@@ -112,3 +112,23 @@ def test_read_jsonl_from_arrow():
     for i, example in enumerate(iterator):
         assert example.sample_id == str(i)
         assert example.text == f"test_{i}"
+
+
+def test_resume_jsonl_from_arrow():
+    resumed_state = ArrowFileIteratorState(
+        file_path="fixtures/test_docs.jsonl",
+        num_workers=1,
+        worker_id=0,
+        preprocess_dir=None,
+        entropy_model_name=None,
+        dataset_files=None,
+        row_num=1,
+        arrow_batch_size=2,
+        s3_profile=None,
+        file_format="json",
+    )
+    arrow_iterator = resumed_state.build()
+    example = next(arrow_iterator.create_iter())
+    assert example.sample_id == "1"
+    assert example.text == "test_1"
+    assert arrow_iterator.get_state().row_num == 2

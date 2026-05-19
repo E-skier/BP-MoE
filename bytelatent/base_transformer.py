@@ -35,7 +35,11 @@ except (ImportError, ModuleNotFoundError):
 if int(os.environ.get("BLT_ALLOW_MISSING_FLEX_ATTENTION", False)) == 0:
     flex_attention_comp = torch.compile(flex_attention)
 else:
-    flex_attention_comp = None
+    logger.warning(
+        "BLT_ALLOW_MISSING_FLEX_ATTENTION is set, but flex attention is available; "
+        "using uncompiled flex_attention instead of disabling it."
+    )
+    flex_attention_comp = flex_attention
 
 
 class InitStdFactor(str, Enum):
