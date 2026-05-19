@@ -51,6 +51,13 @@ class BaseTransformerArgs(BaseModel):
 
     ffn_dim_multiplier: float | None = None
 
+    # Optional sparse FFN routing. Disabled by default.
+    moe_num_experts: int = 0
+    moe_top_k: int = 2
+    moe_layer_frequency: int = 1
+    moe_balance_loss_weight: float = 0.0
+    moe_router_jitter: float = 0.0
+
     multiple_of: int = 256
 
     norm_eps: float = 1e-5
@@ -515,8 +522,161 @@ class FeedForward(nn.Module):
         )
 
 
+class SparseMoEFeedForward(nn.Module):
+    def __init__(
+        self,
+        dim: int,
+        hidden_dim: int,
+        multiple_of: int,
+        ffn_dim_multiplier: Optional[float],
+        num_experts: int,
+        top_k: int,
+        router_jitter: float = 0.0,
+    ):
+        super().__init__()
+        if num_experts <= 0:
+            raise ValueError("num_experts must be positive for SparseMoEFeedForward")
+        if top_k <= 0:
+            raise ValueError("top_k must be positive for SparseMoEFeedForward")
+
+        self.dim = dim
+        self.num_experts = num_experts
+        self.top_k = min(top_k, num_experts)
+        self.router_jitter = router_jitter
+        self.is_sparse_moe = True
+
+        self.router = nn.Linear(dim, num_experts, bias=False)
+        self.experts = nn.ModuleList(
+            [
+                FeedForward(
+                    dim=dim,
+                    hidden_dim=hidden_dim,
+                    multiple_of=multiple_of,
+                    ffn_dim_multiplier=ffn_dim_multiplier,
+                )
+                for _ in range(num_experts)
+            ]
+        )
+        self.last_balance_loss: Optional[torch.Tensor] = None
+        self.last_metrics: dict[str, float] = {}
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        flat_x = x.reshape(-1, x.shape[-1])
+        router_logits = self.router(flat_x)
+        if self.training and self.router_jitter > 0:
+            router_logits = router_logits + torch.empty_like(router_logits).uniform_(
+                -self.router_jitter, self.router_jitter
+            )
+
+        router_probs = F.softmax(router_logits.float(), dim=-1)
+        top_weights, top_indices = torch.topk(
+            router_probs, k=self.top_k, dim=-1, sorted=False
+        )
+        top_weights = top_weights / top_weights.sum(dim=-1, keepdim=True).clamp_min(
+            1e-9
+        )
+
+        flat_output = torch.zeros_like(flat_x)
+        for expert_rank in range(self.top_k):
+            rank_expert_ids = top_indices[:, expert_rank]
+            rank_weights = top_weights[:, expert_rank].to(flat_x.dtype)
+            for expert_id, expert in enumerate(self.experts):
+                token_ids = torch.where(rank_expert_ids == expert_id)[0]
+                if token_ids.numel() == 0:
+                    continue
+                expert_input = flat_x.index_select(0, token_ids)
+                expert_output = expert(expert_input)
+                expert_output = expert_output * rank_weights.index_select(
+                    0, token_ids
+                ).unsqueeze(-1)
+                flat_output.index_add_(0, token_ids, expert_output)
+
+        prob_density = router_probs.mean(dim=0)
+        uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
+        self.last_balance_loss = self.num_experts * torch.sum(
+            (prob_density - uniform) ** 2
+        )
+        self._record_metrics(router_probs, top_indices)
+        return flat_output.reshape_as(x)
+
+    @torch.no_grad()
+    def _record_metrics(
+        self, router_probs: torch.Tensor, top_indices: torch.Tensor
+    ) -> None:
+        assignments = torch.bincount(
+            top_indices.reshape(-1), minlength=self.num_experts
+        ).float()
+        total_assignments = assignments.sum().clamp_min(1.0)
+        load_fraction = assignments / total_assignments
+        mean_load = load_fraction.mean().clamp_min(1e-9)
+        router_entropy = -(
+            router_probs * router_probs.clamp_min(1e-9).log()
+        ).sum(dim=-1)
+
+        self.last_metrics = {
+            "router_entropy": router_entropy.mean().item(),
+            "load_imbalance": (load_fraction.max() / mean_load).item(),
+            "max_load_fraction": load_fraction.max().item(),
+            "min_load_fraction": load_fraction.min().item(),
+            "active_experts": (assignments > 0).float().sum().item(),
+            "balance_loss": (
+                self.last_balance_loss.detach().item()
+                if self.last_balance_loss is not None
+                else 0.0
+            ),
+        }
+        for expert_id, fraction in enumerate(load_fraction):
+            self.last_metrics[f"expert_{expert_id}_load_fraction"] = fraction.item()
+
+    def reset_parameters(self, init_std=None, factor=1.0):
+        router_init_std = init_std or (self.dim ** (-0.5)) / factor
+        nn.init.trunc_normal_(
+            self.router.weight,
+            mean=0.0,
+            std=router_init_std,
+            a=-3 * router_init_std,
+            b=3 * router_init_std,
+        )
+        for expert in self.experts:
+            expert.reset_parameters(init_std, factor)
+
+
+def _iter_sparse_moe_modules(module: nn.Module):
+    for name, child in module.named_modules():
+        if getattr(child, "is_sparse_moe", False):
+            yield name, child
+
+
+def get_moe_aux_loss(module: nn.Module) -> Optional[torch.Tensor]:
+    losses = [
+        child.last_balance_loss
+        for _, child in _iter_sparse_moe_modules(module)
+        if child.last_balance_loss is not None
+    ]
+    if len(losses) == 0:
+        return None
+    return torch.stack(losses).mean()
+
+
+def get_moe_metrics(module: nn.Module) -> dict[str, float]:
+    metrics = [
+        child.last_metrics
+        for _, child in _iter_sparse_moe_modules(module)
+        if child.last_metrics
+    ]
+    if len(metrics) == 0:
+        return {}
+
+    keys = sorted({key for item in metrics for key in item})
+    out: dict[str, float] = {"num_layers": float(len(metrics))}
+    for key in keys:
+        values = [item[key] for item in metrics if key in item]
+        out[f"{key}_mean"] = sum(values) / len(values)
+    return out
+
+
 class TransformerBlock(nn.Module):
-    def __init__(self, args: BaseTransformerArgs):
+    def __init__(self, args: BaseTransformerArgs, layer_idx: int | None = None):
         super().__init__()
 
         assert (args.head_dim is not None) or (
@@ -536,11 +696,26 @@ class TransformerBlock(nn.Module):
             n_kv_heads=self.n_kv_heads,
             rope_theta=args.rope_theta,
         )
-        self.feed_forward = FeedForward(
+        moe_frequency = max(args.moe_layer_frequency, 1)
+        use_moe = args.moe_num_experts > 0 and (
+            layer_idx is None or layer_idx % moe_frequency == 0
+        )
+        ffn_cls = SparseMoEFeedForward if use_moe else FeedForward
+        ffn_kwargs = (
+            dict(
+                num_experts=args.moe_num_experts,
+                top_k=args.moe_top_k,
+                router_jitter=args.moe_router_jitter,
+            )
+            if use_moe
+            else {}
+        )
+        self.feed_forward = ffn_cls(
             dim=args.dim,
             hidden_dim=4 * args.dim,
             multiple_of=args.multiple_of,
             ffn_dim_multiplier=args.ffn_dim_multiplier,
+            **ffn_kwargs,
         )
         self.attention_norm = RMSNorm(args.dim, eps=args.norm_eps)
         self.ffn_norm = RMSNorm(args.dim, eps=args.norm_eps)
@@ -597,8 +772,8 @@ class BaseTransformer(nn.Module, SequenceModelWithOutput):
         self.eos_id = args.eos_id
 
         self.layers = nn.ModuleList()
-        for _ in range(args.n_layers):
-            self.layers.append(TransformerBlock(args))
+        for layer_idx in range(args.n_layers):
+            self.layers.append(TransformerBlock(args, layer_idx=layer_idx))
 
     def get_output_seq_len(self):
         return self.max_seqlen

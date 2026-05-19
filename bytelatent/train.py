@@ -25,6 +25,7 @@ from torch.distributed.checkpoint.stateful import Stateful
 from torch.optim import lr_scheduler
 
 from bytelatent.args import TrainArgs
+from bytelatent.base_transformer import get_moe_aux_loss, get_moe_metrics
 from bytelatent.checkpoint import CheckpointManager, load_from_checkpoint
 from bytelatent.config_parser import parse_args_to_pydantic_model
 from bytelatent.data.file_util import get_fs
@@ -38,6 +39,7 @@ from bytelatent.data.iterators.packing_iterator import PackingIteratorState
 from bytelatent.distributed import (
     check_model_value_range,
     clean_env,
+    dist_max,
     dist_mean,
     dist_sum,
     get_device_mesh,
@@ -366,6 +368,11 @@ def train(args: TrainArgs):
         step_losses: list[float] = []
         step_tok_losses: list[float] = []
         n_bytes: int = 0
+        patch_length_sum = 0.0
+        patch_length_count = 0
+        patch_length_max = 0.0
+        patches_per_seq_sum = 0.0
+        patch_seq_count = 0
         while train_state.step < args.steps and (
             args.max_steps is None or train_state.step < args.max_steps
         ):
@@ -385,6 +392,16 @@ def train(args: TrainArgs):
                 batch_patch_lengths = None
             else:
                 batch_patch_lengths = torch.from_numpy(batch.patch_lengths).cuda()
+                active_patch_lengths = batch_patch_lengths[batch_patch_lengths > 0]
+                if active_patch_lengths.numel() > 0:
+                    patch_length_sum += active_patch_lengths.sum().item()
+                    patch_length_count += active_patch_lengths.numel()
+                    patch_length_max = max(
+                        patch_length_max, active_patch_lengths.max().item()
+                    )
+                patches_per_seq = (batch_patch_lengths > 0).sum(dim=-1)
+                patches_per_seq_sum += patches_per_seq.sum().item()
+                patch_seq_count += patches_per_seq.numel()
             mask = None if batch.mask is None else torch.from_numpy(batch.mask).cuda()
 
             if args.data.tokenizer_args.name in ["bytes", "blt"]:
@@ -469,6 +486,7 @@ def train(args: TrainArgs):
                     next(probe_mod.parameters()).grad is None
                 ), "Probe model shouldn't have grads at this point"
 
+            moe_aux_loss_log = None
             if args.train_entropy_model:
                 pred = model(batch_x)
             else:
@@ -477,6 +495,16 @@ def train(args: TrainArgs):
                 )
 
             loss, tok_loss = compute_loss(pred, batch_y, mask, train_state.scale)
+            if not args.train_entropy_model:
+                moe_aux_loss = get_moe_aux_loss(model)
+                if (
+                    moe_aux_loss is not None
+                    and args.model.moe_balance_loss_weight > 0
+                ):
+                    moe_aux_loss_log = moe_aux_loss.detach()
+                    loss = loss + args.model.moe_balance_loss_weight * moe_aux_loss
+                elif moe_aux_loss is not None:
+                    moe_aux_loss_log = moe_aux_loss.detach()
 
             # We scale loss with grad_acc_steps so the gradient is the same
             # regardless of grad_acc_steps
@@ -625,6 +653,36 @@ def train(args: TrainArgs):
                         ),
                     },
                 }
+                if patch_length_count > 0:
+                    patch_length_count_across_gpus = dist_sum(patch_length_count)
+                    patch_seq_count_across_gpus = dist_sum(patch_seq_count)
+                    patch_length_sum_across_gpus = dist_sum(patch_length_sum)
+                    patches_per_seq_sum_across_gpus = dist_sum(patches_per_seq_sum)
+                    patch_length_max_across_gpus = dist_max(patch_length_max)
+                    metric_dict["patch"] = {
+                        "length_mean_per_gpu": patch_length_sum
+                        / max(patch_length_count, 1),
+                        "length_mean_across_gpus": to_py_num(
+                            patch_length_sum_across_gpus
+                            / patch_length_count_across_gpus.clamp_min(1)
+                        ),
+                        "length_max_per_gpu": patch_length_max,
+                        "length_max_across_gpus": to_py_num(
+                            patch_length_max_across_gpus
+                        ),
+                        "patches_per_seq_mean_per_gpu": patches_per_seq_sum
+                        / max(patch_seq_count, 1),
+                        "patches_per_seq_mean_across_gpus": to_py_num(
+                            patches_per_seq_sum_across_gpus
+                            / patch_seq_count_across_gpus.clamp_min(1)
+                        ),
+                    }
+                if not args.train_entropy_model:
+                    moe_metrics = get_moe_metrics(model)
+                    if moe_aux_loss_log is not None:
+                        moe_metrics["aux_loss"] = to_py_num(moe_aux_loss_log)
+                    if len(moe_metrics) > 0:
+                        metric_dict["moe"] = moe_metrics
 
                 metrics = flatten_dict(
                     metric_dict,
@@ -659,6 +717,11 @@ def train(args: TrainArgs):
                 )
 
                 n_bytes = 0
+                patch_length_sum = 0.0
+                patch_length_count = 0
+                patch_length_max = 0.0
+                patches_per_seq_sum = 0.0
+                patch_seq_count = 0
                 step_losses = []
                 step_tok_losses = []
                 gpu_memory_monitor.reset_peak_stats()
