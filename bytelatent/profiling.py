@@ -8,10 +8,19 @@ from pathlib import Path
 
 import torch.distributed
 import wandb
-import xformers.profiler
 from pydantic import BaseModel
 from torch.profiler.profiler import profile
-from xformers.profiler import MemSnapshotsProfiler, PyTorchProfiler
+try:
+    import xformers.profiler as xformers_profiler
+    from xformers.profiler import MemSnapshotsProfiler, PyTorchProfiler
+except ImportError:
+    xformers_profiler = None
+
+    class PyTorchProfiler:
+        ACTIVITIES = []
+
+    class MemSnapshotsProfiler:
+        pass
 
 from bytelatent.distributed import get_is_master
 
@@ -101,6 +110,9 @@ def maybe_run_profiler(dump_dir, module, config: ProfilerArgs):
     # get user defined profiler settings
 
     if config.run:
+        if xformers_profiler is None:
+            raise ImportError("xformers is required when profiling.run=true")
+
         trace_dir = os.path.join(dump_dir, config.trace_folder)
 
         logger.info(f"Profiling active.  Traces will be saved at {trace_dir}")
@@ -110,7 +122,7 @@ def maybe_run_profiler(dump_dir, module, config: ProfilerArgs):
         if torch.distributed.is_initialized():
             torch.distributed.barrier()
 
-        with xformers.profiler.profile(
+        with xformers_profiler.profile(
             output_dir=trace_dir,
             module=module,
             schedule=[

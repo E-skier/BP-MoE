@@ -14,7 +14,11 @@ from torch.nn.attention.flex_attention import (
     _mask_mod_signature,
     flex_attention,
 )
-from xformers.ops import AttentionBias, fmha
+try:
+    from xformers.ops import AttentionBias, fmha
+except ImportError:
+    AttentionBias = object
+    fmha = None
 
 from bytelatent.tokenizers.constants import EOS_ID
 
@@ -402,6 +406,8 @@ class Attention(nn.Module):
             output = output.transpose(1, 2).contiguous()  # B H S D -> B S H D
 
         elif attn_impl == "xformers":
+            if fmha is None:
+                raise ImportError("xformers is required when attn_impl='xformers'")
             assert mask is None or isinstance(mask, AttentionBias)
             query_shape = xq.shape
             xq, xk, xv = _reshape_for_attn_bias(mask, xq, xk, xv)

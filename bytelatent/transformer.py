@@ -15,7 +15,10 @@ from torch.distributed.tensor.parallel import (
     parallelize_module,
 )
 from torch.nn.attention.flex_attention import BlockMask, create_block_mask
-from xformers.ops import AttentionBias
+try:
+    from xformers.ops import AttentionBias
+except ImportError:
+    AttentionBias = object
 
 from bytelatent.base_transformer import (
     BaseTransformer,

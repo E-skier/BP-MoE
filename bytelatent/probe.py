@@ -34,7 +34,10 @@ from torch.nn.attention import SDPBackend, sdpa_kernel
 from torch.utils._python_dispatch import TorchDispatchMode
 from torch.utils._pytree import tree_map
 from torch.utils.module_tracker import ModuleTracker
-from xformers.ops import fmha
+try:
+    from xformers.ops import fmha
+except ImportError:
+    fmha = None
 
 
 @torch.library.custom_op("torchprobe::log", mutates_args=(), device_types=None)

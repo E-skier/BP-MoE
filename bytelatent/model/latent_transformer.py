@@ -7,7 +7,10 @@ import torch.nn
 import torch.nn as nn
 from torch.nn import functional as F
 from torch.nn.attention.flex_attention import BlockMask
-from xformers.ops import AttentionBias
+try:
+    from xformers.ops import AttentionBias
+except ImportError:
+    AttentionBias = object
 
 from bytelatent.base_transformer import (
     BaseTransformer,
