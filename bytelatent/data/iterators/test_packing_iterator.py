@@ -18,11 +18,13 @@ class DummySequenceIterator(StatefulIterator):
         seq_len: int,
         n_seqs: int,
         patch_lengths: list[int] | None = None,
+        entropies: list[float] | None = None,
         pad_id: int = 0,
     ):
         self.seq_len = seq_len
         self.n_seqs = n_seqs
         self.patch_lengths = patch_lengths
+        self.entropies = entropies
         self.pad_id = pad_id
 
     def get_state(self):
@@ -46,6 +48,7 @@ class DummySequenceIterator(StatefulIterator):
                 tokens=tokens,
                 mask=mask,
                 patch_lengths=self.patch_lengths,
+                entropies=self.entropies,
             )
 
 
@@ -310,3 +313,35 @@ def test_merge_patch_seq_masks():
         masks.append([True] * 256)
         masks.append([True] * 10)
         _merge_patch_seq_masks(batch_size, seq_len, masks)
+
+
+def test_patch_packing_propagates_patch_entropies():
+    patch_lengths = [1, 2, 3]
+    token_entropies = [1.0, 2.0, 4.0, 6.0, 8.0, 10.0]
+    sequence_iterator = DummySequenceIterator(
+        seq_len=sum(patch_lengths),
+        n_seqs=1,
+        patch_lengths=patch_lengths,
+        entropies=token_entropies,
+    )
+    packing_iterator = PackingIterator(
+        sequence_iterator,
+        packing_args=PackingArgs(
+            batch_size=1,
+            seq_len=len(patch_lengths),
+            pad_id=0,
+            packing_mode=PackingMode.PATCHING,
+            max_length=sum(patch_lengths) - 1,
+            pad_to_max_length=False,
+            enable_byte_ngrams=False,
+        ),
+    )
+
+    batch = next(packing_iterator.create_iter())
+
+    assert batch.patch_entropies is not None
+    assert batch.patch_entropies.shape == (1, 3)
+    np.testing.assert_allclose(
+        batch.patch_entropies[0],
+        np.array([1.0, 3.0, 8.0], dtype=np.float32),
+    )

@@ -58,6 +58,24 @@ def _merge_patch_seq_masks(bs: int, slen: int, mask_seqs: list[list[bool]]):
     return mask
 
 
+def _mean_patch_entropies(
+    token_entropies: list[float], patch_lengths: list[int]
+) -> list[float]:
+    patch_entropies: list[float] = []
+    start = 0
+    for patch_length in patch_lengths:
+        if patch_length <= 0:
+            patch_entropies.append(0.0)
+            continue
+        end = start + patch_length
+        patch_values = token_entropies[start:end]
+        assert len(patch_values) == patch_length
+        patch_entropies.append(float(np.mean(patch_values)))
+        start = end
+    assert start == len(token_entropies), f"{start} != {len(token_entropies)}"
+    return patch_entropies
+
+
 def truncate_batch(
     batch: Batch,
     max_length: int,
@@ -226,6 +244,7 @@ class PackingIterator(StatefulIterator[Batch, PackingIteratorState]):
             tokens: list[list[int]] = []
             masks: list[list[bool]] = []
             patch_lengths: list[list[int]] = []
+            patch_entropies: list[list[float]] | None = []
             stop_iteration = False
             try:
                 for _ in range(self.packing_args.batch_size):
@@ -236,6 +255,7 @@ class PackingIterator(StatefulIterator[Batch, PackingIteratorState]):
                     assert (
                         _patch_lengths is not None
                     ), "patch lengths are required for packing based on patches."
+                    _patch_lengths = list(_patch_lengths)
                     # Reminder: seq_len is in terms of patches
                     assert len(sequence.patch_lengths) == self.packing_args.seq_len
                     last_patch_length = 0
@@ -243,9 +263,21 @@ class PackingIterator(StatefulIterator[Batch, PackingIteratorState]):
                         last_patch_length = _patch_lengths[-1]
                         _patch_lengths[0] -= 1
                         _patch_lengths = [1] + _patch_lengths[:-1]
-                    tokens.append(_tokens[: len(_tokens) - last_patch_length])
-                    masks.append(_mask[: len(_mask) - last_patch_length])
+                    token_cutoff = len(_tokens) - last_patch_length
+                    tokens.append(_tokens[:token_cutoff])
+                    masks.append(_mask[:token_cutoff])
                     patch_lengths.append(_patch_lengths)
+                    if patch_entropies is not None:
+                        if sequence.entropies is None:
+                            patch_entropies = None
+                        else:
+                            assert len(sequence.entropies) == len(_tokens)
+                            patch_entropies.append(
+                                _mean_patch_entropies(
+                                    sequence.entropies[:token_cutoff],
+                                    _patch_lengths,
+                                )
+                            )
             except StopIteration:
                 stop_iteration = True
 
@@ -253,6 +285,11 @@ class PackingIterator(StatefulIterator[Batch, PackingIteratorState]):
                 break
 
             x_patch_lengths = np.array(patch_lengths)
+            x_patch_entropies = (
+                None
+                if patch_entropies is None
+                else np.array(patch_entropies, dtype=np.float32)
+            )
             assert (
                 x_patch_lengths.shape[1] == seq_len
             ), f"{x_patch_lengths.shape[1]} vs {seq_len}"
@@ -283,6 +320,13 @@ class PackingIterator(StatefulIterator[Batch, PackingIteratorState]):
                         np.repeat(x_patch_lengths[-1:, :], n_missing, axis=0),
                     ]
                 )
+                if x_patch_entropies is not None:
+                    x_patch_entropies = np.vstack(
+                        [
+                            x_patch_entropies,
+                            np.repeat(x_patch_entropies[-1:, :], n_missing, axis=0),
+                        ]
+                    )
                 for _ in range(n_missing):
                     masks.append([0] * tok_seq_len)
                 assert len(masks) == batch_size
@@ -301,6 +345,7 @@ class PackingIterator(StatefulIterator[Batch, PackingIteratorState]):
                 x=x,
                 y=y,
                 patch_lengths=x_patch_lengths,
+                patch_entropies=x_patch_entropies,
                 ngram_ids=ngram_ids,
                 mask=_merge_patch_seq_masks(batch_size, tok_seq_len, masks),
             )

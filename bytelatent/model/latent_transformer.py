@@ -172,6 +172,8 @@ class GlobalTransformer(BaseTransformer):
         embeds: Optional[torch.Tensor] = None,
         mask: Optional[Union[BlockMask, AttentionBias, torch.Tensor, str]] = None,
         cache: Optional[List[Tuple[torch.Tensor, torch.Tensor, int]]] = None,
+        patch_lengths: Optional[torch.Tensor] = None,
+        patch_entropies: Optional[torch.Tensor] = None,
     ):
         """
         Similar to BaseTransformer.forward, but with an additional embeds argument
@@ -198,7 +200,14 @@ class GlobalTransformer(BaseTransformer):
 
         h = F.dropout(h, p=self.dropout, training=self.training)
 
-        h = super().forward(h, tok_idx=tok_idx, mask=mask, attn_impl=self.attn_impl)
+        h = super().forward(
+            h,
+            tok_idx=tok_idx,
+            mask=mask,
+            attn_impl=self.attn_impl,
+            patch_lengths=patch_lengths,
+            patch_entropies=patch_entropies,
+        )
         return h, cache
 
     def init_weights(self):

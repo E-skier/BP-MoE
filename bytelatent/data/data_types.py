@@ -44,6 +44,7 @@ class BltSequence(BaseModel):
     tokens: list[int]
     mask: list[bool]
     patch_lengths: list[int] | None
+    entropies: list[float] | None = None
 
 
 @dataclass
@@ -52,6 +53,7 @@ class Batch:
     y: np.ndarray
     mask: np.ndarray | None = None
     patch_lengths: np.ndarray | None = None
+    patch_entropies: np.ndarray | None = None
     ngram_ids: np.ndarray | None = None
     is_final: bool = False
 
@@ -66,6 +68,10 @@ class Batch:
             patch_lengths = None
         else:
             patch_lengths = self.patch_lengths.tolist()
+        if self.patch_entropies is None:
+            patch_entropies = None
+        else:
+            patch_entropies = self.patch_entropies.tolist()
         if self.ngram_ids is None:
             ngram_ids = None
         else:
@@ -75,6 +81,7 @@ class Batch:
             "y": y,
             "mask": mask,
             "patch_lengths": patch_lengths,
+            "patch_entropies": patch_entropies,
             "ngram_ids": ngram_ids,
             "is_final": self.is_final,
         }
@@ -91,6 +98,10 @@ class Batch:
             patch_lengths = None
         else:
             patch_lengths = np.array(data["patch_lengths"])
+        if data.get("patch_entropies") is None:
+            patch_entropies = None
+        else:
+            patch_entropies = np.array(data["patch_entropies"])
         if data["ngram_ids"] is None:
             ngram_ids = None
         else:
@@ -100,6 +111,7 @@ class Batch:
             y=y,
             mask=mask,
             patch_lengths=patch_lengths,
+            patch_entropies=patch_entropies,
             ngram_ids=ngram_ids,
             is_final=data["is_final"],
         )

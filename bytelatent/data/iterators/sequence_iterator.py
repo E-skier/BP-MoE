@@ -91,6 +91,7 @@ class SequenceIterator(StatefulIterator):
         patch_lengths: list[int] = []
         tokens: list[int] = []
         mask: list[bool] = []
+        entropies: list[float] | None = []
         first = True
         logger.info(
             "Starting first buffer for: %s",
@@ -107,9 +108,16 @@ class SequenceIterator(StatefulIterator):
             assert len(example.tokens) != 0
             assert len(example.mask) != 0
             assert len(example.tokens) == len(example.mask)
+            if example.entropies is not None:
+                assert len(example.entropies) == len(example.tokens)
 
             tokens.extend(example.tokens)
             mask.extend(example.mask)
+            if entropies is not None:
+                if example.entropies is None:
+                    entropies = None
+                else:
+                    entropies.extend(example.entropies)
             if self.preprocess_iterator.add_patches:
                 patch_lengths.extend(example.patch_lengths)
             else:
@@ -129,12 +137,17 @@ class SequenceIterator(StatefulIterator):
                 )
                 seq_tokens = []
                 seq_mask = []
+                seq_entropies = [] if entropies is not None else None
                 start_id = 0
                 # We fix the number of patches and therefore global steps per batch
                 # so we have a variable number of tokens we need to account for
                 for num_tokens in x_patches.sum(axis=-1):
                     seq_tokens.append(tokens[start_id : start_id + num_tokens])
                     seq_mask.append(mask[start_id : start_id + num_tokens])
+                    if seq_entropies is not None:
+                        seq_entropies.append(
+                            entropies[start_id : start_id + num_tokens]
+                        )
                     start_id += num_tokens
 
                 assert start_id == x_patches.sum()
@@ -143,6 +156,8 @@ class SequenceIterator(StatefulIterator):
                 patch_lengths = patch_lengths[n_buffer_patches:]
                 tokens = tokens[x_patches.sum() :]
                 mask = mask[x_patches.sum() :]
+                if entropies is not None:
+                    entropies = entropies[x_patches.sum() :]
 
                 seq_patch_lengths: list[list[int]] = x_patches.tolist()
                 assert len(seq_patch_lengths) == self.buffer_size
@@ -159,15 +174,20 @@ class SequenceIterator(StatefulIterator):
                         == len(seq_mask[idx])
                     ), f"{sum(seq_patch_lengths[idx])}, {len(seq_tokens[idx])} {len(seq_mask[idx])}, idx={idx}"
                     assert seq_patch_lengths[idx][0] > 0, f"{seq_patch_lengths[idx]}"
+                    sequence_entropies = (
+                        None if seq_entropies is None else seq_entropies[idx]
+                    )
                     if self.preprocess_iterator.add_patches:
                         yield BltSequence(
                             tokens=seq_tokens[idx],
                             mask=seq_mask[idx],
                             patch_lengths=seq_patch_lengths[idx],
+                            entropies=sequence_entropies,
                         )
                     else:
                         yield BltSequence(
                             tokens=seq_tokens[idx],
                             mask=seq_mask[idx],
                             patch_lengths=None,
+                            entropies=None,
                         )

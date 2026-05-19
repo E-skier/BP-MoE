@@ -65,6 +65,9 @@ class BaseTransformerArgs(BaseModel):
     moe_layer_frequency: int = 1
     moe_balance_loss_weight: float = 0.0
     moe_router_jitter: float = 0.0
+    moe_router_use_patch_length: bool = False
+    moe_router_use_patch_entropy: bool = False
+    moe_balance_cost: str = "patch"
 
     multiple_of: int = 256
 
@@ -542,20 +545,41 @@ class SparseMoEFeedForward(nn.Module):
         num_experts: int,
         top_k: int,
         router_jitter: float = 0.0,
+        router_use_patch_length: bool = False,
+        router_use_patch_entropy: bool = False,
+        balance_cost: str = "patch",
     ):
         super().__init__()
         if num_experts <= 0:
             raise ValueError("num_experts must be positive for SparseMoEFeedForward")
         if top_k <= 0:
             raise ValueError("top_k must be positive for SparseMoEFeedForward")
+        if balance_cost not in {"patch", "byte", "entropy_byte"}:
+            raise ValueError(
+                "balance_cost must be one of: patch, byte, entropy_byte"
+            )
 
         self.dim = dim
         self.num_experts = num_experts
         self.top_k = min(top_k, num_experts)
         self.router_jitter = router_jitter
+        self.router_use_patch_length = router_use_patch_length
+        self.router_use_patch_entropy = router_use_patch_entropy
+        self.balance_cost = balance_cost
         self.is_sparse_moe = True
 
         self.router = nn.Linear(dim, num_experts, bias=False)
+        self.patch_feature_names = []
+        if router_use_patch_length:
+            self.patch_feature_names.append("length")
+        if router_use_patch_entropy:
+            self.patch_feature_names.append("entropy")
+        self.patch_feature_router = (
+            nn.Linear(len(self.patch_feature_names), num_experts, bias=False)
+            if len(self.patch_feature_names) > 0
+            else None
+        )
+        self.patch_length_router = self.patch_feature_router
         self.experts = nn.ModuleList(
             [
                 FeedForward(
@@ -570,9 +594,28 @@ class SparseMoEFeedForward(nn.Module):
         self.last_balance_loss: Optional[torch.Tensor] = None
         self.last_metrics: dict[str, float] = {}
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        x: torch.Tensor,
+        patch_lengths: Optional[torch.Tensor] = None,
+        patch_entropies: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         flat_x = x.reshape(-1, x.shape[-1])
+        flat_patch_lengths = self._prepare_patch_lengths(x, patch_lengths)
+        flat_patch_entropies = self._prepare_patch_entropies(x, patch_entropies)
+
         router_logits = self.router(flat_x)
+        if self.patch_feature_router is not None:
+            patch_features = self._patch_features(
+                flat_patch_lengths, flat_patch_entropies
+            )
+            patch_features = patch_features.to(
+                dtype=self.patch_feature_router.weight.dtype
+            )
+            router_logits = router_logits + self.patch_feature_router(
+                patch_features
+            ).to(router_logits.dtype)
+
         if self.training and self.router_jitter > 0:
             router_logits = router_logits + torch.empty_like(router_logits).uniform_(
                 -self.router_jitter, self.router_jitter
@@ -601,27 +644,150 @@ class SparseMoEFeedForward(nn.Module):
                 ).unsqueeze(-1)
                 flat_output.index_add_(0, token_ids, expert_output)
 
-        prob_density = router_probs.mean(dim=0)
+        load_weights = self._load_weights(
+            flat_x, flat_patch_lengths, flat_patch_entropies
+        )
+        prob_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
+        prob_density = prob_density / load_weights.sum().clamp_min(1.0)
         uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
         self.last_balance_loss = self.num_experts * torch.sum(
             (prob_density - uniform) ** 2
         )
-        self._record_metrics(router_probs, top_indices)
+        self._record_metrics(
+            router_probs,
+            top_indices,
+            load_weights,
+            flat_patch_lengths,
+            flat_patch_entropies,
+        )
         return flat_output.reshape_as(x)
+
+    def _prepare_patch_lengths(
+        self, x: torch.Tensor, patch_lengths: Optional[torch.Tensor]
+    ) -> Optional[torch.Tensor]:
+        if patch_lengths is None:
+            if self.router_use_patch_length or self.balance_cost in {
+                "byte",
+                "entropy_byte",
+            }:
+                raise ValueError(
+                    "patch_lengths must be provided when length-aware PatchMoE "
+                    "routing, byte-cost balancing, or entropy-byte balancing "
+                    "is enabled"
+                )
+            return None
+
+        if patch_lengths.shape != x.shape[:-1]:
+            raise ValueError(
+                f"patch_lengths shape {tuple(patch_lengths.shape)} must match "
+                f"MoE input prefix shape {tuple(x.shape[:-1])}"
+            )
+        return patch_lengths.reshape(-1).to(device=x.device)
+
+    def _prepare_patch_entropies(
+        self, x: torch.Tensor, patch_entropies: Optional[torch.Tensor]
+    ) -> Optional[torch.Tensor]:
+        if patch_entropies is None:
+            if self.router_use_patch_entropy or self.balance_cost == "entropy_byte":
+                raise ValueError(
+                    "patch_entropies must be provided when entropy-aware "
+                    "PatchMoE routing or entropy-byte balancing is enabled"
+                )
+            return None
+
+        if patch_entropies.shape != x.shape[:-1]:
+            raise ValueError(
+                f"patch_entropies shape {tuple(patch_entropies.shape)} must "
+                f"match MoE input prefix shape {tuple(x.shape[:-1])}"
+            )
+        return patch_entropies.reshape(-1).to(device=x.device)
+
+    def _patch_features(
+        self,
+        flat_patch_lengths: Optional[torch.Tensor],
+        flat_patch_entropies: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        features = []
+        if self.router_use_patch_length:
+            assert flat_patch_lengths is not None
+            length_feature = torch.log1p(flat_patch_lengths.float()).unsqueeze(-1)
+            positive_lengths = flat_patch_lengths[flat_patch_lengths > 0].float()
+            if positive_lengths.numel() > 0:
+                length_feature = length_feature / torch.log1p(
+                    positive_lengths.mean()
+                ).clamp_min(1.0)
+            features.append(length_feature)
+        if self.router_use_patch_entropy:
+            assert flat_patch_entropies is not None
+            entropy_feature = flat_patch_entropies.float().clamp_min(0.0)
+            if flat_patch_lengths is None:
+                active_entropies = entropy_feature[entropy_feature > 0]
+            else:
+                active_entropies = entropy_feature[flat_patch_lengths > 0]
+            if active_entropies.numel() > 0:
+                entropy_feature = entropy_feature / active_entropies.mean().clamp_min(
+                    1.0
+                )
+            if flat_patch_lengths is not None:
+                entropy_feature = entropy_feature.masked_fill(
+                    flat_patch_lengths <= 0, 0.0
+                )
+            features.append(entropy_feature.unsqueeze(-1))
+        if len(features) == 0:
+            raise RuntimeError("Patch feature router has no enabled features")
+        return torch.cat(features, dim=-1)
+
+    def _load_weights(
+        self,
+        flat_x: torch.Tensor,
+        flat_patch_lengths: Optional[torch.Tensor],
+        flat_patch_entropies: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        if flat_patch_lengths is None:
+            return torch.ones(flat_x.shape[0], device=flat_x.device, dtype=torch.float32)
+
+        patch_lengths = flat_patch_lengths.float().clamp_min(0.0)
+        if self.balance_cost == "patch":
+            return (patch_lengths > 0).float()
+        if self.balance_cost == "byte":
+            return patch_lengths
+        if self.balance_cost == "entropy_byte":
+            assert flat_patch_entropies is not None
+            patch_entropies = flat_patch_entropies.float().clamp_min(0.0)
+            return patch_lengths * patch_entropies
+        raise ValueError(f"Unknown balance_cost: {self.balance_cost}")
 
     @torch.no_grad()
     def _record_metrics(
-        self, router_probs: torch.Tensor, top_indices: torch.Tensor
+        self,
+        router_probs: torch.Tensor,
+        top_indices: torch.Tensor,
+        load_weights: torch.Tensor,
+        flat_patch_lengths: Optional[torch.Tensor],
+        flat_patch_entropies: Optional[torch.Tensor],
     ) -> None:
-        assignments = torch.bincount(
-            top_indices.reshape(-1), minlength=self.num_experts
-        ).float()
+        assignment_weights = (
+            load_weights.unsqueeze(-1).expand_as(top_indices).reshape(-1)
+        )
+        assignments = torch.zeros(
+            self.num_experts, device=router_probs.device, dtype=torch.float32
+        )
+        assignments.scatter_add_(0, top_indices.reshape(-1), assignment_weights)
         total_assignments = assignments.sum().clamp_min(1.0)
         load_fraction = assignments / total_assignments
         mean_load = load_fraction.mean().clamp_min(1e-9)
         router_entropy = -(
             router_probs * router_probs.clamp_min(1e-9).log()
         ).sum(dim=-1)
+
+        if flat_patch_lengths is None:
+            active_unit_mask = torch.ones_like(load_weights, dtype=torch.bool)
+        else:
+            active_unit_mask = flat_patch_lengths > 0
+        active_weights = load_weights[active_unit_mask]
+        routed_units = active_unit_mask.sum().item()
+        load_weight_mean = active_weights.mean().item() if routed_units > 0 else 0.0
+        load_weight_max = active_weights.max().item() if routed_units > 0 else 0.0
 
         self.last_metrics = {
             "router_entropy": router_entropy.mean().item(),
@@ -634,7 +800,28 @@ class SparseMoEFeedForward(nn.Module):
                 if self.last_balance_loss is not None
                 else 0.0
             ),
+            "routed_units": float(routed_units),
+            "total_units": float(load_weights.numel()),
+            "load_weight_mean": load_weight_mean,
+            "load_weight_max": load_weight_max,
+            "side_feature_count": float(len(self.patch_feature_names)),
         }
+        if flat_patch_entropies is not None:
+            active_entropies = flat_patch_entropies.float()[active_unit_mask]
+            self.last_metrics.update(
+                {
+                    "patch_entropy_mean": (
+                        active_entropies.mean().item()
+                        if active_entropies.numel() > 0
+                        else 0.0
+                    ),
+                    "patch_entropy_max": (
+                        active_entropies.max().item()
+                        if active_entropies.numel() > 0
+                        else 0.0
+                    ),
+                }
+            )
         for expert_id, fraction in enumerate(load_fraction):
             self.last_metrics[f"expert_{expert_id}_load_fraction"] = fraction.item()
 
@@ -647,6 +834,14 @@ class SparseMoEFeedForward(nn.Module):
             a=-3 * router_init_std,
             b=3 * router_init_std,
         )
+        if self.patch_feature_router is not None:
+            nn.init.trunc_normal_(
+                self.patch_feature_router.weight,
+                mean=0.0,
+                std=router_init_std,
+                a=-3 * router_init_std,
+                b=3 * router_init_std,
+            )
         for expert in self.experts:
             expert.reset_parameters(init_std, factor)
 
@@ -716,6 +911,9 @@ class TransformerBlock(nn.Module):
                 num_experts=args.moe_num_experts,
                 top_k=args.moe_top_k,
                 router_jitter=args.moe_router_jitter,
+                router_use_patch_length=args.moe_router_use_patch_length,
+                router_use_patch_entropy=args.moe_router_use_patch_entropy,
+                balance_cost=args.moe_balance_cost,
             )
             if use_moe
             else {}
@@ -737,6 +935,8 @@ class TransformerBlock(nn.Module):
         tok_idx: Optional[torch.Tensor] = None,
         mask: Optional[Union[BlockMask, AttentionBias, str]] = None,
         attn_impl: str = "sdpa",
+        patch_lengths: Optional[torch.Tensor] = None,
+        patch_entropies: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         attn_out = self.attention(
             self.attention_norm(x),
@@ -747,7 +947,15 @@ class TransformerBlock(nn.Module):
         )
         h = x + attn_out
         h_norm = self.ffn_norm(h)
-        out = h + self.feed_forward(h_norm)
+        if isinstance(self.feed_forward, SparseMoEFeedForward):
+            ffn_out = self.feed_forward(
+                h_norm,
+                patch_lengths=patch_lengths,
+                patch_entropies=patch_entropies,
+            )
+        else:
+            ffn_out = self.feed_forward(h_norm)
+        out = h + ffn_out
         return out
 
     def init_weights(self, init_std=None, factor=1.0):
@@ -794,12 +1002,22 @@ class BaseTransformer(nn.Module, SequenceModelWithOutput):
         tok_idx: Optional[torch.Tensor] = None,
         mask: Optional[Union[BlockMask, AttentionBias, str]] = None,
         attn_impl: str = "sdpa",
+        patch_lengths: Optional[torch.Tensor] = None,
+        patch_entropies: Optional[torch.Tensor] = None,
     ):
 
         freq_cis = self.rope_embeddings(seqlen=self.max_seqlen, tok_idx=tok_idx)
 
         for i, layer in enumerate(self.layers):
-            h = layer(h, freq_cis, tok_idx=tok_idx, mask=mask, attn_impl=attn_impl)
+            h = layer(
+                h,
+                freq_cis,
+                tok_idx=tok_idx,
+                mask=mask,
+                attn_impl=attn_impl,
+                patch_lengths=patch_lengths,
+                patch_entropies=patch_entropies,
+            )
         return h
 
     def init_weights(self):

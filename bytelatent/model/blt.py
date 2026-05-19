@@ -403,6 +403,32 @@ def patch_ids_from_lengths(patch_lengths, seq_len):
     return patch_ids
 
 
+def patch_entropies_from_token_scores(
+    tok_scores: torch.Tensor | None, patch_lengths: torch.Tensor
+) -> torch.Tensor | None:
+    if tok_scores is None:
+        return None
+
+    patch_entropies = torch.zeros(
+        patch_lengths.shape,
+        dtype=torch.float32,
+        device=patch_lengths.device,
+    )
+    tok_scores = tok_scores.to(device=patch_lengths.device, dtype=torch.float32)
+    for row in range(patch_lengths.shape[0]):
+        start = 0
+        for col, patch_length in enumerate(patch_lengths[row].tolist()):
+            patch_length = int(patch_length)
+            if patch_length <= 0:
+                continue
+            end = start + patch_length
+            valid_end = min(end, tok_scores.shape[1])
+            if valid_end > start:
+                patch_entropies[row, col] = tok_scores[row, start:valid_end].mean()
+            start = end
+    return patch_entropies
+
+
 class ByteLatentTransformerArgs(BaseTransformerArgs):
     # Basic model configuration
     seed: int = 42
@@ -885,6 +911,7 @@ class ByteLatentTransformer(
         self,
         tokens: torch.Tensor,
         patch_lengths: Optional[torch.Tensor] = None,
+        patch_entropies: Optional[torch.Tensor] = None,
         ngram_ids: Optional[torch.Tensor] = None,
     ):
         # Ensure ngram_ids is either a tensor or None
@@ -914,6 +941,10 @@ class ByteLatentTransformer(
                 include_next_token=True,
                 threshold=self.patcher.threshold,
             )
+            if patch_entropies is None:
+                patch_entropies = patch_entropies_from_token_scores(
+                    tok_scores, patch_lengths
+                )
         else:
             if nb_boe > 0:
                 patch_lengths[:, 0] += nb_boe
@@ -1005,6 +1036,8 @@ class ByteLatentTransformer(
         h, _ = self.global_transformer(
             embeds=h,
             tokens=global_tokens,
+            patch_lengths=patch_lengths,
+            patch_entropies=patch_entropies,
         )
 
         # Unpatching

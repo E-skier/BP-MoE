@@ -374,6 +374,9 @@ def train(args: TrainArgs):
         patch_length_sum = 0.0
         patch_length_count = 0
         patch_length_max = 0.0
+        patch_entropy_sum = 0.0
+        patch_entropy_count = 0
+        patch_entropy_max = 0.0
         patches_per_seq_sum = 0.0
         patch_seq_count = 0
         while train_state.step < args.steps and (
@@ -405,6 +408,21 @@ def train(args: TrainArgs):
                 patches_per_seq = (batch_patch_lengths > 0).sum(dim=-1)
                 patches_per_seq_sum += patches_per_seq.sum().item()
                 patch_seq_count += patches_per_seq.numel()
+            if batch.patch_entropies is None:
+                batch_patch_entropies = None
+            else:
+                batch_patch_entropies = torch.from_numpy(batch.patch_entropies).cuda()
+                active_patch_entropies = batch_patch_entropies
+                if batch_patch_lengths is not None:
+                    active_patch_entropies = active_patch_entropies[
+                        batch_patch_lengths > 0
+                    ]
+                if active_patch_entropies.numel() > 0:
+                    patch_entropy_sum += active_patch_entropies.sum().item()
+                    patch_entropy_count += active_patch_entropies.numel()
+                    patch_entropy_max = max(
+                        patch_entropy_max, active_patch_entropies.max().item()
+                    )
             mask = None if batch.mask is None else torch.from_numpy(batch.mask).cuda()
 
             if args.data.tokenizer_args.name in ["bytes", "blt"]:
@@ -494,7 +512,10 @@ def train(args: TrainArgs):
                 pred = model(batch_x)
             else:
                 pred = model(
-                    batch_x, patch_lengths=batch_patch_lengths, ngram_ids=ngram_ids
+                    batch_x,
+                    patch_lengths=batch_patch_lengths,
+                    patch_entropies=batch_patch_entropies,
+                    ngram_ids=ngram_ids,
                 )
 
             loss, tok_loss = compute_loss(pred, batch_y, mask, train_state.scale)
@@ -680,6 +701,24 @@ def train(args: TrainArgs):
                             / patch_seq_count_across_gpus.clamp_min(1)
                         ),
                     }
+                    if patch_entropy_count > 0:
+                        patch_entropy_count_across_gpus = dist_sum(patch_entropy_count)
+                        patch_entropy_sum_across_gpus = dist_sum(patch_entropy_sum)
+                        patch_entropy_max_across_gpus = dist_max(patch_entropy_max)
+                        metric_dict["patch"].update(
+                            {
+                                "entropy_mean_per_gpu": patch_entropy_sum
+                                / max(patch_entropy_count, 1),
+                                "entropy_mean_across_gpus": to_py_num(
+                                    patch_entropy_sum_across_gpus
+                                    / patch_entropy_count_across_gpus.clamp_min(1)
+                                ),
+                                "entropy_max_per_gpu": patch_entropy_max,
+                                "entropy_max_across_gpus": to_py_num(
+                                    patch_entropy_max_across_gpus
+                                ),
+                            }
+                        )
                 if not args.train_entropy_model:
                     moe_metrics = get_moe_metrics(model)
                     if moe_aux_loss_log is not None:
@@ -723,6 +762,9 @@ def train(args: TrainArgs):
                 patch_length_sum = 0.0
                 patch_length_count = 0
                 patch_length_max = 0.0
+                patch_entropy_sum = 0.0
+                patch_entropy_count = 0
+                patch_entropy_max = 0.0
                 patches_per_seq_sum = 0.0
                 patch_seq_count = 0
                 step_losses = []

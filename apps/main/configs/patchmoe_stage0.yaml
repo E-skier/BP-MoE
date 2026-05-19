@@ -82,6 +82,9 @@ model:
   moe_layer_frequency: 1
   moe_balance_loss_weight: 0.01
   moe_router_jitter: 0.0
+  moe_router_use_patch_length: false
+  moe_router_use_patch_entropy: false
+  moe_balance_cost: "patch"
 
 data:
   root_dir: ???
