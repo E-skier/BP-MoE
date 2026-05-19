@@ -50,9 +50,15 @@ default_no_recompute_ops = {
 }
 
 if int(os.environ.get("BLT_ALLOW_MISSING_FLEX_ATTENTION", False)) == 0:
-    default_no_recompute_ops.add(
-        torch.ops.xformers.efficient_attention_forward_cutlass.default
-    )
+    try:
+        default_no_recompute_ops.add(
+            torch.ops.xformers.efficient_attention_forward_cutlass.default
+        )
+    except AttributeError:
+        logger.warning(
+            "xformers efficient_attention_forward_cutlass op is unavailable; "
+            "skipping it in the selective activation checkpoint policy."
+        )
 
 
 class DistributedArgs(BaseModel):
