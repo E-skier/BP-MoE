@@ -766,13 +766,14 @@ class SparseMoEFeedForward(nn.Module):
         flat_patch_lengths: Optional[torch.Tensor],
         flat_patch_entropies: Optional[torch.Tensor],
     ) -> None:
+        flat_top_indices = top_indices.reshape(-1)
         assignment_weights = (
             load_weights.unsqueeze(-1).expand_as(top_indices).reshape(-1)
         )
         assignments = torch.zeros(
             self.num_experts, device=router_probs.device, dtype=torch.float32
         )
-        assignments.scatter_add_(0, top_indices.reshape(-1), assignment_weights)
+        assignments.scatter_add_(0, flat_top_indices, assignment_weights)
         total_assignments = assignments.sum().clamp_min(1.0)
         load_fraction = assignments / total_assignments
         mean_load = load_fraction.mean().clamp_min(1e-9)
@@ -789,12 +790,23 @@ class SparseMoEFeedForward(nn.Module):
         load_weight_mean = active_weights.mean().item() if routed_units > 0 else 0.0
         load_weight_max = active_weights.max().item() if routed_units > 0 else 0.0
 
+        unit_assignment_weights = (
+            active_unit_mask.float().unsqueeze(-1).expand_as(top_indices).reshape(-1)
+        )
+        unit_assignments = torch.zeros_like(assignments)
+        unit_assignments.scatter_add_(
+            0, flat_top_indices, unit_assignment_weights
+        )
+        total_unit_assignments = unit_assignments.sum().clamp_min(1.0)
+        unit_assignment_fraction = unit_assignments / total_unit_assignments
+
         self.last_metrics = {
             "router_entropy": router_entropy.mean().item(),
             "load_imbalance": (load_fraction.max() / mean_load).item(),
             "max_load_fraction": load_fraction.max().item(),
             "min_load_fraction": load_fraction.min().item(),
             "active_experts": (assignments > 0).float().sum().item(),
+            "unit_active_experts": (unit_assignments > 0).float().sum().item(),
             "balance_loss": (
                 self.last_balance_loss.detach().item()
                 if self.last_balance_loss is not None
@@ -806,6 +818,53 @@ class SparseMoEFeedForward(nn.Module):
             "load_weight_max": load_weight_max,
             "side_feature_count": float(len(self.patch_feature_names)),
         }
+        for expert_id, fraction in enumerate(load_fraction):
+            self.last_metrics[f"expert_{expert_id}_load_fraction"] = fraction.item()
+        for expert_id, fraction in enumerate(unit_assignment_fraction):
+            self.last_metrics[
+                f"expert_{expert_id}_unit_assignment_fraction"
+            ] = fraction.item()
+
+        if flat_patch_lengths is not None:
+            active_lengths = flat_patch_lengths.float()[active_unit_mask]
+            self.last_metrics.update(
+                {
+                    "patch_length_mean": (
+                        active_lengths.mean().item()
+                        if active_lengths.numel() > 0
+                        else 0.0
+                    ),
+                    "patch_length_max": (
+                        active_lengths.max().item()
+                        if active_lengths.numel() > 0
+                        else 0.0
+                    ),
+                }
+            )
+            self._record_per_expert_feature_metrics(
+                "patch_length",
+                flat_patch_lengths.float(),
+                top_indices,
+                flat_top_indices,
+                active_unit_mask,
+                unit_assignment_weights,
+                unit_assignments,
+            )
+            self._record_bucket_usage_metrics(
+                "length",
+                (
+                    ("short", flat_patch_lengths <= 4),
+                    ("medium", (flat_patch_lengths > 4) & (flat_patch_lengths <= 8)),
+                    ("long", flat_patch_lengths > 8),
+                ),
+                top_indices,
+                flat_top_indices,
+                active_unit_mask,
+                unit_assignment_weights,
+                unit_assignments,
+                total_unit_assignments,
+            )
+
         if flat_patch_entropies is not None:
             active_entropies = flat_patch_entropies.float()[active_unit_mask]
             self.last_metrics.update(
@@ -822,8 +881,109 @@ class SparseMoEFeedForward(nn.Module):
                     ),
                 }
             )
-        for expert_id, fraction in enumerate(load_fraction):
-            self.last_metrics[f"expert_{expert_id}_load_fraction"] = fraction.item()
+            self._record_per_expert_feature_metrics(
+                "patch_entropy",
+                flat_patch_entropies.float(),
+                top_indices,
+                flat_top_indices,
+                active_unit_mask,
+                unit_assignment_weights,
+                unit_assignments,
+            )
+            self._record_bucket_usage_metrics(
+                "entropy",
+                (
+                    ("low", flat_patch_entropies <= 1.0),
+                    ("medium", (flat_patch_entropies > 1.0) & (flat_patch_entropies <= 2.0)),
+                    ("high", flat_patch_entropies > 2.0),
+                ),
+                top_indices,
+                flat_top_indices,
+                active_unit_mask,
+                unit_assignment_weights,
+                unit_assignments,
+                total_unit_assignments,
+            )
+
+    @torch.no_grad()
+    def _record_per_expert_feature_metrics(
+        self,
+        feature_name: str,
+        values: torch.Tensor,
+        top_indices: torch.Tensor,
+        flat_top_indices: torch.Tensor,
+        active_unit_mask: torch.Tensor,
+        unit_assignment_weights: torch.Tensor,
+        unit_assignments: torch.Tensor,
+    ) -> None:
+        del active_unit_mask
+        expanded_values = values.unsqueeze(-1).expand_as(top_indices).reshape(-1)
+        feature_sums = torch.zeros(
+            self.num_experts, device=values.device, dtype=torch.float32
+        )
+        feature_sums.scatter_add_(
+            0,
+            flat_top_indices,
+            expanded_values * unit_assignment_weights,
+        )
+        feature_means = feature_sums / unit_assignments.clamp_min(1.0)
+        for expert_id, mean_value in enumerate(feature_means):
+            self.last_metrics[
+                f"expert_{expert_id}_{feature_name}_mean"
+            ] = mean_value.item()
+
+    @torch.no_grad()
+    def _record_bucket_usage_metrics(
+        self,
+        feature_name: str,
+        buckets: tuple[tuple[str, torch.Tensor], ...],
+        top_indices: torch.Tensor,
+        flat_top_indices: torch.Tensor,
+        active_unit_mask: torch.Tensor,
+        unit_assignment_weights: torch.Tensor,
+        unit_assignments: torch.Tensor,
+        total_unit_assignments: torch.Tensor,
+    ) -> None:
+        del unit_assignment_weights
+        active_unit_count = active_unit_mask.float().sum().clamp_min(1.0)
+        for bucket_name, bucket_mask in buckets:
+            bucket_unit_mask = bucket_mask & active_unit_mask
+            bucket_units = bucket_unit_mask.float().sum()
+            bucket_assignment_weights = (
+                bucket_unit_mask.float()
+                .unsqueeze(-1)
+                .expand_as(top_indices)
+                .reshape(-1)
+            )
+            bucket_assignments = torch.zeros(
+                self.num_experts, device=top_indices.device, dtype=torch.float32
+            )
+            bucket_assignments.scatter_add_(
+                0, flat_top_indices, bucket_assignment_weights
+            )
+            bucket_total_assignments = bucket_assignments.sum()
+            self.last_metrics[
+                f"{feature_name}_bucket_{bucket_name}_unit_fraction"
+            ] = (bucket_units / active_unit_count).item()
+            self.last_metrics[
+                f"{feature_name}_bucket_{bucket_name}_assignment_fraction"
+            ] = (
+                bucket_total_assignments / total_unit_assignments
+            ).item()
+            bucket_distribution = bucket_assignments / bucket_total_assignments.clamp_min(
+                1.0
+            )
+            for expert_id, fraction in enumerate(bucket_distribution):
+                self.last_metrics[
+                    f"{feature_name}_bucket_{bucket_name}_expert_{expert_id}_assignment_fraction"
+                ] = fraction.item()
+            expert_bucket_fraction = bucket_assignments / unit_assignments.clamp_min(
+                1.0
+            )
+            for expert_id, fraction in enumerate(expert_bucket_fraction):
+                self.last_metrics[
+                    f"expert_{expert_id}_{feature_name}_bucket_{bucket_name}_assignment_fraction"
+                ] = fraction.item()
 
     def reset_parameters(self, init_std=None, factor=1.0):
         router_init_std = init_std or (self.dim ** (-0.5)) / factor

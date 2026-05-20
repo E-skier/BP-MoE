@@ -161,3 +161,61 @@ def test_sparse_moe_entropy_routing_requires_patch_entropies():
         assert "patch_entropies must be provided" in str(exc)
     else:
         raise AssertionError("Expected missing patch_entropies to raise ValueError")
+
+
+def test_sparse_moe_specialization_metrics_bucket_usage():
+    moe = SparseMoEFeedForward(
+        dim=32,
+        hidden_dim=128,
+        multiple_of=8,
+        ffn_dim_multiplier=1.0,
+        num_experts=2,
+        top_k=1,
+    )
+    router_probs = torch.full((4, 2), 0.5)
+    top_indices = torch.tensor([[0], [0], [1], [1]])
+    patch_lengths = torch.tensor([2, 6, 10, 0])
+    patch_entropies = torch.tensor([0.5, 1.5, 2.5, 0.0])
+    load_weights = (patch_lengths > 0).float()
+
+    moe._record_metrics(
+        router_probs,
+        top_indices,
+        load_weights,
+        patch_lengths,
+        patch_entropies,
+    )
+
+    metrics = moe.last_metrics
+
+    def assert_close(key, expected):
+        assert abs(metrics[key] - expected) < 1e-6, (key, metrics[key], expected)
+
+    assert_close("expert_0_patch_length_mean", 4.0)
+    assert_close("expert_1_patch_length_mean", 10.0)
+    assert_close("expert_0_patch_entropy_mean", 1.0)
+    assert_close("expert_1_patch_entropy_mean", 2.5)
+    assert_close("expert_0_unit_assignment_fraction", 2.0 / 3.0)
+    assert_close("expert_1_unit_assignment_fraction", 1.0 / 3.0)
+
+    for bucket in ("short", "medium", "long"):
+        assert_close(f"length_bucket_{bucket}_unit_fraction", 1.0 / 3.0)
+        assert_close(f"length_bucket_{bucket}_assignment_fraction", 1.0 / 3.0)
+
+    assert_close("length_bucket_short_expert_0_assignment_fraction", 1.0)
+    assert_close("length_bucket_medium_expert_0_assignment_fraction", 1.0)
+    assert_close("length_bucket_long_expert_1_assignment_fraction", 1.0)
+    assert_close("expert_0_length_bucket_short_assignment_fraction", 0.5)
+    assert_close("expert_0_length_bucket_medium_assignment_fraction", 0.5)
+    assert_close("expert_1_length_bucket_long_assignment_fraction", 1.0)
+
+    for bucket in ("low", "medium", "high"):
+        assert_close(f"entropy_bucket_{bucket}_unit_fraction", 1.0 / 3.0)
+        assert_close(f"entropy_bucket_{bucket}_assignment_fraction", 1.0 / 3.0)
+
+    assert_close("entropy_bucket_low_expert_0_assignment_fraction", 1.0)
+    assert_close("entropy_bucket_medium_expert_0_assignment_fraction", 1.0)
+    assert_close("entropy_bucket_high_expert_1_assignment_fraction", 1.0)
+    assert_close("expert_0_entropy_bucket_low_assignment_fraction", 0.5)
+    assert_close("expert_0_entropy_bucket_medium_assignment_fraction", 0.5)
+    assert_close("expert_1_entropy_bucket_high_assignment_fraction", 1.0)
