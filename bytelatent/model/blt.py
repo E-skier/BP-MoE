@@ -279,11 +279,7 @@ def cross_attn_mask(
             )
             return block_mask
         else:
-            return torch.where(
-                cross_mask, torch.tensor(0.0), torch.tensor(float("-inf"))
-            ).unsqueeze(
-                1
-            )  # [bs, 1, q_len, kv_len]
+            return cross_mask.unsqueeze(1)  # [bs, 1, q_len, kv_len]
 
 
 def get_blt_input(

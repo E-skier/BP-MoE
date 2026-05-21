@@ -209,6 +209,32 @@ def every_n_steps(train_state, freq: int, acc_step=None, acc_freq=None):
     return test
 
 
+def trace_train_phase(step: int, acc_step: int, phase: str):
+    if os.environ.get("BLT_STAGE1_TRACE", "").lower() not in {"1", "true", "yes"}:
+        return
+    if (
+        os.environ.get("BLT_STAGE1_TRACE_SYNC", "").lower() in {"1", "true", "yes"}
+        and torch.cuda.is_available()
+    ):
+        torch.cuda.synchronize()
+    rank = (
+        torch.distributed.get_rank()
+        if torch.distributed.is_available() and torch.distributed.is_initialized()
+        else 0
+    )
+    message = f"stage1_trace rank={rank} step={step} acc={acc_step} phase={phase}"
+    trace_dir = os.environ.get("BLT_STAGE1_TRACE_DIR")
+    if trace_dir:
+        try:
+            os.makedirs(trace_dir, exist_ok=True)
+            trace_path = os.path.join(trace_dir, f"stage1_trace_rank{rank}.log")
+            with open(trace_path, "a", encoding="utf-8") as trace_file:
+                trace_file.write(message + "\n")
+        except Exception as exc:
+            logger.warning("failed to write stage1 trace file: %s", exc)
+    logger.warning(message)
+
+
 def compute_loss(p, y, mask, scale):
     tok_loss = scale * F.cross_entropy(
         p.flatten(0, 1), y.flatten(0, 1), reduction="none"
@@ -385,11 +411,15 @@ def train(args: TrainArgs):
             # We constrain train_state.acc_step to be in range 0 to args.grad_acc_steps - 1
             train_state.acc_step += 1
             train_state.acc_step = train_state.acc_step % args.grad_acc_steps
+            trace_step = train_state.step + 1
+            trace_train_phase(trace_step, train_state.acc_step, "loop_start")
 
             # get batch
             curr_lr = float(optimizer.param_groups[0]["lr"])
             data_load_start = timer()
+            trace_train_phase(trace_step, train_state.acc_step, "before_next_batch")
             batch = next(batch_iterator)
+            trace_train_phase(trace_step, train_state.acc_step, "after_next_batch")
             batch_x = torch.from_numpy(
                 batch.x,
             ).cuda()
@@ -453,6 +483,7 @@ def train(args: TrainArgs):
                 if batch.ngram_ids is None
                 else torch.from_numpy(batch.ngram_ids).cuda()
             )
+            trace_train_phase(trace_step, train_state.acc_step, "after_batch_to_cuda")
 
             if every_n_steps(train_state, args.gc_collect_freq, acc_step=0):
                 logger.info("garbage collection")
@@ -508,6 +539,7 @@ def train(args: TrainArgs):
                 ), "Probe model shouldn't have grads at this point"
 
             moe_aux_loss_log = None
+            trace_train_phase(trace_step, train_state.acc_step, "before_forward")
             if args.train_entropy_model:
                 pred = model(batch_x)
             else:
@@ -517,6 +549,7 @@ def train(args: TrainArgs):
                     patch_entropies=batch_patch_entropies,
                     ngram_ids=ngram_ids,
                 )
+            trace_train_phase(trace_step, train_state.acc_step, "after_forward")
 
             loss, tok_loss = compute_loss(pred, batch_y, mask, train_state.scale)
             if not args.train_entropy_model:
@@ -535,7 +568,9 @@ def train(args: TrainArgs):
             loss = loss / args.grad_acc_steps
 
             # backward on scaled loss to create scaled gradients
+            trace_train_phase(trace_step, train_state.acc_step, "before_backward")
             loss.backward()
+            trace_train_phase(trace_step, train_state.acc_step, "after_backward")
             # For logging we undo that scaling
             loss = loss.detach() * args.grad_acc_steps
 
@@ -543,6 +578,7 @@ def train(args: TrainArgs):
             step_losses.append((loss / train_state.scale).item())
             step_tok_losses.append(tok_loss / train_state.scale)
 
+            trace_train_phase(trace_step, train_state.acc_step, "before_grad_clip")
             world_size = get_world_size()
             if 1 < world_size <= 8:
                 # For some reason, there are errors in reduces due to
@@ -561,19 +597,24 @@ def train(args: TrainArgs):
             grad_norm = (
                 grad_norm.full_tensor() if isinstance(grad_norm, DTensor) else grad_norm
             ).item()
+            trace_train_phase(trace_step, train_state.acc_step, "after_grad_clip")
 
             # optimizer step
             if train_state.acc_step == 0:
+                trace_train_phase(trace_step, train_state.acc_step, "before_optimizer_step")
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 train_state.step += 1
+                trace_train_phase(trace_step, train_state.acc_step, "after_optimizer_step")
 
             # updates the scale for next iteration
             # training iteration complete
             end_timer.record()
 
+            trace_train_phase(trace_step, train_state.acc_step, "before_cuda_synchronize")
             torch.cuda.synchronize()
+            trace_train_phase(trace_step, train_state.acc_step, "after_cuda_synchronize")
 
             curr_iter_time = round(start_timer.elapsed_time(end_timer) * 1e-3, 4)
 
@@ -588,6 +629,7 @@ def train(args: TrainArgs):
                 acc_step=None if args.logging.acc_freq else 0,
                 acc_freq=args.logging.acc_freq,
             ):
+                trace_train_phase(trace_step, train_state.acc_step, "before_log_metrics")
                 time_delta = timer() - time_last_log
                 wps = nwords_since_last_log / (time_delta * args.distributed.tp_size)
 
@@ -678,11 +720,11 @@ def train(args: TrainArgs):
                     },
                 }
                 if patch_length_count > 0:
-                    patch_length_count_across_gpus = dist_sum(patch_length_count)
-                    patch_seq_count_across_gpus = dist_sum(patch_seq_count)
-                    patch_length_sum_across_gpus = dist_sum(patch_length_sum)
-                    patches_per_seq_sum_across_gpus = dist_sum(patches_per_seq_sum)
-                    patch_length_max_across_gpus = dist_max(patch_length_max)
+                    patch_length_count_across_gpus = dist_sum(patch_length_count, reduce_dtype=torch.bfloat16)
+                    patch_seq_count_across_gpus = dist_sum(patch_seq_count, reduce_dtype=torch.bfloat16)
+                    patch_length_sum_across_gpus = dist_sum(patch_length_sum, reduce_dtype=torch.bfloat16)
+                    patches_per_seq_sum_across_gpus = dist_sum(patches_per_seq_sum, reduce_dtype=torch.bfloat16)
+                    patch_length_max_across_gpus = dist_max(patch_length_max, reduce_dtype=torch.bfloat16)
                     metric_dict["patch"] = {
                         "length_mean_per_gpu": patch_length_sum
                         / max(patch_length_count, 1),
@@ -702,9 +744,9 @@ def train(args: TrainArgs):
                         ),
                     }
                     if patch_entropy_count > 0:
-                        patch_entropy_count_across_gpus = dist_sum(patch_entropy_count)
-                        patch_entropy_sum_across_gpus = dist_sum(patch_entropy_sum)
-                        patch_entropy_max_across_gpus = dist_max(patch_entropy_max)
+                        patch_entropy_count_across_gpus = dist_sum(patch_entropy_count, reduce_dtype=torch.bfloat16)
+                        patch_entropy_sum_across_gpus = dist_sum(patch_entropy_sum, reduce_dtype=torch.bfloat16)
+                        patch_entropy_max_across_gpus = dist_max(patch_entropy_max, reduce_dtype=torch.bfloat16)
                         metric_dict["patch"].update(
                             {
                                 "entropy_mean_per_gpu": patch_entropy_sum

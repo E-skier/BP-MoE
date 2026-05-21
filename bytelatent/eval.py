@@ -199,11 +199,18 @@ def eval_ppl_on_path(
         patch_lengths = batch.patch_lengths
         if patch_lengths is not None:
             patch_lengths = torch.from_numpy(patch_lengths).cuda()
+        patch_entropies = batch.patch_entropies
+        if patch_entropies is not None:
+            patch_entropies = torch.from_numpy(patch_entropies).cuda()
 
         if tokenizer_args.name in ["bytes", "blt"]:
             n_bytes += y.numel() if mask is None else mask.sum().item()
             if isinstance(model, ByteLatentTransformer):
-                pred = model(x, patch_lengths=patch_lengths)
+                pred = model(
+                    x,
+                    patch_lengths=patch_lengths,
+                    patch_entropies=patch_entropies,
+                )
             else:
                 pred = model(x)
             loss = F.cross_entropy(

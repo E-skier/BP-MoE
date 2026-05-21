@@ -3,17 +3,40 @@ import abc
 import logging
 import os
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import torch
 from pydantic import BaseModel, ConfigDict
 from torch import nn
 from torch.nn import functional as F
-from torch.nn.attention.flex_attention import (
-    BlockMask,
-    _mask_mod_signature,
-    flex_attention,
+_ALLOW_MISSING_FLEX_ATTENTION = (
+    int(os.environ.get("BLT_ALLOW_MISSING_FLEX_ATTENTION", False)) != 0
 )
+
+try:
+    from torch.nn.attention.flex_attention import (
+        BlockMask,
+        _mask_mod_signature,
+        flex_attention,
+    )
+
+    _FLEX_ATTENTION_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    if not _ALLOW_MISSING_FLEX_ATTENTION:
+        raise
+
+    class BlockMask:
+        pass
+
+    _mask_mod_signature = Callable
+    _FLEX_ATTENTION_AVAILABLE = False
+
+    def flex_attention(*args, **kwargs):
+        raise RuntimeError(
+            "torch.nn.attention.flex_attention is unavailable. Install a Torch "
+            "build with flex_attention or use an SDPA attention path."
+        )
+
 try:
     from xformers.ops import AttentionBias, fmha
 except ImportError:
@@ -32,7 +55,13 @@ except (ImportError, ModuleNotFoundError):
     logging.debug("Apex not found. Using nn.RMSNorm")
     RMSNorm = nn.RMSNorm
 
-if int(os.environ.get("BLT_ALLOW_MISSING_FLEX_ATTENTION", False)) == 0:
+if not _FLEX_ATTENTION_AVAILABLE:
+    logger.warning(
+        "BLT_ALLOW_MISSING_FLEX_ATTENTION is set and flex attention is "
+        "unavailable; flex_attention calls will raise unless an SDPA path is used."
+    )
+    flex_attention_comp = flex_attention
+elif not _ALLOW_MISSING_FLEX_ATTENTION:
     flex_attention_comp = torch.compile(flex_attention)
 else:
     logger.warning(
@@ -630,12 +659,20 @@ class SparseMoEFeedForward(nn.Module):
         )
 
         flat_output = torch.zeros_like(flat_x)
+        empty_expert_dependency = flat_x.new_zeros(())
         for expert_rank in range(self.top_k):
             rank_expert_ids = top_indices[:, expert_rank]
             rank_weights = top_weights[:, expert_rank].to(flat_x.dtype)
             for expert_id, expert in enumerate(self.experts):
                 token_ids = torch.where(rank_expert_ids == expert_id)[0]
                 if token_ids.numel() == 0:
+                    if self.training:
+                        empty_input = flat_x.new_empty((0, flat_x.shape[-1]))
+                        empty_output = expert(empty_input)
+                        # Keep FSDP expert collectives aligned across ranks.
+                        empty_expert_dependency = (
+                            empty_expert_dependency + empty_output.sum() * 0.0
+                        )
                     continue
                 expert_input = flat_x.index_select(0, token_ids)
                 expert_output = expert(expert_input)
@@ -643,6 +680,9 @@ class SparseMoEFeedForward(nn.Module):
                     0, token_ids
                 ).unsqueeze(-1)
                 flat_output.index_add_(0, token_ids, expert_output)
+
+        if self.training:
+            flat_output = flat_output + empty_expert_dependency
 
         load_weights = self._load_weights(
             flat_x, flat_patch_lengths, flat_patch_entropies

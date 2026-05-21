@@ -172,30 +172,56 @@ def get_device_mesh(distributed_args: DistributedArgs):
     return init_device_mesh("cuda", mesh_shape=dims, mesh_dim_names=names)
 
 
-def dist_max(x: Union[int, float], mesh: DeviceMesh = None):
-    tensor = torch.tensor(x).cuda()
+def _cuda_reduce_tensor(
+    x: Union[int, float, torch.Tensor], reduce_dtype: torch.dtype = None
+):
+    if isinstance(x, torch.Tensor):
+        tensor = x.detach()
+        if not tensor.is_cuda:
+            tensor = tensor.cuda()
+    else:
+        tensor = torch.tensor(x, device="cuda")
+    if reduce_dtype is not None:
+        tensor = tensor.to(reduce_dtype)
+    return tensor
+
+
+def dist_max(
+    x: Union[int, float, torch.Tensor],
+    mesh: DeviceMesh = None,
+    reduce_dtype: torch.dtype = None,
+):
+    tensor = _cuda_reduce_tensor(x, reduce_dtype=reduce_dtype)
     dist.all_reduce(tensor, op=ReduceOp.MAX, group=mesh.get_group() if mesh else None)
     return tensor
 
 
-def dist_min(x: Union[int, float], mesh: DeviceMesh = None):
-    tensor = torch.tensor(x).cuda()
+def dist_min(
+    x: Union[int, float, torch.Tensor],
+    mesh: DeviceMesh = None,
+    reduce_dtype: torch.dtype = None,
+):
+    tensor = _cuda_reduce_tensor(x, reduce_dtype=reduce_dtype)
     dist.all_reduce(tensor, op=ReduceOp.MIN, group=mesh.get_group() if mesh else None)
     return tensor
 
 
 def dist_sum(
-    x: Union[int, float], mesh: DeviceMesh = None, reduce_dtype: torch.dtype = None
+    x: Union[int, float, torch.Tensor],
+    mesh: DeviceMesh = None,
+    reduce_dtype: torch.dtype = None,
 ):
-    tensor = torch.tensor(x).cuda()
-    if reduce_dtype is not None:
-        tensor = tensor.to(reduce_dtype)
+    tensor = _cuda_reduce_tensor(x, reduce_dtype=reduce_dtype)
     dist.all_reduce(tensor, op=ReduceOp.SUM, group=mesh.get_group() if mesh else None)
     return tensor
 
 
-def dist_mean(x: Union[int, float], mesh: DeviceMesh = None):
-    tensor = torch.tensor(x).cuda()
+def dist_mean(
+    x: Union[int, float, torch.Tensor],
+    mesh: DeviceMesh = None,
+    reduce_dtype: torch.dtype = None,
+):
+    tensor = _cuda_reduce_tensor(x, reduce_dtype=reduce_dtype)
     dist.all_reduce(tensor, op=ReduceOp.AVG, group=mesh.get_group() if mesh else None)
     return tensor
 
