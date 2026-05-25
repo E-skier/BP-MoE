@@ -1,0 +1,237 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Reproduce and scale the current best Phase-2 PatchMoE setting:
+#   byte-cost balancing + entropy-only side-feature routing.
+#
+# Defaults are sized for the current 2x H100 server. The script runs seeds
+# sequentially, keeps only the latest checkpoint, evaluates on expanded
+# held-out entropy shards, and regenerates per-expert bucket summaries.
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT_DIR"
+
+UV_BIN="${UV_BIN:-/home/ubuntu/.local/bin/uv}"
+CONFIG="${CONFIG:-apps/main/configs/patchmoe_stage1_candidate.yaml}"
+OUT_ROOT="${OUT_ROOT:-$ROOT_DIR/runs/byte_entropy_repro_scale}"
+EVAL_ROOT="${EVAL_ROOT:-$ROOT_DIR/runs/byte_entropy_repro_scale_heldout_eval}"
+ANALYSIS_ROOT="${ANALYSIS_ROOT:-$ROOT_DIR/runs/byte_entropy_repro_scale_analysis}"
+
+DATA_ROOT="${DATA_ROOT:-$ROOT_DIR/data}"
+SOURCE="${SOURCE:-fineweb_edu_10bt}"
+PREPROCESS_DIR="${PREPROCESS_DIR:-$ROOT_DIR/data/entropy_preprocessed_stage1}"
+ENTROPY_MODEL_NAME="${ENTROPY_MODEL_NAME:-transformer_100m}"
+TOKENIZER_PATH="${TOKENIZER_PATH:-/tmp/unused.tokenizer.model}"
+
+SEEDS="${SEEDS:-778 779}"
+STEPS="${STEPS:-200000}"
+MAX_STEPS="${MAX_STEPS:-$STEPS}"
+NPROC_PER_NODE="${NPROC_PER_NODE:-2}"
+BATCH_SIZE="${BATCH_SIZE:-1}"
+SEQ_LEN="${SEQ_LEN:-2048}"
+GRAD_ACC_STEPS="${GRAD_ACC_STEPS:-1}"
+LOAD_ASYNC="${LOAD_ASYNC:-false}"
+LOG_FREQ="${LOG_FREQ:-10}"
+ENABLE_INTRA_NODE_COMM="${ENABLE_INTRA_NODE_COMM:-1}"
+CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-20000}"
+CHECKPOINT_KEEP="${CHECKPOINT_KEEP:-1}"
+REMOVE_EVAL_CONSOLIDATED="${REMOVE_EVAL_CONSOLIDATED:-1}"
+FORCE_TRAIN="${FORCE_TRAIN:-0}"
+FORCE_EVAL="${FORCE_EVAL:-0}"
+
+HELDOUT_CHUNKS="${HELDOUT_CHUNKS:-00002 00003}"
+HELDOUT_LINES_PER_CHUNK="${HELDOUT_LINES_PER_CHUNK:-100000}"
+HELDOUT_SOURCE_NAME="${HELDOUT_SOURCE_NAME:-${SOURCE}_heldout_expanded_${HELDOUT_LINES_PER_CHUNK}}"
+HELDOUT_RAW_DIR="${HELDOUT_RAW_DIR:-$DATA_ROOT/stage1_heldout/$HELDOUT_SOURCE_NAME}"
+HELDOUT_PREPROCESS_ROOT="${HELDOUT_PREPROCESS_ROOT:-$ROOT_DIR/data/entropy_preprocessed_stage1_heldout_expanded}"
+HELDOUT_ARROW_DIR="$HELDOUT_PREPROCESS_ROOT/$HELDOUT_SOURCE_NAME/$ENTROPY_MODEL_NAME"
+HELDOUT_PREPROCESS_NPROC="${HELDOUT_PREPROCESS_NPROC:-2}"
+
+EVAL_MAX_BATCHES="${EVAL_MAX_BATCHES:-8000}"
+EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-1}"
+EVAL_CUDA_VISIBLE_DEVICES="${EVAL_CUDA_VISIBLE_DEVICES:-0}"
+
+RUN_PREFIX="${RUN_PREFIX:-byte_entropy}"
+
+export PYTHONPATH="$ROOT_DIR:${PYTHONPATH:-}"
+export BLT_ALLOW_MISSING_FLEX_ATTENTION="${BLT_ALLOW_MISSING_FLEX_ATTENTION:-1}"
+export BLT_SUPPRESS_ATTN_ERROR="${BLT_SUPPRESS_ATTN_ERROR:-1}"
+
+final_step_dir="$(printf "%010d" "$STEPS")"
+preprocessed_source_dir="$PREPROCESS_DIR/$SOURCE/$ENTROPY_MODEL_NAME"
+
+if [[ ! -d "$preprocessed_source_dir" ]]; then
+  echo "Missing training entropy-preprocessed data: $preprocessed_source_dir" >&2
+  exit 1
+fi
+if ! find "$preprocessed_source_dir" -name '*.arrow.complete' -print -quit | grep -q .; then
+  echo "No completed training entropy arrow shards found in: $preprocessed_source_dir" >&2
+  exit 1
+fi
+
+declare -a HELDOUT_ARROW_NAMES=()
+
+prepare_heldout() {
+  mkdir -p "$HELDOUT_RAW_DIR"
+  HELDOUT_ARROW_NAMES=()
+
+  for chunk in $HELDOUT_CHUNKS; do
+    local source_file="$DATA_ROOT/$SOURCE/$SOURCE.chunk.$chunk.jsonl"
+    local raw_file="$HELDOUT_RAW_DIR/$HELDOUT_SOURCE_NAME.chunk.$chunk.first_${HELDOUT_LINES_PER_CHUNK}.jsonl"
+
+    if [[ ! -f "$source_file" ]]; then
+      echo "Missing held-out source chunk: $source_file" >&2
+      exit 1
+    fi
+
+    if [[ ! -f "$raw_file" ]]; then
+      echo "Creating held-out subset: $raw_file"
+      local tmp_file="$raw_file.tmp"
+      head -n "$HELDOUT_LINES_PER_CHUNK" "$source_file" >"$tmp_file"
+      mv "$tmp_file" "$raw_file"
+    else
+      echo "Using existing held-out subset: $raw_file"
+    fi
+
+    HELDOUT_ARROW_NAMES+=("$(basename "$raw_file").shard_00.arrow")
+  done
+
+  echo "Preparing expanded held-out entropy shards under: $HELDOUT_ARROW_DIR"
+  SOURCE_DIR="$HELDOUT_RAW_DIR" \
+  SOURCE_NAME="$HELDOUT_SOURCE_NAME" \
+  OUTPUT_ROOT="$HELDOUT_PREPROCESS_ROOT" \
+  ENTROPY_MODEL_NAME="$ENTROPY_MODEL_NAME" \
+  NPROC="$HELDOUT_PREPROCESS_NPROC" \
+  MAX_FILES=all \
+    scripts/patchmoe/preprocess_fineweb_entropy_stage1.sh
+}
+
+validation_sources_arg() {
+  local result="["
+  local first=1
+  for name in "${HELDOUT_ARROW_NAMES[@]}"; do
+    if [[ "$first" -eq 0 ]]; then
+      result+=","
+    fi
+    result+="$name"
+    first=0
+  done
+  result+="]"
+  printf '%s' "$result"
+}
+
+run_eval() {
+  local label="$1"
+  local run_dir="$2"
+  local ckpt_dir="$3"
+  local step="$4"
+  local eval_dir="$EVAL_ROOT/$label/$step"
+  local global_step="$step"
+  if [[ "$global_step" =~ ^[0-9]+$ ]]; then
+    global_step=$((10#$global_step))
+  fi
+
+  if [[ ! -d "$ckpt_dir" ]]; then
+    echo "Missing checkpoint for eval: $ckpt_dir" >&2
+    return 1
+  fi
+  if [[ "$FORCE_EVAL" != "1" && -f "$eval_dir/validation.json" ]]; then
+    echo "Skipping completed eval: $eval_dir/validation.json"
+    return 0
+  fi
+
+  mkdir -p "$eval_dir"
+  echo "Evaluating $label checkpoint $step on expanded held-out shards"
+  CUDA_VISIBLE_DEVICES="$EVAL_CUDA_VISIBLE_DEVICES" "$UV_BIN" run python -m bytelatent.eval \
+    "ckpt_dir=$ckpt_dir" \
+    "dump_dir=$eval_dir" \
+    "metric_log_dir=$run_dir" \
+    "global_step=$global_step" \
+    "consolidate_if_needed=true" \
+    "run_ppl=true" \
+    "run_tasks=false" \
+    "validation.use_val_from_train_src=false" \
+    "validation.root_dir=$HELDOUT_ARROW_DIR" \
+    "validation.sources=$(validation_sources_arg)" \
+    "validation.batch_size=$EVAL_BATCH_SIZE" \
+    "validation.max_n_batches=$EVAL_MAX_BATCHES"
+
+  if [[ "$REMOVE_EVAL_CONSOLIDATED" == "1" ]]; then
+    rm -rf "$ckpt_dir/consolidated"
+  fi
+}
+
+analyze_runs() {
+  mkdir -p "$ANALYSIS_ROOT"
+  "$UV_BIN" run python -m bytelatent.plotting.patchmoe_phase2_ablation \
+    "$OUT_ROOT" \
+    "$ANALYSIS_ROOT"
+}
+
+train_seed() {
+  local seed="$1"
+  local run_name="${RUN_PREFIX}_seed${seed}_${STEPS}step"
+  local run_dir="$OUT_ROOT/$run_name"
+  local ckpt_dir="$run_dir/checkpoints/$final_step_dir"
+
+  mkdir -p "$run_dir"
+  if [[ "$FORCE_TRAIN" != "1" && -d "$ckpt_dir" ]]; then
+    echo "Skipping completed training run: $run_name"
+    run_eval "$run_name" "$run_dir" "$ckpt_dir" "$final_step_dir"
+    return 0
+  fi
+
+  echo "Training byte+entropy-only replicate: $run_name"
+  "$UV_BIN" run torchrun --standalone --nproc-per-node="$NPROC_PER_NODE" \
+    -m bytelatent.train \
+    "config=$CONFIG" \
+    "dump_dir=$run_dir" \
+    "name=$run_name" \
+    "steps=$STEPS" \
+    "max_steps=$MAX_STEPS" \
+    "seed=$seed" \
+    "model.seed=$seed" \
+    "data.seed=$seed" \
+    "grad_acc_steps=$GRAD_ACC_STEPS" \
+    "data.root_dir=$DATA_ROOT" \
+    "data.sources={$SOURCE: 1.0}" \
+    "data.batch_size=$BATCH_SIZE" \
+    "data.seq_len=$SEQ_LEN" \
+    "data.load_async=$LOAD_ASYNC" \
+    "logging.freq=$LOG_FREQ" \
+    "data.preprocess_dir=$PREPROCESS_DIR" \
+    "data.entropy_model_name=$ENTROPY_MODEL_NAME" \
+    "data.tokenizer_args.init_kwargs.bpe_tokenizer_path=$TOKENIZER_PATH" \
+    "checkpoint.path=$run_dir/checkpoints" \
+    "checkpoint.dump.every=$CHECKPOINT_EVERY" \
+    "checkpoint.dump.keep=$CHECKPOINT_KEEP" \
+    "checkpoint.eval.every=$CHECKPOINT_EVERY" \
+    "checkpoint.eval.keep=$CHECKPOINT_KEEP" \
+    "distributed.dp_shard=$NPROC_PER_NODE" \
+    "distributed.dp_replicate=1" \
+    "eval_on_gpus=$NPROC_PER_NODE" \
+    "env.ENABLE_INTRA_NODE_COMM=\"$ENABLE_INTRA_NODE_COMM\"" \
+    "env.NCCL_DEBUG=WARN" \
+    "model.moe_num_experts=8" \
+    "model.moe_top_k=2" \
+    "model.moe_balance_loss_weight=0.05" \
+    "model.moe_router_use_patch_length=false" \
+    "model.moe_router_use_patch_entropy=true" \
+    "model.moe_balance_cost=byte"
+
+  run_eval "$run_name" "$run_dir" "$ckpt_dir" "$final_step_dir"
+  analyze_runs
+}
+
+prepare_heldout
+
+for seed in $SEEDS; do
+  train_seed "$seed"
+done
+
+analyze_runs
+
+echo "Byte+entropy reproduction/scale pipeline complete."
+echo "Run root:      $OUT_ROOT"
+echo "Eval root:     $EVAL_ROOT"
+echo "Analysis root: $ANALYSIS_ROOT"

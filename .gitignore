@@ -169,6 +169,22 @@ internal/
 jobs_parallel-copy/
 wandb/
 *.ipynb
-hf-weights/
+# Local datasets, model weights, checkpoints, and generated run artifacts
 /data/
 /runs/
+/download_bundle/
+/hf-weights/
+/tokenizers/
+checkpoints/
+checkpoint/
+*.ckpt
+*.distcp
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.onnx
+*.npy
+*.npz
+*.arrow
+*.parquet
