@@ -146,6 +146,45 @@ def create_args(cross_attention=False):
     return transformer_args
 
 
+def test_blt_reset_rope_embeddings_resets_all_submodels():
+    args = create_args().model_copy(
+        update=dict(
+            dim=32,
+            n_heads=4,
+            dim_global=32,
+            n_layers_global=2,
+            n_heads_global=4,
+            dim_local_encoder=16,
+            n_layers_local_encoder=1,
+            n_heads_local_encoder=4,
+            dim_local_decoder=16,
+            n_layers_local_decoder=2,
+            n_heads_local_decoder=4,
+            encoder_hash_byte_group_size=[3],
+            encoder_hash_byte_group_vocab=32,
+            encoder_hash_byte_group_nb_functions=1,
+            max_encoder_seq_length=64,
+            max_seqlen=32,
+            multiple_of=8,
+            local_attention_window_len=16,
+        )
+    )
+    model = ByteLatentTransformer(args)
+    ropes = (
+        model.local_encoder.rope,
+        model.global_transformer.rope_embeddings,
+        model.local_decoder.rope,
+    )
+    expected = tuple(rope.freqs_cis.clone() for rope in ropes)
+    for rope in ropes:
+        rope.freqs_cis.zero_()
+
+    model.reset_rope_embeddings()
+
+    for rope, expected_freqs_cis in zip(ropes, expected):
+        torch.testing.assert_close(rope.freqs_cis, expected_freqs_cis)
+
+
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
 class TestByteLatentTransformer:
     def test_local_encoder(self):

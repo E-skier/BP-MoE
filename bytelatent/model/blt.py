@@ -1153,6 +1153,11 @@ class ByteLatentTransformer(
         )
         return output
 
+    def reset_rope_embeddings(self):
+        self.local_encoder.reset_rope_embeddings()
+        self.global_transformer.reset_rope_embeddings()
+        self.local_decoder.reset_rope_embeddings()
+
     def init_weights(self):
         self.local_encoder.init_weights()
         self.global_transformer.init_weights()

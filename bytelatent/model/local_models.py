@@ -9,6 +9,7 @@ import torch.nn as nn
 from pydantic import ConfigDict
 from torch.nn import functional as F
 from torch.nn.attention.flex_attention import BlockMask
+
 try:
     from xformers.ops import AttentionBias
 except ImportError:
@@ -136,8 +137,12 @@ class LocalModelBase(nn.Module):
         else:
             return self.tok_embeddings(tokens)
 
+    def reset_rope_embeddings(self):
+        if self.use_rope:
+            self.rope.reset_parameters()
+
     def init_weights(self, init_std=None):
-        self.rope.reset_parameters()
+        self.reset_rope_embeddings()
         if hasattr(self, "norm"):
             self.norm.reset_parameters()
 

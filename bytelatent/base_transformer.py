@@ -1402,8 +1402,11 @@ class BaseTransformer(nn.Module, SequenceModelWithOutput):
             )
         return h
 
-    def init_weights(self):
+    def reset_rope_embeddings(self):
         self.rope_embeddings.reset_parameters()
+
+    def init_weights(self):
+        self.reset_rope_embeddings()
         for depth, layer in enumerate(self.layers):
             factor = {
                 InitStdFactor.CURRENT_DEPTH: (2 * (depth + 1)) ** 0.5,
