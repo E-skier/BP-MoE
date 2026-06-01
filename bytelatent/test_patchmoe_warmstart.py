@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import torch
 import torch.distributed.checkpoint as dcp
 
@@ -9,6 +10,7 @@ from bytelatent.patchmoe_warmstart import (
     PatchMoEWarmStartSpec,
     convert_dense_state_dict_to_patchmoe,
     load_patchmoe_warmstart_manifest,
+    verify_patchmoe_warmstart_dcp,
     write_patchmoe_warmstart_dcp,
 )
 
@@ -125,3 +127,32 @@ def test_write_patchmoe_warmstart_dcp_and_manifest(tmp_path: Path):
     dcp.load({"model": loaded}, checkpoint_id=output_dir)
     for key, value in converted.items():
         assert torch.equal(loaded[key], value)
+
+
+def test_verify_patchmoe_warmstart_dcp_checks_keys_and_sample_values(tmp_path: Path):
+    dense = dense_global_state_dict(n_layers=2)
+    spec = PatchMoEWarmStartSpec(num_experts=2, top_k=1, layer_frequency=2)
+    converted, report = convert_dense_state_dict_to_patchmoe(dense, spec)
+    output_dir = tmp_path / "warmstart"
+    write_patchmoe_warmstart_dcp(
+        output_dir,
+        converted,
+        source_checkpoint=tmp_path / "dense.pth",
+        spec=spec,
+        report=report,
+    )
+
+    verification = verify_patchmoe_warmstart_dcp(output_dir, converted)
+    assert verification.dcp_key_count == len(converted)
+    assert "outside.weight" in verification.sample_keys
+    assert any("experts.0.w1.weight" in key for key in verification.sample_keys)
+    assert any(
+        "layers.1.feed_forward.w1.weight" in key for key in verification.sample_keys
+    )
+
+    wrong = dict(converted)
+    wrong["outside.weight"] = wrong["outside.weight"] + 1
+    with pytest.raises(ValueError, match="DCP tensor mismatch: outside.weight"):
+        verify_patchmoe_warmstart_dcp(
+            output_dir, wrong, sample_keys=("outside.weight",)
+        )

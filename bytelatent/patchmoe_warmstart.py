@@ -6,7 +6,7 @@ import re
 import shutil
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import torch
 import torch.distributed.checkpoint as dcp
@@ -71,6 +71,12 @@ class PatchMoEWarmStartReport:
     selected_layers: tuple[int, ...]
     global_layers: tuple[int, ...]
     patch_feature_count: int
+
+
+@dataclass(frozen=True)
+class PatchMoEWarmStartVerificationReport:
+    dcp_key_count: int
+    sample_keys: tuple[str, ...]
 
 
 def _global_ffn_weights(
@@ -269,3 +275,97 @@ def load_patchmoe_warmstart_manifest(output_dir: str | Path) -> dict:
             f"Unsupported warm-start manifest format: {manifest.get('format')}"
         )
     return manifest
+
+
+def _verification_sample_keys(
+    converted_state_dict: Mapping[str, torch.Tensor],
+) -> tuple[str, ...]:
+    keys = set(converted_state_dict)
+    samples: list[str] = []
+
+    def append_first_matching(pattern: str):
+        matches = sorted(key for key in keys if re.search(pattern, key))
+        if matches:
+            samples.append(matches[0])
+
+    append_first_matching(r"\.feed_forward\.router\.weight$")
+    append_first_matching(r"\.feed_forward\.patch_feature_router\.weight$")
+    append_first_matching(r"\.feed_forward\.patch_length_router\.weight$")
+    append_first_matching(r"\.feed_forward\.experts\.0\.w1\.weight$")
+
+    expert_w3_keys = sorted(
+        key
+        for key in keys
+        if re.search(r"\.feed_forward\.experts\.\d+\.w3\.weight$", key)
+    )
+    if expert_w3_keys:
+        samples.append(expert_w3_keys[-1])
+
+    dense_ffn_keys = sorted(key for key in keys if DENSE_GLOBAL_FFN_RE.match(key))
+    if dense_ffn_keys:
+        samples.append(dense_ffn_keys[0])
+
+    local_trunk_keys = [
+        key
+        for key in keys
+        if key.startswith("local_encoder.") and ".feed_forward." not in key
+    ]
+    preserved_keys = local_trunk_keys or [
+        key
+        for key in keys
+        if ".feed_forward." not in key and "router.weight" not in key
+    ]
+    if preserved_keys:
+        samples.append(
+            min(
+                preserved_keys,
+                key=lambda key: (converted_state_dict[key].numel(), key),
+            )
+        )
+    return tuple(dict.fromkeys(samples))
+
+
+def verify_patchmoe_warmstart_dcp(
+    output_dir: str | Path,
+    converted_state_dict: Mapping[str, torch.Tensor],
+    *,
+    sample_keys: Sequence[str] | None = None,
+) -> PatchMoEWarmStartVerificationReport:
+    output_dir = Path(output_dir)
+    load_patchmoe_warmstart_manifest(output_dir)
+
+    metadata = dcp.FileSystemReader(str(output_dir)).read_metadata()
+    actual_dcp_keys = set(metadata.state_dict_metadata)
+    expected_dcp_keys = {f"model.{key}" for key in converted_state_dict}
+    missing_keys = expected_dcp_keys - actual_dcp_keys
+    extra_keys = actual_dcp_keys - expected_dcp_keys
+    if missing_keys or extra_keys:
+        raise ValueError(
+            "DCP key set mismatch: "
+            f"missing={sorted(missing_keys)[:5]}, extra={sorted(extra_keys)[:5]}"
+        )
+
+    selected_sample_keys = tuple(
+        sample_keys or _verification_sample_keys(converted_state_dict)
+    )
+    if not selected_sample_keys:
+        raise ValueError("No DCP verification sample keys selected")
+    unknown_sample_keys = set(selected_sample_keys) - set(converted_state_dict)
+    if unknown_sample_keys:
+        raise ValueError(
+            f"Unknown DCP verification sample keys: {sorted(unknown_sample_keys)}"
+        )
+
+    loaded = {
+        key: torch.empty_like(converted_state_dict[key], device="cpu")
+        for key in selected_sample_keys
+    }
+    dcp.load({"model": loaded}, checkpoint_id=output_dir)
+    for key, value in loaded.items():
+        if not torch.equal(value, converted_state_dict[key]):
+            raise ValueError(f"DCP tensor mismatch: {key}")
+
+    return PatchMoEWarmStartVerificationReport(
+        dcp_key_count=len(actual_dcp_keys),
+        sample_keys=selected_sample_keys,
+    )
