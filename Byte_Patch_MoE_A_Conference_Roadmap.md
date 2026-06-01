@@ -777,6 +777,7 @@ Completed integration:
 - Stage-1 and 200k formal launchers now provide `--preflight` checks for data readiness, variant coverage, checkpoints, eval outputs, and pending runs before using GPUs.
 - `scripts/patchmoe/launch_formal_single_variant.sh` provides a guarded single-variant launch path that defaults to command printing and refuses `MODE=run` when GPU memory or utilization is above threshold.
 - `scripts/patchmoe/formal_status_report.py` emits CSV/JSON status for Stage-1, 200k, and external dense-compute controls, including done/partial/todo state and held-out BPB when available.
+- BLT-1B warm-start integration has started: `scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py` converts the released dense BLT-1B checkpoint into a PatchMoE DCP initialization by preserving the byte/local/global/local-decoder trunk, expanding selected patch-level global FFNs into copied experts, and initializing new routers deterministically. The first guarded BLT-1B launcher uses the validated entropy router with byte-cost balancing on every fourth global FFN layer.
 
 Formal Stage-1 queue:
 
