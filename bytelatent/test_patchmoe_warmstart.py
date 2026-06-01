@@ -104,6 +104,20 @@ def test_dense_to_patchmoe_router_initialization_is_deterministic():
     assert torch.equal(first[key], second[key])
 
 
+def test_dense_to_patchmoe_default_maps_every_global_ffn_layer():
+    dense = dense_global_state_dict(n_layers=4)
+
+    converted, report = convert_dense_state_dict_to_patchmoe(
+        dense, PatchMoEWarmStartSpec()
+    )
+
+    assert report.selected_layers == (0, 1, 2, 3)
+    for layer_idx in report.selected_layers:
+        prefix = f"global_transformer.layers.{layer_idx}.feed_forward"
+        assert f"{prefix}.experts.0.w1.weight" in converted
+        assert f"{prefix}.w1.weight" not in converted
+
+
 def test_write_patchmoe_warmstart_dcp_and_manifest(tmp_path: Path):
     dense = dense_global_state_dict(n_layers=1)
     spec = PatchMoEWarmStartSpec(num_experts=2, top_k=1, layer_frequency=1)

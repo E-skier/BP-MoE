@@ -29,7 +29,7 @@ def parse_args():
     )
     parser.add_argument(
         "--checkpoint-dir",
-        default="hf-weights/blt_1b_patchmoe_entropy_freq4_dcp",
+        default="hf-weights/blt_1b_patchmoe_entropy_all_layers_dcp",
         help="PatchMoE DCP warm-start directory.",
     )
     return parser.parse_args()

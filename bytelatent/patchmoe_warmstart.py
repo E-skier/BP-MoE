@@ -26,7 +26,7 @@ MANIFEST_NAME = "patchmoe_warmstart_manifest.json"
 class PatchMoEWarmStartSpec:
     num_experts: int = 8
     top_k: int = 2
-    layer_frequency: int = 4
+    layer_frequency: int = 1
     patch_features: tuple[str, ...] = ("entropy",)
     router_seed: int = 42
     init_std_factor: str = "current_depth"

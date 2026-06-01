@@ -28,12 +28,12 @@ def parse_args():
     )
     parser.add_argument(
         "--output-dir",
-        default="hf-weights/blt_1b_patchmoe_entropy_freq4_dcp",
+        default="hf-weights/blt_1b_patchmoe_entropy_all_layers_dcp",
         help="Output DCP directory consumed by checkpoint.init_ckpt_path.",
     )
     parser.add_argument("--num-experts", type=int, default=8)
     parser.add_argument("--top-k", type=int, default=2)
-    parser.add_argument("--layer-frequency", type=int, default=4)
+    parser.add_argument("--layer-frequency", type=int, default=1)
     parser.add_argument(
         "--patch-features",
         default="entropy",

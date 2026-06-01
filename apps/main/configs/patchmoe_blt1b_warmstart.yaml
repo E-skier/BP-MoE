@@ -6,7 +6,7 @@
 
 config: hf-weights/blt_1b/params.json
 
-name: "patchmoe_blt1b_warmstart_entropy_freq4"
+name: "patchmoe_blt1b_warmstart_entropy_all_layers"
 dump_dir: ???
 steps: 1000
 max_steps: 10
@@ -32,11 +32,12 @@ model:
   log_patch_lengths: true
 
   # First BLT-1B warm-start candidate: use the previously validated entropy
-  # router and byte-cost balance. Newer byte-type/congestion/z-loss controls
-  # remain separate ablations until their formal queue is complete.
+  # router and byte-cost balance. All 25 global FFNs use MoE by default;
+  # moe_layer_frequency remains available for interleaved-MoE ablations. Newer
+  # byte-type/congestion/z-loss controls remain separate until formal completion.
   moe_num_experts: 8
   moe_top_k: 2
-  moe_layer_frequency: 4
+  moe_layer_frequency: 1
   moe_balance_loss_weight: 0.05
   moe_router_jitter: 0.01
   moe_router_congestion_weight: 0.0
