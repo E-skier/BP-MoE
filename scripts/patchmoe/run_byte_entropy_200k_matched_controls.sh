@@ -88,6 +88,17 @@ variant_overrides() {
         model.moe_router_use_patch_entropy=false \
         model.moe_balance_cost=patch
       ;;
+    dense_compute_matched)
+      printf '%s\n' \
+        model.moe_num_experts=0 \
+        model.moe_top_k=1 \
+        model.moe_balance_loss_weight=0.0 \
+        model.moe_router_jitter=0.0 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=false \
+        model.moe_balance_cost=patch \
+        model.ffn_dim_multiplier_global=2.0
+      ;;
     byte_hidden_only_w005)
       printf '%s\n' \
         model.moe_num_experts=8 \
@@ -140,7 +151,7 @@ variant_overrides() {
       ;;
     *)
       echo "Unknown 200k matched-control variant: $variant" >&2
-      echo "Known variants: dense byte_hidden_only_w005 byte_length_w005 byte_entropy_length_w005 entropy_byte_entropy_length_w0005 entropy_byte_entropy_length_w001" >&2
+      echo "Known variants: dense dense_compute_matched byte_hidden_only_w005 byte_length_w005 byte_entropy_length_w005 entropy_byte_entropy_length_w0005 entropy_byte_entropy_length_w001" >&2
       return 1
       ;;
   esac

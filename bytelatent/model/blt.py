@@ -508,6 +508,7 @@ class ByteLatentTransformerArgs(BaseTransformerArgs):
     # Additional configurations
     multiple_of: int = 256
     ffn_dim_multiplier: float = 1.0
+    ffn_dim_multiplier_global: float | None = None
     dropout: float = 0
     output_size: int = -1
 
@@ -610,6 +611,11 @@ def create_global_transformer(args: ByteLatentTransformerArgs) -> GlobalTransfor
             dim_patch_emb=None,
             cross_attn_encoder=False,
             cross_attn_decoder=False,
+            ffn_dim_multiplier=(
+                args.ffn_dim_multiplier_global
+                if args.ffn_dim_multiplier_global is not None
+                else args.ffn_dim_multiplier
+            ),
         ),
     )
 
