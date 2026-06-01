@@ -42,11 +42,15 @@ EXTRA_VARIANTS=(
   length_byte_balance
   top2_entropy_length_entropy_byte
   experts4_top2_entropy_length_entropy_byte
+  byte_type_patch_balance
+  entropy_length_byte_type_entropy_byte_balance
+  entropy_length_byte_type_entropy_byte_congestion_w05
+  entropy_length_byte_type_entropy_byte_congestion_zloss_w0001
 )
 
 usage() {
   cat <<USAGE
-Usage: $0 [--list] [--all] [variant ...]
+Usage: $0 [--list] [--print-overrides variant] [--all] [variant ...]
 
 Runs Phase-2 PatchMoE smoke ablations on the entropy-preprocessed shard.
 
@@ -75,7 +79,7 @@ variant_overrides() {
       printf '%s\n' \
         model.moe_num_experts=0 \
         model.moe_top_k=1 \
-        model.moe_balance_loss_weight=0.0 \
+        model.moe_balance_loss_weight="$MOE_BALANCE_LOSS_WEIGHT"0.0 \
         model.moe_router_use_patch_length=false \
         model.moe_router_use_patch_entropy=false \
         model.moe_balance_cost=patch
@@ -134,6 +138,49 @@ variant_overrides() {
         model.moe_router_use_patch_entropy=true \
         model.moe_balance_cost=entropy_byte
       ;;
+    byte_type_patch_balance)
+      printf '%s\n' \
+        model.moe_num_experts=2 \
+        model.moe_top_k=1 \
+        model.moe_balance_loss_weight="$MOE_BALANCE_LOSS_WEIGHT" \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=patch
+      ;;
+    entropy_length_byte_type_entropy_byte_balance)
+      printf '%s\n' \
+        model.moe_num_experts=2 \
+        model.moe_top_k=1 \
+        model.moe_balance_loss_weight="$MOE_BALANCE_LOSS_WEIGHT" \
+        model.moe_router_use_patch_length=true \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=entropy_byte
+      ;;
+    entropy_length_byte_type_entropy_byte_congestion_w05)
+      printf '%s\n' \
+        model.moe_num_experts=2 \
+        model.moe_top_k=1 \
+        model.moe_balance_loss_weight="$MOE_BALANCE_LOSS_WEIGHT" \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_use_patch_length=true \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=entropy_byte
+      ;;
+    entropy_length_byte_type_entropy_byte_congestion_zloss_w0001)
+      printf '%s\n' \
+        model.moe_num_experts=2 \
+        model.moe_top_k=1 \
+        model.moe_balance_loss_weight="$MOE_BALANCE_LOSS_WEIGHT" \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.001 \
+        model.moe_router_use_patch_length=true \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=entropy_byte
+      ;;
     entropy_entropy_byte_balance)
       printf '%s\n' \
         model.moe_num_experts=2 \
@@ -189,6 +236,15 @@ if [[ "${1:-}" == "--list" ]]; then
   exit 0
 fi
 
+if [[ "${1:-}" == "--print-overrides" ]]; then
+  if [[ "${2:-}" == "" || "${3:-}" != "" ]]; then
+    echo "usage: $0 --print-overrides VARIANT" >&2
+    exit 2
+  fi
+  variant_overrides "$2"
+  exit 0
+fi
+
 declare -a variants
 if [[ "${1:-}" == "--all" ]]; then
   variants=("${CORE_VARIANTS[@]}" "${EXTRA_VARIANTS[@]}")
@@ -227,6 +283,9 @@ common_overrides=(
   "data.patcher_args.patching_mode=entropy"
   "data.patcher_args.patch_size=6.0"
   "model.patching_mode=entropy"
+  "model.moe_router_use_patch_byte_features=false"
+  "model.moe_router_congestion_weight=0.0"
+  "model.moe_router_z_loss_weight=0.0"
   "model.attn_impl=sdpa"
   "model.cross_attn_encoder=true"
   "model.cross_attn_decoder=true"

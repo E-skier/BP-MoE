@@ -6,6 +6,7 @@ import torch
 import torch.nn
 import torch.nn as nn
 from torch.nn import functional as F
+
 try:
     from xformers.ops import AttentionBias
 except ImportError:
@@ -181,6 +182,7 @@ class GlobalTransformer(BaseTransformer):
         cache: Optional[List[Tuple[torch.Tensor, torch.Tensor, int]]] = None,
         patch_lengths: Optional[torch.Tensor] = None,
         patch_entropies: Optional[torch.Tensor] = None,
+        patch_byte_features: Optional[torch.Tensor] = None,
     ):
         """
         Similar to BaseTransformer.forward, but with an additional embeds argument
@@ -214,6 +216,7 @@ class GlobalTransformer(BaseTransformer):
             attn_impl=self.attn_impl,
             patch_lengths=patch_lengths,
             patch_entropies=patch_entropies,
+            patch_byte_features=patch_byte_features,
         )
         return h, cache
 

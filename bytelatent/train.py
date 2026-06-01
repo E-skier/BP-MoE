@@ -19,6 +19,7 @@ import torch.distributed
 import torch.nn.functional
 import torch.nn.functional as F
 import wandb
+
 try:
     import xformers.profiler as xformers_profiler
 except ImportError:
@@ -28,7 +29,11 @@ from torch.distributed.checkpoint.stateful import Stateful
 from torch.optim import lr_scheduler
 
 from bytelatent.args import TrainArgs
-from bytelatent.base_transformer import get_moe_aux_loss, get_moe_metrics
+from bytelatent.base_transformer import (
+    get_moe_aux_loss,
+    get_moe_metrics,
+    get_moe_router_z_loss,
+)
 from bytelatent.checkpoint import CheckpointManager, load_from_checkpoint
 from bytelatent.config_parser import parse_args_to_pydantic_model
 from bytelatent.data.file_util import get_fs
@@ -539,6 +544,7 @@ def train(args: TrainArgs):
                 ), "Probe model shouldn't have grads at this point"
 
             moe_aux_loss_log = None
+            moe_router_z_loss_log = None
             trace_train_phase(trace_step, train_state.acc_step, "before_forward")
             if args.train_entropy_model:
                 pred = model(batch_x)
@@ -554,14 +560,20 @@ def train(args: TrainArgs):
             loss, tok_loss = compute_loss(pred, batch_y, mask, train_state.scale)
             if not args.train_entropy_model:
                 moe_aux_loss = get_moe_aux_loss(model)
-                if (
-                    moe_aux_loss is not None
-                    and args.model.moe_balance_loss_weight > 0
-                ):
+                if moe_aux_loss is not None and args.model.moe_balance_loss_weight > 0:
                     moe_aux_loss_log = moe_aux_loss.detach()
                     loss = loss + args.model.moe_balance_loss_weight * moe_aux_loss
                 elif moe_aux_loss is not None:
                     moe_aux_loss_log = moe_aux_loss.detach()
+
+                moe_router_z_loss = get_moe_router_z_loss(model)
+                if moe_router_z_loss is not None:
+                    moe_router_z_loss_log = moe_router_z_loss.detach()
+                    if args.model.moe_router_z_loss_weight > 0:
+                        loss = (
+                            loss
+                            + args.model.moe_router_z_loss_weight * moe_router_z_loss
+                        )
 
             # We scale loss with grad_acc_steps so the gradient is the same
             # regardless of grad_acc_steps
@@ -601,20 +613,28 @@ def train(args: TrainArgs):
 
             # optimizer step
             if train_state.acc_step == 0:
-                trace_train_phase(trace_step, train_state.acc_step, "before_optimizer_step")
+                trace_train_phase(
+                    trace_step, train_state.acc_step, "before_optimizer_step"
+                )
                 optimizer.step()
                 scheduler.step()
                 optimizer.zero_grad()
                 train_state.step += 1
-                trace_train_phase(trace_step, train_state.acc_step, "after_optimizer_step")
+                trace_train_phase(
+                    trace_step, train_state.acc_step, "after_optimizer_step"
+                )
 
             # updates the scale for next iteration
             # training iteration complete
             end_timer.record()
 
-            trace_train_phase(trace_step, train_state.acc_step, "before_cuda_synchronize")
+            trace_train_phase(
+                trace_step, train_state.acc_step, "before_cuda_synchronize"
+            )
             torch.cuda.synchronize()
-            trace_train_phase(trace_step, train_state.acc_step, "after_cuda_synchronize")
+            trace_train_phase(
+                trace_step, train_state.acc_step, "after_cuda_synchronize"
+            )
 
             curr_iter_time = round(start_timer.elapsed_time(end_timer) * 1e-3, 4)
 
@@ -629,7 +649,9 @@ def train(args: TrainArgs):
                 acc_step=None if args.logging.acc_freq else 0,
                 acc_freq=args.logging.acc_freq,
             ):
-                trace_train_phase(trace_step, train_state.acc_step, "before_log_metrics")
+                trace_train_phase(
+                    trace_step, train_state.acc_step, "before_log_metrics"
+                )
                 time_delta = timer() - time_last_log
                 wps = nwords_since_last_log / (time_delta * args.distributed.tp_size)
 
@@ -720,11 +742,21 @@ def train(args: TrainArgs):
                     },
                 }
                 if patch_length_count > 0:
-                    patch_length_count_across_gpus = dist_sum(patch_length_count, reduce_dtype=torch.bfloat16)
-                    patch_seq_count_across_gpus = dist_sum(patch_seq_count, reduce_dtype=torch.bfloat16)
-                    patch_length_sum_across_gpus = dist_sum(patch_length_sum, reduce_dtype=torch.bfloat16)
-                    patches_per_seq_sum_across_gpus = dist_sum(patches_per_seq_sum, reduce_dtype=torch.bfloat16)
-                    patch_length_max_across_gpus = dist_max(patch_length_max, reduce_dtype=torch.bfloat16)
+                    patch_length_count_across_gpus = dist_sum(
+                        patch_length_count, reduce_dtype=torch.bfloat16
+                    )
+                    patch_seq_count_across_gpus = dist_sum(
+                        patch_seq_count, reduce_dtype=torch.bfloat16
+                    )
+                    patch_length_sum_across_gpus = dist_sum(
+                        patch_length_sum, reduce_dtype=torch.bfloat16
+                    )
+                    patches_per_seq_sum_across_gpus = dist_sum(
+                        patches_per_seq_sum, reduce_dtype=torch.bfloat16
+                    )
+                    patch_length_max_across_gpus = dist_max(
+                        patch_length_max, reduce_dtype=torch.bfloat16
+                    )
                     metric_dict["patch"] = {
                         "length_mean_per_gpu": patch_length_sum
                         / max(patch_length_count, 1),
@@ -744,9 +776,15 @@ def train(args: TrainArgs):
                         ),
                     }
                     if patch_entropy_count > 0:
-                        patch_entropy_count_across_gpus = dist_sum(patch_entropy_count, reduce_dtype=torch.bfloat16)
-                        patch_entropy_sum_across_gpus = dist_sum(patch_entropy_sum, reduce_dtype=torch.bfloat16)
-                        patch_entropy_max_across_gpus = dist_max(patch_entropy_max, reduce_dtype=torch.bfloat16)
+                        patch_entropy_count_across_gpus = dist_sum(
+                            patch_entropy_count, reduce_dtype=torch.bfloat16
+                        )
+                        patch_entropy_sum_across_gpus = dist_sum(
+                            patch_entropy_sum, reduce_dtype=torch.bfloat16
+                        )
+                        patch_entropy_max_across_gpus = dist_max(
+                            patch_entropy_max, reduce_dtype=torch.bfloat16
+                        )
                         metric_dict["patch"].update(
                             {
                                 "entropy_mean_per_gpu": patch_entropy_sum
@@ -765,6 +803,10 @@ def train(args: TrainArgs):
                     moe_metrics = get_moe_metrics(model)
                     if moe_aux_loss_log is not None:
                         moe_metrics["aux_loss"] = to_py_num(moe_aux_loss_log)
+                    if moe_router_z_loss_log is not None:
+                        moe_metrics["router_z_loss_aux"] = to_py_num(
+                            moe_router_z_loss_log
+                        )
                     if len(moe_metrics) > 0:
                         metric_dict["moe"] = moe_metrics
 

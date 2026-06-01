@@ -165,7 +165,8 @@ analyze_runs() {
   mkdir -p "$ANALYSIS_ROOT"
   "$UV_BIN" run python -m bytelatent.plotting.patchmoe_phase2_ablation \
     "$OUT_ROOT" \
-    "$ANALYSIS_ROOT"
+    "$ANALYSIS_ROOT" \
+    --eval-root "$EVAL_ROOT"
 }
 
 train_seed() {
@@ -215,8 +216,11 @@ train_seed() {
     "model.moe_num_experts=8" \
     "model.moe_top_k=2" \
     "model.moe_balance_loss_weight=0.05" \
+    "model.moe_router_congestion_weight=0.0" \
+    "model.moe_router_z_loss_weight=0.0" \
     "model.moe_router_use_patch_length=false" \
     "model.moe_router_use_patch_entropy=true" \
+    "model.moe_router_use_patch_byte_features=false" \
     "model.moe_balance_cost=byte"
 
   run_eval "$run_name" "$run_dir" "$ckpt_dir" "$final_step_dir"

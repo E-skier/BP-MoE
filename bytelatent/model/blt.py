@@ -11,6 +11,7 @@ from torch.nn.attention.flex_attention import create_block_mask
 from typing_extensions import Self
 
 from bytelatent.base_transformer import (
+    PATCH_BYTE_TYPE_NAMES,
     BaseTransformerArgs,
     InitStdFactor,
     SequenceModelWithOutput,
@@ -19,7 +20,14 @@ from bytelatent.data.patcher import Patcher, PatcherArgs
 from bytelatent.model.latent_transformer import GlobalTransformer
 from bytelatent.model.local_models import LocalDecoder, LocalEncoder, LocalModelArgs
 from bytelatent.model.utils import downsample
-from bytelatent.tokenizers.constants import BOE_ID, BOS_ID, EOS_ID, OFFSET, PAD_ID
+from bytelatent.tokenizers.constants import (
+    BOE_ID,
+    BOS_ID,
+    BYTE_UNITS,
+    EOS_ID,
+    OFFSET,
+    PAD_ID,
+)
 
 
 def attention_flops_per_token(n_layers, seq_len, dim, causal):
@@ -423,6 +431,58 @@ def patch_entropies_from_token_scores(
                 patch_entropies[row, col] = tok_scores[row, start:valid_end].mean()
             start = end
     return patch_entropies
+
+
+def patch_byte_type_features_from_tokens(
+    tokens: torch.Tensor,
+    patch_lengths: torch.Tensor,
+    patch_ids: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Aggregate lightweight byte-pattern ratios for each dynamic patch."""
+    if tokens.ndim != 2 or patch_lengths.ndim != 2:
+        raise ValueError("tokens and patch_lengths must both be rank-2 tensors")
+    if tokens.shape[0] != patch_lengths.shape[0]:
+        raise ValueError("tokens and patch_lengths must have the same batch size")
+    if patch_ids is None:
+        patch_ids = patch_ids_from_lengths(patch_lengths, tokens.shape[1])
+    if patch_ids.shape != tokens.shape:
+        raise ValueError(
+            f"patch_ids shape {tuple(patch_ids.shape)} must match tokens shape "
+            f"{tuple(tokens.shape)}"
+        )
+
+    byte_values = tokens - OFFSET
+    valid_bytes = (byte_values >= 0) & (byte_values < BYTE_UNITS)
+    is_alpha = ((byte_values >= ord("A")) & (byte_values <= ord("Z"))) | (
+        (byte_values >= ord("a")) & (byte_values <= ord("z"))
+    )
+    is_digit = (byte_values >= ord("0")) & (byte_values <= ord("9"))
+    is_whitespace = ((byte_values >= 9) & (byte_values <= 13)) | (
+        byte_values == ord(" ")
+    )
+    is_punctuation = (byte_values >= 33) & (byte_values <= 126) & ~(is_alpha | is_digit)
+    is_non_ascii = byte_values >= 128
+    byte_features = torch.stack(
+        (is_alpha, is_digit, is_whitespace, is_punctuation, is_non_ascii),
+        dim=-1,
+    ).float()
+    byte_features = byte_features * valid_bytes.unsqueeze(-1)
+
+    patch_features = torch.zeros(
+        (*patch_lengths.shape, len(PATCH_BYTE_TYPE_NAMES)),
+        dtype=torch.float32,
+        device=tokens.device,
+    )
+    patch_features.scatter_add_(
+        1,
+        patch_ids.unsqueeze(-1).expand(-1, -1, len(PATCH_BYTE_TYPE_NAMES)),
+        byte_features,
+    )
+    patch_byte_counts = torch.zeros(
+        patch_lengths.shape, dtype=torch.float32, device=tokens.device
+    )
+    patch_byte_counts.scatter_add_(1, patch_ids, valid_bytes.float())
+    return patch_features / patch_byte_counts.unsqueeze(-1).clamp_min(1.0)
 
 
 class ByteLatentTransformerArgs(BaseTransformerArgs):
@@ -838,6 +898,9 @@ class ByteLatentTransformer(
         self.init_base_std = args.init_base_std
         self.init_std_factor = InitStdFactor(args.init_std_factor)
         self.max_seqlen = args.max_seqlen
+        self.moe_router_use_patch_byte_features = (
+            args.moe_router_use_patch_byte_features
+        )
 
         # Cross attention configuration
         self.cross_attn_encoder = args.cross_attn_encoder
@@ -961,6 +1024,12 @@ class ByteLatentTransformer(
             (patch_lengths != 0).sum(dim=-1)
         ), f"{torch.max(patch_ids) + 1} > {torch.max((patch_lengths != 0).sum(dim=-1))}"
 
+        patch_byte_features = None
+        if self.moe_router_use_patch_byte_features:
+            patch_byte_features = patch_byte_type_features_from_tokens(
+                local_encoder_tokens, patch_lengths, patch_ids
+            )
+
         cross_attn_mask_enc = None
         # Cross-attention encoder
         if self.cross_attn_encoder:
@@ -1040,6 +1109,7 @@ class ByteLatentTransformer(
             tokens=global_tokens,
             patch_lengths=patch_lengths,
             patch_entropies=patch_entropies,
+            patch_byte_features=patch_byte_features,
         )
 
         # Unpatching

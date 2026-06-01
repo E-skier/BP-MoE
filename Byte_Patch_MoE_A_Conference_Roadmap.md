@@ -761,6 +761,39 @@ Exit criteria:
 - expert utilization remains stable;
 - specialization patterns are visible.
 
+### Implementation checkpoint: 2026-06-01
+
+Completed integration:
+
+- PatchMoE is wired into the BLT global Transformer at the dynamic patch level.
+- Router side features now cover patch length, patch entropy, and patch byte-type ratios: alpha, digit, whitespace, punctuation, and non-ASCII bytes.
+- Patch-count, byte-count, and entropy-weighted byte balancing remain selectable controls.
+- Cost-aware expert congestion pricing `C_e(t)` is implemented as an optional router logit penalty using the active patch cost definition.
+- Router z-loss is implemented as an optional training auxiliary loss on learned router logits for collapse mitigation.
+- Byte-type specialization metrics and analysis plots are available.
+- Stage-0 end-to-end smoke runs pass for byte-type-only, entropy-plus-byte-type, entropy-plus-byte-type-plus-congestion, and congestion-plus-z-loss routing.
+- Stage-1 matched-eval launch script now exposes the roadmap queue variants, including byte-type, congestion, and z-loss candidates.
+- Formal analysis hooks now emit training summaries, held-out validation summaries, and exact-run-label merged `summary_with_heldout.csv` tables for Stage-1/200k multi-seed evidence.
+- Stage-1 and 200k formal launchers now provide `--preflight` checks for data readiness, variant coverage, checkpoints, eval outputs, and pending runs before using GPUs.
+- `scripts/patchmoe/launch_formal_single_variant.sh` provides a guarded single-variant launch path that defaults to command printing and refuses `MODE=run` when GPU memory or utilization is above threshold.
+- `scripts/patchmoe/formal_status_report.py` emits CSV/JSON status for Stage-1, 200k, and external dense-compute controls, including done/partial/todo state and held-out BPB when available.
+
+Formal Stage-1 queue:
+
+1. Compare `dense`, `byte_hidden_only_w005`, `byte_entropy_w005`, `byte_type_w005`, and `byte_entropy_type_w005` under matched training bytes.
+2. Profile `byte_entropy_type_w005` against the existing matched-compute controls.
+3. Run `byte_entropy_length_type_w005` only if the decisive controls justify the extra ablation.
+4. Evaluate `byte_entropy_type_congestion_w05` as a non-default congestion-price ablation after the byte-type controls establish the base candidate.
+5. Evaluate `byte_entropy_type_congestion_zloss_w0001` only if congestion improves stability or router collapse appears at Stage-1 scale.
+
+Pending exit-criteria evidence:
+
+- Stage-1 BPB and active-compute comparison for the new byte-type controls;
+- Stage-1 BPB/load-stability comparison for the optional congestion-price control;
+- Stage-1 stability and BPB comparison for the optional router z-loss control;
+- expert utilization stability and byte-type specialization at Stage-1 scale;
+- profile results for throughput, memory, and dispatch overhead.
+
 ---
 
 ## 8.3 Phase 3: Main Model Training
@@ -1156,7 +1189,7 @@ Problem:
 Mitigation:
 
 - use load-balancing loss;
-- add router z-loss;
+- add router z-loss (implemented as an optional PatchMoE auxiliary loss, default off);
 - use capacity factor;
 - use noisy Top-K routing;
 - warm up with dense FFN or progressive sparsification;

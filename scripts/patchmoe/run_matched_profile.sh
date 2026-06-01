@@ -17,7 +17,8 @@ PREPROCESS_DIR="${PREPROCESS_DIR:-$ROOT_DIR/data/entropy_preprocessed_stage1}"
 ENTROPY_MODEL_NAME="${ENTROPY_MODEL_NAME:-transformer_100m}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-/tmp/unused.tokenizer.model}"
 
-VARIANTS="${VARIANTS:-dense_compute_matched byte_hidden_only_w005 byte_entropy_w005}"
+VARIANTS="${VARIANTS:-dense_compute_matched byte_hidden_only_w005 byte_entropy_w005 byte_entropy_type_w005}"
+KNOWN_VARIANTS="dense_compute_matched byte_hidden_only_w005 byte_entropy_w005 byte_entropy_type_w005 byte_entropy_type_congestion_w05 byte_entropy_type_congestion_zloss_w0001"
 SEED="${SEED:-779}"
 STEPS="${STEPS:-40}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
@@ -33,6 +34,11 @@ PROFILE_STEPS="${PROFILE_STEPS:-4}"
 export PYTHONPATH="$ROOT_DIR:${PYTHONPATH:-}"
 export BLT_ALLOW_MISSING_FLEX_ATTENTION="${BLT_ALLOW_MISSING_FLEX_ATTENTION:-1}"
 export BLT_SUPPRESS_ATTN_ERROR="${BLT_SUPPRESS_ATTN_ERROR:-1}"
+
+if [[ "${1:-}" == "--list" ]]; then
+  printf "%s\n" $KNOWN_VARIANTS
+  exit 0
+fi
 
 preprocessed_source_dir="$PREPROCESS_DIR/$SOURCE/$ENTROPY_MODEL_NAME"
 if [[ ! -d "$preprocessed_source_dir" ]]; then
@@ -57,8 +63,11 @@ variant_overrides() {
         model.moe_top_k=1 \
         model.moe_balance_loss_weight=0.0 \
         model.moe_router_jitter=0.0 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=false \
         model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=patch \
         model.ffn_dim_multiplier_global=2.0
       ;;
@@ -68,8 +77,11 @@ variant_overrides() {
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
         model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=false \
         model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=byte
       ;;
     byte_entropy_w005)
@@ -78,16 +90,68 @@ variant_overrides() {
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
         model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=false \
         model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_congestion_w05)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_congestion_zloss_w0001)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.001 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
         model.moe_balance_cost=byte
       ;;
     *)
       echo "Unknown profiling variant: $variant" >&2
+      echo "Known variants: $KNOWN_VARIANTS" >&2
       return 1
       ;;
   esac
 }
+
+if [[ "${1:-}" == "--print-overrides" ]]; then
+  if [[ "${2:-}" == "" || "${3:-}" != "" ]]; then
+    echo "usage: $0 --print-overrides VARIANT" >&2
+    exit 2
+  fi
+  variant_overrides "$2"
+  exit 0
+fi
 
 run_variant() {
   local variant="$1"

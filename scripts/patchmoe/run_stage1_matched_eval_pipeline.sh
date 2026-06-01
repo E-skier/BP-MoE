@@ -44,11 +44,13 @@ HELDOUT_ARROW_NAME="$(basename "$HELDOUT_RAW_FILE").shard_00.arrow"
 HELDOUT_ARROW_FILE="$HELDOUT_ARROW_DIR/$HELDOUT_ARROW_NAME"
 
 EVAL_ROOT="${EVAL_ROOT:-$ROOT_DIR/runs/stage1_heldout_eval}"
+ANALYSIS_ROOT="${ANALYSIS_ROOT:-$ROOT_DIR/runs/stage1_matched_budget_analysis}"
 EVAL_MAX_BATCHES="${EVAL_MAX_BATCHES:-2000}"
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-1}"
 EVAL_CUDA_VISIBLE_DEVICES="${EVAL_CUDA_VISIBLE_DEVICES:-0}"
 
-VARIANTS="${VARIANTS-dense no_entropy_router no_entropy_byte_balance}"
+VARIANTS="${VARIANTS:-dense byte_hidden_only_w005 byte_entropy_w005 byte_type_w005 byte_entropy_type_w005}"
+KNOWN_VARIANTS="dense byte_hidden_only_w005 byte_entropy_w005 byte_type_w005 byte_entropy_type_w005 byte_entropy_type_congestion_w05 byte_entropy_type_congestion_zloss_w0001 byte_entropy_length_type_w005 no_entropy_router no_entropy_byte_balance"
 FORCE_TRAIN="${FORCE_TRAIN:-0}"
 FORCE_EVAL="${FORCE_EVAL:-0}"
 
@@ -59,11 +61,256 @@ export BLT_SUPPRESS_ATTN_ERROR="${BLT_SUPPRESS_ATTN_ERROR:-1}"
 final_step_dir="$(printf "%010d" "$STEPS")"
 preprocessed_source_dir="$PREPROCESS_DIR/$SOURCE/$ENTROPY_MODEL_NAME"
 
+if [[ "${1:-}" == "--list" ]]; then
+  printf "%s\n" $KNOWN_VARIANTS
+  exit 0
+fi
+
+variant_overrides() {
+  local variant="$1"
+  case "$variant" in
+    dense)
+      printf "%s\n" \
+        model.moe_num_experts=0 \
+        model.moe_top_k=1 \
+        model.moe_balance_loss_weight=0.0 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.0 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=patch
+      ;;
+    byte_hidden_only_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=byte
+      ;;
+    byte_type_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_congestion_w05)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_congestion_zloss_w0001)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.001 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_length_type_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=true \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    no_entropy_router)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=true \
+        model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=entropy_byte
+      ;;
+    no_entropy_byte_balance)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_use_patch_length=true \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=byte
+      ;;
+    *)
+      echo "Unknown Stage-1 matched-budget variant: $variant" >&2
+      echo "Known variants: $KNOWN_VARIANTS" >&2
+      return 1
+      ;;
+  esac
+}
+
+if [[ "${1:-}" == "--print-overrides" ]]; then
+  if [[ "${2:-}" == "" || "${3:-}" != "" ]]; then
+    echo "usage: $0 --print-overrides VARIANT" >&2
+    exit 2
+  fi
+  variant_overrides "$2"
+  exit 0
+fi
+
+preflight() {
+  local failures=0
+  local shard_count=0
+  local candidate_ckpt="$CANDIDATE_RUN_DIR/checkpoints/$final_step_dir"
+
+  echo "Stage-1 matched-budget preflight"
+  echo "Config:        $CONFIG"
+  echo "Train data:    $preprocessed_source_dir"
+  echo "Held-out src:  $HELDOUT_SOURCE_FILE"
+  echo "Candidate ckpt:$candidate_ckpt"
+  echo "Variants:      $VARIANTS"
+  echo "Run root:      $OUT_ROOT"
+  echo "Eval root:     $EVAL_ROOT"
+  echo "Analysis root: $ANALYSIS_ROOT"
+
+  if [[ -f "$CONFIG" ]]; then
+    echo "OK   config exists"
+  else
+    echo "FAIL missing config: $CONFIG" >&2
+    failures=1
+  fi
+
+  if [[ -d "$preprocessed_source_dir" ]]; then
+    shard_count="$(find "$preprocessed_source_dir" -name "*.arrow.complete" -print | wc -l | tr -d ' ')"
+    if [[ "$shard_count" != "0" ]]; then
+      echo "OK   training entropy shards complete: $shard_count"
+    else
+      echo "FAIL no completed training entropy shards in: $preprocessed_source_dir" >&2
+      failures=1
+    fi
+  else
+    echo "FAIL missing training entropy-preprocessed directory: $preprocessed_source_dir" >&2
+    failures=1
+  fi
+
+  if [[ -f "$HELDOUT_SOURCE_FILE" ]]; then
+    echo "OK   held-out source exists"
+  else
+    echo "FAIL missing held-out source file: $HELDOUT_SOURCE_FILE" >&2
+    failures=1
+  fi
+
+  if [[ -d "$candidate_ckpt" ]]; then
+    echo "OK   candidate checkpoint exists"
+  else
+    echo "FAIL missing candidate checkpoint: $candidate_ckpt" >&2
+    failures=1
+  fi
+
+  for variant in $VARIANTS; do
+    if ! variant_overrides "$variant" >/dev/null; then
+      failures=1
+      continue
+    fi
+    local run_name="stage1_${variant}_matched"
+    local run_dir="$OUT_ROOT/$run_name"
+    local ckpt_dir="$run_dir/checkpoints/$final_step_dir"
+    local eval_file="$EVAL_ROOT/$run_name/$final_step_dir/validation.json"
+    local metrics_file="$run_dir/metrics.jsonl"
+
+    if [[ -d "$ckpt_dir" ]]; then
+      echo "DONE checkpoint $variant: $ckpt_dir"
+    elif [[ -f "$metrics_file" ]]; then
+      local last_step
+      last_step="$(tail -n 1 "$metrics_file" | sed -n 's/.*"global_step": *\([0-9][0-9]*\).*/\1/p')"
+      echo "PARTIAL train $variant: metrics present, last_step=${last_step:-unknown}"
+    else
+      echo "TODO train $variant: $run_dir"
+    fi
+
+    if [[ -f "$eval_file" ]]; then
+      echo "DONE eval $variant: $eval_file"
+    else
+      echo "TODO eval $variant: $eval_file"
+    fi
+  done
+
+  return "$failures"
+}
+
+if [[ "${1:-}" == "--preflight" ]]; then
+  preflight
+  exit $?
+fi
+
+if [[ "${1:-}" != "" ]]; then
+  echo "usage: $0 [--list|--preflight|--print-overrides VARIANT]" >&2
+  exit 2
+fi
+
 if [[ ! -d "$preprocessed_source_dir" ]]; then
   echo "Missing training entropy-preprocessed data: $preprocessed_source_dir" >&2
   exit 1
 fi
-if ! find "$preprocessed_source_dir" -name '*.arrow.complete' -print -quit | grep -q .; then
+if ! find "$preprocessed_source_dir" -name "*.arrow.complete" -print -quit | grep -q .; then
   echo "No completed training entropy arrow shards found in: $preprocessed_source_dir" >&2
   exit 1
 fi
@@ -71,45 +318,6 @@ if [[ ! -f "$HELDOUT_SOURCE_FILE" ]]; then
   echo "Missing held-out source file: $HELDOUT_SOURCE_FILE" >&2
   exit 1
 fi
-
-variant_overrides() {
-  local variant="$1"
-  case "$variant" in
-    dense)
-      printf '%s\n' \
-        model.moe_num_experts=0 \
-        model.moe_top_k=1 \
-        model.moe_balance_loss_weight=0.0 \
-        model.moe_router_jitter=0.0 \
-        model.moe_router_use_patch_length=false \
-        model.moe_router_use_patch_entropy=false \
-        model.moe_balance_cost=patch
-      ;;
-    no_entropy_router)
-      printf '%s\n' \
-        model.moe_num_experts=8 \
-        model.moe_top_k=2 \
-        model.moe_balance_loss_weight=0.05 \
-        model.moe_router_use_patch_length=true \
-        model.moe_router_use_patch_entropy=false \
-        model.moe_balance_cost=entropy_byte
-      ;;
-    no_entropy_byte_balance)
-      printf '%s\n' \
-        model.moe_num_experts=8 \
-        model.moe_top_k=2 \
-        model.moe_balance_loss_weight=0.05 \
-        model.moe_router_use_patch_length=true \
-        model.moe_router_use_patch_entropy=true \
-        model.moe_balance_cost=byte
-      ;;
-    *)
-      echo "Unknown Stage-1 matched-budget variant: $variant" >&2
-      echo "Known variants: dense no_entropy_router no_entropy_byte_balance" >&2
-      return 1
-      ;;
-  esac
-}
 
 prepare_heldout() {
   mkdir -p "$HELDOUT_RAW_DIR"
@@ -173,6 +381,14 @@ run_eval() {
     "validation.max_n_batches=$EVAL_MAX_BATCHES"
 }
 
+analyze_runs() {
+  mkdir -p "$ANALYSIS_ROOT"
+  "$UV_BIN" run python -m bytelatent.plotting.patchmoe_phase2_ablation \
+    "$OUT_ROOT" \
+    "$ANALYSIS_ROOT" \
+    --eval-root "$EVAL_ROOT"
+}
+
 train_variant() {
   local variant="$1"
   local run_name="stage1_${variant}_matched"
@@ -225,6 +441,9 @@ for variant in $VARIANTS; do
   train_variant "$variant"
 done
 
+analyze_runs
+
 echo "Stage-1 matched-budget pipeline complete."
-echo "Eval root: $EVAL_ROOT"
-echo "Run root:  $OUT_ROOT"
+echo "Eval root:     $EVAL_ROOT"
+echo "Run root:      $OUT_ROOT"
+echo "Analysis root: $ANALYSIS_ROOT"

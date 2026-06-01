@@ -88,8 +88,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=false \
         model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=byte
       ;;
     byte_length_w005)
@@ -97,8 +100,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=true \
         model.moe_router_use_patch_entropy=false \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=byte
       ;;
     byte_entropy_w005)
@@ -106,8 +112,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=false \
         model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=byte
       ;;
     byte_entropy_length_w005)
@@ -115,8 +124,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=true \
         model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=byte
       ;;
     entropy_byte_entropy_length_w0005)
@@ -124,8 +136,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.005 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=true \
         model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=entropy_byte
       ;;
     entropy_byte_entropy_length_w001)
@@ -133,8 +148,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.01 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=true \
         model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=entropy_byte
       ;;
     entropy_byte_entropy_length_w002)
@@ -142,8 +160,11 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.02 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
         model.moe_router_use_patch_length=true \
         model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
         model.moe_balance_cost=entropy_byte
       ;;
     *)

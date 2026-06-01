@@ -9,6 +9,7 @@ import torch
 from pydantic import BaseModel, ConfigDict
 from torch import nn
 from torch.nn import functional as F
+
 _ALLOW_MISSING_FLEX_ATTENTION = (
     int(os.environ.get("BLT_ALLOW_MISSING_FLEX_ATTENTION", False)) != 0
 )
@@ -37,6 +38,7 @@ except (ImportError, ModuleNotFoundError):
             "build with flex_attention or use an SDPA attention path."
         )
 
+
 try:
     from xformers.ops import AttentionBias, fmha
 except ImportError:
@@ -46,6 +48,14 @@ except ImportError:
 from bytelatent.tokenizers.constants import EOS_ID
 
 logger = logging.getLogger()
+
+PATCH_BYTE_TYPE_NAMES = (
+    "alpha",
+    "digit",
+    "whitespace",
+    "punctuation",
+    "non_ascii",
+)
 
 try:
     from apex.normalization.fused_layer_norm import FusedRMSNorm
@@ -94,8 +104,11 @@ class BaseTransformerArgs(BaseModel):
     moe_layer_frequency: int = 1
     moe_balance_loss_weight: float = 0.0
     moe_router_jitter: float = 0.0
+    moe_router_congestion_weight: float = 0.0
+    moe_router_z_loss_weight: float = 0.0
     moe_router_use_patch_length: bool = False
     moe_router_use_patch_entropy: bool = False
+    moe_router_use_patch_byte_features: bool = False
     moe_balance_cost: str = "patch"
 
     multiple_of: int = 256
@@ -574,8 +587,11 @@ class SparseMoEFeedForward(nn.Module):
         num_experts: int,
         top_k: int,
         router_jitter: float = 0.0,
+        router_congestion_weight: float = 0.0,
+        router_z_loss_weight: float = 0.0,
         router_use_patch_length: bool = False,
         router_use_patch_entropy: bool = False,
+        router_use_patch_byte_features: bool = False,
         balance_cost: str = "patch",
     ):
         super().__init__()
@@ -583,17 +599,22 @@ class SparseMoEFeedForward(nn.Module):
             raise ValueError("num_experts must be positive for SparseMoEFeedForward")
         if top_k <= 0:
             raise ValueError("top_k must be positive for SparseMoEFeedForward")
+        if router_congestion_weight < 0:
+            raise ValueError("router_congestion_weight must be non-negative")
+        if router_z_loss_weight < 0:
+            raise ValueError("router_z_loss_weight must be non-negative")
         if balance_cost not in {"patch", "byte", "entropy_byte"}:
-            raise ValueError(
-                "balance_cost must be one of: patch, byte, entropy_byte"
-            )
+            raise ValueError("balance_cost must be one of: patch, byte, entropy_byte")
 
         self.dim = dim
         self.num_experts = num_experts
         self.top_k = min(top_k, num_experts)
         self.router_jitter = router_jitter
+        self.router_congestion_weight = router_congestion_weight
+        self.router_z_loss_weight = router_z_loss_weight
         self.router_use_patch_length = router_use_patch_length
         self.router_use_patch_entropy = router_use_patch_entropy
+        self.router_use_patch_byte_features = router_use_patch_byte_features
         self.balance_cost = balance_cost
         self.is_sparse_moe = True
 
@@ -603,6 +624,10 @@ class SparseMoEFeedForward(nn.Module):
             self.patch_feature_names.append("length")
         if router_use_patch_entropy:
             self.patch_feature_names.append("entropy")
+        if router_use_patch_byte_features:
+            self.patch_feature_names.extend(
+                f"byte_{name}" for name in PATCH_BYTE_TYPE_NAMES
+            )
         self.patch_feature_router = (
             nn.Linear(len(self.patch_feature_names), num_experts, bias=False)
             if len(self.patch_feature_names) > 0
@@ -621,6 +646,7 @@ class SparseMoEFeedForward(nn.Module):
             ]
         )
         self.last_balance_loss: Optional[torch.Tensor] = None
+        self.last_router_z_loss: Optional[torch.Tensor] = None
         self.last_metrics: dict[str, float] = {}
 
     def forward(
@@ -628,15 +654,25 @@ class SparseMoEFeedForward(nn.Module):
         x: torch.Tensor,
         patch_lengths: Optional[torch.Tensor] = None,
         patch_entropies: Optional[torch.Tensor] = None,
+        patch_byte_features: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         flat_x = x.reshape(-1, x.shape[-1])
         flat_patch_lengths = self._prepare_patch_lengths(x, patch_lengths)
         flat_patch_entropies = self._prepare_patch_entropies(x, patch_entropies)
+        flat_patch_byte_features = self._prepare_patch_byte_features(
+            x, patch_byte_features
+        )
+        load_weights = self._load_weights(
+            flat_x, flat_patch_lengths, flat_patch_entropies
+        )
 
         router_logits = self.router(flat_x)
+        learned_router_logits = router_logits
         if self.patch_feature_router is not None:
             patch_features = self._patch_features(
-                flat_patch_lengths, flat_patch_entropies
+                flat_patch_lengths,
+                flat_patch_entropies,
+                flat_patch_byte_features,
             )
             patch_features = patch_features.to(
                 dtype=self.patch_feature_router.weight.dtype
@@ -644,13 +680,28 @@ class SparseMoEFeedForward(nn.Module):
             router_logits = router_logits + self.patch_feature_router(
                 patch_features
             ).to(router_logits.dtype)
+            learned_router_logits = router_logits
+
+        self.last_router_z_loss = (
+            torch.logsumexp(learned_router_logits.float(), dim=-1).square().mean()
+        )
 
         if self.training and self.router_jitter > 0:
             router_logits = router_logits + torch.empty_like(router_logits).uniform_(
                 -self.router_jitter, self.router_jitter
             )
 
-        router_probs = F.softmax(router_logits.float(), dim=-1)
+        pre_congestion_router_probs = F.softmax(router_logits.float(), dim=-1)
+        congestion_price = self._congestion_price(
+            pre_congestion_router_probs, load_weights
+        )
+        if self.router_congestion_weight > 0:
+            router_logits = router_logits - self.router_congestion_weight * (
+                congestion_price.to(router_logits.dtype)
+            )
+            router_probs = F.softmax(router_logits.float(), dim=-1)
+        else:
+            router_probs = pre_congestion_router_probs
         top_weights, top_indices = torch.topk(
             router_probs, k=self.top_k, dim=-1, sorted=False
         )
@@ -684,9 +735,6 @@ class SparseMoEFeedForward(nn.Module):
         if self.training:
             flat_output = flat_output + empty_expert_dependency
 
-        load_weights = self._load_weights(
-            flat_x, flat_patch_lengths, flat_patch_entropies
-        )
         prob_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
         prob_density = prob_density / load_weights.sum().clamp_min(1.0)
         uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
@@ -699,6 +747,9 @@ class SparseMoEFeedForward(nn.Module):
             load_weights,
             flat_patch_lengths,
             flat_patch_entropies,
+            flat_patch_byte_features,
+            congestion_price,
+            pre_congestion_router_probs,
         )
         return flat_output.reshape_as(x)
 
@@ -742,10 +793,32 @@ class SparseMoEFeedForward(nn.Module):
             )
         return patch_entropies.reshape(-1).to(device=x.device)
 
+    def _prepare_patch_byte_features(
+        self, x: torch.Tensor, patch_byte_features: Optional[torch.Tensor]
+    ) -> Optional[torch.Tensor]:
+        if patch_byte_features is None:
+            if self.router_use_patch_byte_features:
+                raise ValueError(
+                    "patch_byte_features must be provided when byte-type-aware "
+                    "PatchMoE routing is enabled"
+                )
+            return None
+
+        expected_shape = x.shape[:-1] + (len(PATCH_BYTE_TYPE_NAMES),)
+        if patch_byte_features.shape != expected_shape:
+            raise ValueError(
+                f"patch_byte_features shape {tuple(patch_byte_features.shape)} "
+                f"must match {tuple(expected_shape)}"
+            )
+        return patch_byte_features.reshape(-1, len(PATCH_BYTE_TYPE_NAMES)).to(
+            device=x.device
+        )
+
     def _patch_features(
         self,
         flat_patch_lengths: Optional[torch.Tensor],
         flat_patch_entropies: Optional[torch.Tensor],
+        flat_patch_byte_features: Optional[torch.Tensor],
     ) -> torch.Tensor:
         features = []
         if self.router_use_patch_length:
@@ -773,6 +846,9 @@ class SparseMoEFeedForward(nn.Module):
                     flat_patch_lengths <= 0, 0.0
                 )
             features.append(entropy_feature.unsqueeze(-1))
+        if self.router_use_patch_byte_features:
+            assert flat_patch_byte_features is not None
+            features.append(flat_patch_byte_features.float())
         if len(features) == 0:
             raise RuntimeError("Patch feature router has no enabled features")
         return torch.cat(features, dim=-1)
@@ -784,7 +860,9 @@ class SparseMoEFeedForward(nn.Module):
         flat_patch_entropies: Optional[torch.Tensor],
     ) -> torch.Tensor:
         if flat_patch_lengths is None:
-            return torch.ones(flat_x.shape[0], device=flat_x.device, dtype=torch.float32)
+            return torch.ones(
+                flat_x.shape[0], device=flat_x.device, dtype=torch.float32
+            )
 
         patch_lengths = flat_patch_lengths.float().clamp_min(0.0)
         if self.balance_cost == "patch":
@@ -797,6 +875,17 @@ class SparseMoEFeedForward(nn.Module):
             return patch_lengths * patch_entropies
         raise ValueError(f"Unknown balance_cost: {self.balance_cost}")
 
+    def _congestion_price(
+        self,
+        router_probs: torch.Tensor,
+        load_weights: torch.Tensor,
+    ) -> torch.Tensor:
+        total_load = load_weights.sum()
+        load_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
+        load_density = load_density / total_load.clamp_min(1.0)
+        has_load = (total_load > 0).to(load_density.dtype)
+        return (self.num_experts * load_density - 1.0).mul(has_load).detach()
+
     @torch.no_grad()
     def _record_metrics(
         self,
@@ -805,6 +894,9 @@ class SparseMoEFeedForward(nn.Module):
         load_weights: torch.Tensor,
         flat_patch_lengths: Optional[torch.Tensor],
         flat_patch_entropies: Optional[torch.Tensor],
+        flat_patch_byte_features: Optional[torch.Tensor] = None,
+        congestion_price: Optional[torch.Tensor] = None,
+        pre_congestion_router_probs: Optional[torch.Tensor] = None,
     ) -> None:
         flat_top_indices = top_indices.reshape(-1)
         assignment_weights = (
@@ -817,9 +909,9 @@ class SparseMoEFeedForward(nn.Module):
         total_assignments = assignments.sum().clamp_min(1.0)
         load_fraction = assignments / total_assignments
         mean_load = load_fraction.mean().clamp_min(1e-9)
-        router_entropy = -(
-            router_probs * router_probs.clamp_min(1e-9).log()
-        ).sum(dim=-1)
+        router_entropy = -(router_probs * router_probs.clamp_min(1e-9).log()).sum(
+            dim=-1
+        )
 
         if flat_patch_lengths is None:
             active_unit_mask = torch.ones_like(load_weights, dtype=torch.bool)
@@ -834,9 +926,7 @@ class SparseMoEFeedForward(nn.Module):
             active_unit_mask.float().unsqueeze(-1).expand_as(top_indices).reshape(-1)
         )
         unit_assignments = torch.zeros_like(assignments)
-        unit_assignments.scatter_add_(
-            0, flat_top_indices, unit_assignment_weights
-        )
+        unit_assignments.scatter_add_(0, flat_top_indices, unit_assignment_weights)
         total_unit_assignments = unit_assignments.sum().clamp_min(1.0)
         unit_assignment_fraction = unit_assignments / total_unit_assignments
 
@@ -857,13 +947,48 @@ class SparseMoEFeedForward(nn.Module):
             "load_weight_mean": load_weight_mean,
             "load_weight_max": load_weight_max,
             "side_feature_count": float(len(self.patch_feature_names)),
+            "congestion_weight": self.router_congestion_weight,
+            "router_z_loss": (
+                self.last_router_z_loss.detach().item()
+                if self.last_router_z_loss is not None
+                else 0.0
+            ),
+            "router_z_loss_weight": self.router_z_loss_weight,
         }
+        if congestion_price is not None and pre_congestion_router_probs is not None:
+            pre_prob_density = (
+                pre_congestion_router_probs * load_weights.unsqueeze(-1)
+            ).sum(dim=0)
+            pre_prob_density = pre_prob_density / load_weights.sum().clamp_min(1.0)
+            post_prob_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
+            post_prob_density = post_prob_density / load_weights.sum().clamp_min(1.0)
+            self.last_metrics.update(
+                {
+                    "congestion_price_min": congestion_price.min().item(),
+                    "congestion_price_max": congestion_price.max().item(),
+                    "congestion_price_std": congestion_price.std(unbiased=False).item(),
+                    "pre_congestion_prob_load_imbalance": (
+                        pre_prob_density.max() / pre_prob_density.mean().clamp_min(1e-9)
+                    ).item(),
+                    "post_congestion_prob_load_imbalance": (
+                        post_prob_density.max()
+                        / post_prob_density.mean().clamp_min(1e-9)
+                    ).item(),
+                    "congestion_top1_reroute_fraction": (
+                        pre_congestion_router_probs.argmax(dim=-1)
+                        != router_probs.argmax(dim=-1)
+                    )
+                    .float()
+                    .mean()
+                    .item(),
+                }
+            )
         for expert_id, fraction in enumerate(load_fraction):
             self.last_metrics[f"expert_{expert_id}_load_fraction"] = fraction.item()
         for expert_id, fraction in enumerate(unit_assignment_fraction):
-            self.last_metrics[
-                f"expert_{expert_id}_unit_assignment_fraction"
-            ] = fraction.item()
+            self.last_metrics[f"expert_{expert_id}_unit_assignment_fraction"] = (
+                fraction.item()
+            )
 
         if flat_patch_lengths is not None:
             active_lengths = flat_patch_lengths.float()[active_unit_mask]
@@ -934,8 +1059,49 @@ class SparseMoEFeedForward(nn.Module):
                 "entropy",
                 (
                     ("low", flat_patch_entropies <= 1.0),
-                    ("medium", (flat_patch_entropies > 1.0) & (flat_patch_entropies <= 2.0)),
+                    (
+                        "medium",
+                        (flat_patch_entropies > 1.0) & (flat_patch_entropies <= 2.0),
+                    ),
                     ("high", flat_patch_entropies > 2.0),
+                ),
+                top_indices,
+                flat_top_indices,
+                active_unit_mask,
+                unit_assignment_weights,
+                unit_assignments,
+                total_unit_assignments,
+            )
+
+        if flat_patch_byte_features is not None:
+            active_byte_features = flat_patch_byte_features.float()[active_unit_mask]
+            for feature_id, feature_name in enumerate(PATCH_BYTE_TYPE_NAMES):
+                values = flat_patch_byte_features[:, feature_id].float()
+                self.last_metrics[f"patch_byte_{feature_name}_fraction_mean"] = (
+                    active_byte_features[:, feature_id].mean().item()
+                    if active_byte_features.numel() > 0
+                    else 0.0
+                )
+                self._record_per_expert_feature_metrics(
+                    f"patch_byte_{feature_name}_fraction",
+                    values,
+                    top_indices,
+                    flat_top_indices,
+                    active_unit_mask,
+                    unit_assignment_weights,
+                    unit_assignments,
+                )
+
+            dominant_byte_types = flat_patch_byte_features.argmax(dim=-1)
+            has_classified_bytes = flat_patch_byte_features.sum(dim=-1) > 0
+            self._record_bucket_usage_metrics(
+                "byte_type",
+                tuple(
+                    (
+                        feature_name,
+                        (dominant_byte_types == feature_id) & has_classified_bytes,
+                    )
+                    for feature_id, feature_name in enumerate(PATCH_BYTE_TYPE_NAMES)
                 ),
                 top_indices,
                 flat_top_indices,
@@ -968,9 +1134,9 @@ class SparseMoEFeedForward(nn.Module):
         )
         feature_means = feature_sums / unit_assignments.clamp_min(1.0)
         for expert_id, mean_value in enumerate(feature_means):
-            self.last_metrics[
-                f"expert_{expert_id}_{feature_name}_mean"
-            ] = mean_value.item()
+            self.last_metrics[f"expert_{expert_id}_{feature_name}_mean"] = (
+                mean_value.item()
+            )
 
     @torch.no_grad()
     def _record_bucket_usage_metrics(
@@ -1002,16 +1168,14 @@ class SparseMoEFeedForward(nn.Module):
                 0, flat_top_indices, bucket_assignment_weights
             )
             bucket_total_assignments = bucket_assignments.sum()
-            self.last_metrics[
-                f"{feature_name}_bucket_{bucket_name}_unit_fraction"
-            ] = (bucket_units / active_unit_count).item()
+            self.last_metrics[f"{feature_name}_bucket_{bucket_name}_unit_fraction"] = (
+                bucket_units / active_unit_count
+            ).item()
             self.last_metrics[
                 f"{feature_name}_bucket_{bucket_name}_assignment_fraction"
-            ] = (
-                bucket_total_assignments / total_unit_assignments
-            ).item()
-            bucket_distribution = bucket_assignments / bucket_total_assignments.clamp_min(
-                1.0
+            ] = (bucket_total_assignments / total_unit_assignments).item()
+            bucket_distribution = (
+                bucket_assignments / bucket_total_assignments.clamp_min(1.0)
             )
             for expert_id, fraction in enumerate(bucket_distribution):
                 self.last_metrics[
@@ -1057,6 +1221,17 @@ def get_moe_aux_loss(module: nn.Module) -> Optional[torch.Tensor]:
         child.last_balance_loss
         for _, child in _iter_sparse_moe_modules(module)
         if child.last_balance_loss is not None
+    ]
+    if len(losses) == 0:
+        return None
+    return torch.stack(losses).mean()
+
+
+def get_moe_router_z_loss(module: nn.Module) -> Optional[torch.Tensor]:
+    losses = [
+        child.last_router_z_loss
+        for _, child in _iter_sparse_moe_modules(module)
+        if child.last_router_z_loss is not None
     ]
     if len(losses) == 0:
         return None
@@ -1111,8 +1286,11 @@ class TransformerBlock(nn.Module):
                 num_experts=args.moe_num_experts,
                 top_k=args.moe_top_k,
                 router_jitter=args.moe_router_jitter,
+                router_congestion_weight=args.moe_router_congestion_weight,
+                router_z_loss_weight=args.moe_router_z_loss_weight,
                 router_use_patch_length=args.moe_router_use_patch_length,
                 router_use_patch_entropy=args.moe_router_use_patch_entropy,
+                router_use_patch_byte_features=args.moe_router_use_patch_byte_features,
                 balance_cost=args.moe_balance_cost,
             )
             if use_moe
@@ -1137,6 +1315,7 @@ class TransformerBlock(nn.Module):
         attn_impl: str = "sdpa",
         patch_lengths: Optional[torch.Tensor] = None,
         patch_entropies: Optional[torch.Tensor] = None,
+        patch_byte_features: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         attn_out = self.attention(
             self.attention_norm(x),
@@ -1152,6 +1331,7 @@ class TransformerBlock(nn.Module):
                 h_norm,
                 patch_lengths=patch_lengths,
                 patch_entropies=patch_entropies,
+                patch_byte_features=patch_byte_features,
             )
         else:
             ffn_out = self.feed_forward(h_norm)
@@ -1204,6 +1384,7 @@ class BaseTransformer(nn.Module, SequenceModelWithOutput):
         attn_impl: str = "sdpa",
         patch_lengths: Optional[torch.Tensor] = None,
         patch_entropies: Optional[torch.Tensor] = None,
+        patch_byte_features: Optional[torch.Tensor] = None,
     ):
 
         freq_cis = self.rope_embeddings(seqlen=self.max_seqlen, tok_idx=tok_idx)
@@ -1217,6 +1398,7 @@ class BaseTransformer(nn.Module, SequenceModelWithOutput):
                 attn_impl=attn_impl,
                 patch_lengths=patch_lengths,
                 patch_entropies=patch_entropies,
+                patch_byte_features=patch_byte_features,
             )
         return h
 

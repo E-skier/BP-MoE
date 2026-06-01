@@ -21,13 +21,46 @@ from bytelatent.model.blt import (
     decoder_patch_ids_from_lengths,
     get_blt_input,
     init_embeddings,
+    patch_byte_type_features_from_tokens,
     patch_ids_from_lengths,
 )
 from bytelatent.model.latent_transformer import CrossAttention
 from bytelatent.model.utils import create_causal_mask
 from bytelatent.optim import OptimArgs, build_optimizer
-from bytelatent.tokenizers.constants import EOS_ID
+from bytelatent.tokenizers.constants import EOS_ID, OFFSET
 from bytelatent.train import compute_loss
+
+
+def test_patch_byte_type_features_from_tokens():
+    tokens = torch.tensor(
+        [
+            [
+                OFFSET + ord("a"),
+                OFFSET + ord("1"),
+                OFFSET + ord(" "),
+                OFFSET + ord("!"),
+                OFFSET + 0xC3,
+                EOS_ID,
+            ]
+        ]
+    )
+    patch_lengths = torch.tensor([[2, 3, 1, 0]])
+
+    features = patch_byte_type_features_from_tokens(tokens, patch_lengths)
+
+    torch.testing.assert_close(
+        features,
+        torch.tensor(
+            [
+                [
+                    [0.5, 0.5, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0],
+                    [0.0] * 5,
+                    [0.0] * 5,
+                ]
+            ]
+        ),
+    )
 
 
 def batch_to_tensors_and_gpu(batch):
