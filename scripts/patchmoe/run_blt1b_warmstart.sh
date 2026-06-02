@@ -23,6 +23,7 @@ LAUNCH_LOCK_DIR="$OUT_ROOT/.${RUN_NAME}.launch.lock"
 MODE="${MODE:-print}"
 GPUS="${GPUS:-0,1}"
 NPROC_PER_NODE="${NPROC_PER_NODE:-2}"
+EP_SIZE="${EP_SIZE:-$NPROC_PER_NODE}"
 STEPS="${STEPS:-1000}"
 MAX_STEPS="${MAX_STEPS:-10}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
@@ -49,6 +50,14 @@ export BLT_SUPPRESS_ATTN_ERROR="${BLT_SUPPRESS_ATTN_ERROR:-1}"
 
 if [[ "$MODE" != "print" && "$MODE" != "run" && "$MODE" != "wait" ]]; then
   echo "MODE must be print, run, or wait" >&2
+  exit 2
+fi
+if (( EP_SIZE <= 0 || NPROC_PER_NODE % EP_SIZE != 0 )); then
+  echo "EP_SIZE must be positive and divide NPROC_PER_NODE" >&2
+  exit 2
+fi
+if (( 8 % EP_SIZE != 0 )); then
+  echo "EP_SIZE must divide the configured 8 experts" >&2
   exit 2
 fi
 
@@ -179,6 +188,7 @@ cmd=(
   "model.max_seqlen=$SEQ_LEN"
   "model.max_length=$SEQ_LEN"
   "model.max_encoder_seq_length=$MAX_ENCODER_SEQ_LENGTH"
+  "model.moe_ep_size=$EP_SIZE"
   "checkpoint.path=$RUN_DIR/checkpoints"
   "checkpoint.init_ckpt_path=$INIT_CKPT_DIR"
   "distributed.dp_shard=$NPROC_PER_NODE"

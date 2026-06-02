@@ -779,6 +779,7 @@ Completed integration:
 - `scripts/patchmoe/formal_status_report.py` emits CSV/JSON status for Stage-1, 200k, and external dense-compute controls, including done/partial/todo state and held-out BPB when available.
 - BLT-1B warm-start integration has started: `scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py` converts the released dense BLT-1B checkpoint into a PatchMoE DCP initialization by preserving the byte/local/global/local-decoder trunk, expanding selected patch-level global FFNs into copied experts, and initializing new routers deterministically. `scripts/patchmoe/verify_blt1b_patchmoe_warmstart.py` verifies the full DCP key set and representative loaded tensors. The first guarded BLT-1B launcher uses the validated entropy router with byte-cost balancing on all 25 global FFN layers by default, keeps `moe_layer_frequency` as the interleaved-MoE ablation switch, and supports a locked one-time `MODE=wait` queue while GPUs are occupied.
 - A CPU-side production-loader audit materialized and loaded the complete all-layer BLT-1B PatchMoE model (`10,589,816,008` parameters, `986` state keys). It exposed and fixed the inherited dense-only top-level RoPE reset assumption: warm-start loading now calls `model.reset_rope_embeddings()`, which resets all three non-persistent BLT RoPE buffers before training.
+- All-layer BLT-1B PatchMoE now has an expert-parallel execution path. `model.moe_ep_size` partitions the eight experts across EP ranks, patch assignments use differentiable all-to-all dispatch and return collectives, and local experts are wrapped first on the orthogonal `expert_dp` mesh so outer FSDP continues to shard the shared BLT trunk without materializing every expert on every rank. Rank-local model and AdamW states save and restore through DCP while preserving complete consolidated expert keys. The guarded BLT-1B launcher defaults `EP_SIZE` to `NPROC_PER_NODE`, yielding `EP=8` for the intended eight-A100 launch. CPU/gloo equivalence, gradient, and DCP regression tests pass; the CUDA nested-FSDP smoke remains pending until GPUs are free.
 
 Formal Stage-1 queue:
 
@@ -794,7 +795,8 @@ Pending exit-criteria evidence:
 - Stage-1 BPB/load-stability comparison for the optional congestion-price control;
 - Stage-1 stability and BPB comparison for the optional router z-loss control;
 - expert utilization stability and byte-type specialization at Stage-1 scale;
-- profile results for throughput, memory, and dispatch overhead.
+- profile results for throughput, memory, and dispatch overhead;
+- guarded eight-A100 CUDA smoke for all-layer BLT-1B `EP=8` warm-start, nested FSDP materialization, and one optimizer step.
 
 ---
 

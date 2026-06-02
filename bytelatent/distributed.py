@@ -146,6 +146,24 @@ class EnvironmentArgs(BaseModel):
     TORCH_NCCL_ASYNC_ERROR_HANDLING: str = "1"
 
 
+def get_expert_parallel_mesh(expert_parallel_size: int) -> DeviceMesh | None:
+    if expert_parallel_size == 1:
+        return None
+    if expert_parallel_size <= 0:
+        raise ValueError("Expert parallel size must be positive")
+    world_size = get_world_size()
+    if world_size % expert_parallel_size != 0:
+        raise ValueError(
+            f"World size {world_size} must be divisible by expert parallel size "
+            f"{expert_parallel_size}"
+        )
+    return init_device_mesh(
+        "cuda",
+        mesh_shape=(world_size // expert_parallel_size, expert_parallel_size),
+        mesh_dim_names=("expert_dp", "ep"),
+    )
+
+
 def get_device_mesh(distributed_args: DistributedArgs):
     tp_size = distributed_args.tp_size
     dp_replicate = distributed_args.dp_replicate
@@ -487,6 +505,62 @@ def clean_env():
         os.environ.update(cluster_env)
 
 
+def _get_sparse_moe_modules(model: torch.nn.Module) -> list[torch.nn.Module]:
+    return [
+        module for module in model.modules() if getattr(module, "is_sparse_moe", False)
+    ]
+
+
+def _configure_expert_parallel(
+    model: torch.nn.Module,
+    model_args,
+    distributed_args: DistributedArgs,
+) -> DeviceMesh | None:
+    expert_parallel_size = getattr(model_args, "moe_ep_size", 1)
+    if expert_parallel_size == 1:
+        return None
+    if distributed_args.fsdp_type != "full_shard":
+        raise ValueError("Expert parallelism currently requires full_shard FSDP")
+    if distributed_args.tp_size != 1:
+        raise ValueError("Expert parallelism is not yet compatible with TP")
+
+    expert_parallel_mesh = get_expert_parallel_mesh(expert_parallel_size)
+    assert expert_parallel_mesh is not None
+    sparse_moe_modules = _get_sparse_moe_modules(model)
+    if len(sparse_moe_modules) == 0:
+        raise ValueError(
+            "Expert parallelism was requested but the model has no MoE layers"
+        )
+    ep_group = expert_parallel_mesh["ep"].get_group()
+    for module in sparse_moe_modules:
+        module.configure_expert_parallel(ep_group)
+    logger.info(
+        "Configured expert parallelism: ep_size=%s expert_dp_size=%s local_moe_layers=%s",
+        expert_parallel_mesh["ep"].size(),
+        expert_parallel_mesh["expert_dp"].size(),
+        len(sparse_moe_modules),
+    )
+    return expert_parallel_mesh
+
+
+def _fully_shard_local_experts(
+    model: torch.nn.Module,
+    expert_parallel_mesh: DeviceMesh,
+    mp_policy: MixedPrecisionPolicy,
+) -> None:
+    expert_dp_mesh = expert_parallel_mesh["expert_dp"]
+    for module in _get_sparse_moe_modules(model):
+        for expert_id in module.local_expert_ids:
+            expert = module.experts[expert_id]
+            assert expert is not None
+            module.experts[expert_id] = fully_shard(
+                expert,
+                mp_policy=mp_policy,
+                mesh=expert_dp_mesh,
+                reshard_after_forward=True,
+            )
+
+
 def parallelize_model(
     model: torch.nn.Module,
     device_mesh,
@@ -496,6 +570,10 @@ def parallelize_model(
     tp_parallelize=None,
     no_recompute_ops=None,
 ) -> torch.nn.Module:
+    expert_parallel_mesh = _configure_expert_parallel(
+        model, model_args, distributed_args
+    )
+
     if distributed_args.tp_size > 1:
         assert (
             distributed_args.fsdp_type == "full_shard"
@@ -529,13 +607,12 @@ def parallelize_model(
                 device_mesh["dp_shard"].size() == 1
             ), "dp_shard must be 1 for no_shard fsdp_type"
 
+        mp_policy = MixedPrecisionPolicy(
+            param_dtype=param_dtype,
+            reduce_dtype=torch.float32,
+        )
         fsdp_config = dict(
-            mp_policy=(
-                MixedPrecisionPolicy(
-                    param_dtype=param_dtype,
-                    reduce_dtype=torch.float32,
-                )
-            ),
+            mp_policy=mp_policy,
             mesh=(
                 device_mesh["dp_replicate", "dp_shard"]
                 if distributed_args.dp_shard > 1
@@ -543,6 +620,9 @@ def parallelize_model(
                 else device_mesh["dp_replicate"]
             ),
         )
+
+        if expert_parallel_mesh is not None:
+            _fully_shard_local_experts(model, expert_parallel_mesh, mp_policy)
 
         if fsdp_grouping_plan is None:
             # Assume that the model has list of layers and group around it

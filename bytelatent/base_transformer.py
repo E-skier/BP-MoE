@@ -6,8 +6,10 @@ from enum import Enum
 from typing import Callable, Optional, Tuple, Union
 
 import torch
+import torch.distributed as dist
 from pydantic import BaseModel, ConfigDict
 from torch import nn
+from torch.distributed.nn.functional import all_to_all_single
 from torch.nn import functional as F
 
 _ALLOW_MISSING_FLEX_ATTENTION = (
@@ -102,6 +104,7 @@ class BaseTransformerArgs(BaseModel):
     moe_num_experts: int = 0
     moe_top_k: int = 2
     moe_layer_frequency: int = 1
+    moe_ep_size: int = 1
     moe_balance_loss_weight: float = 0.0
     moe_router_jitter: float = 0.0
     moe_router_congestion_weight: float = 0.0
@@ -586,6 +589,7 @@ class SparseMoEFeedForward(nn.Module):
         ffn_dim_multiplier: Optional[float],
         num_experts: int,
         top_k: int,
+        expert_parallel_size: int = 1,
         router_jitter: float = 0.0,
         router_congestion_weight: float = 0.0,
         router_z_loss_weight: float = 0.0,
@@ -599,6 +603,13 @@ class SparseMoEFeedForward(nn.Module):
             raise ValueError("num_experts must be positive for SparseMoEFeedForward")
         if top_k <= 0:
             raise ValueError("top_k must be positive for SparseMoEFeedForward")
+        if expert_parallel_size <= 0:
+            raise ValueError("expert_parallel_size must be positive")
+        if num_experts % expert_parallel_size != 0:
+            raise ValueError(
+                "num_experts must be divisible by expert_parallel_size, got "
+                f"{num_experts} experts and EP size {expert_parallel_size}"
+            )
         if router_congestion_weight < 0:
             raise ValueError("router_congestion_weight must be non-negative")
         if router_z_loss_weight < 0:
@@ -609,6 +620,11 @@ class SparseMoEFeedForward(nn.Module):
         self.dim = dim
         self.num_experts = num_experts
         self.top_k = min(top_k, num_experts)
+        self.requested_expert_parallel_size = expert_parallel_size
+        self.expert_parallel_size = 1
+        self.expert_parallel_rank = 0
+        self.expert_parallel_group = None
+        self.local_expert_ids = tuple(range(num_experts))
         self.router_jitter = router_jitter
         self.router_congestion_weight = router_congestion_weight
         self.router_z_loss_weight = router_z_loss_weight
@@ -648,6 +664,36 @@ class SparseMoEFeedForward(nn.Module):
         self.last_balance_loss: Optional[torch.Tensor] = None
         self.last_router_z_loss: Optional[torch.Tensor] = None
         self.last_metrics: dict[str, float] = {}
+        self.last_expert_parallel_metrics: dict[str, float] = {}
+
+    def configure_expert_parallel(self, process_group=None) -> None:
+        ep_size = self.requested_expert_parallel_size
+        if ep_size == 1:
+            return
+        if not dist.is_initialized():
+            raise RuntimeError("Expert parallelism requires torch.distributed")
+        if process_group is None:
+            raise ValueError("An expert-parallel process group is required")
+        if self.expert_parallel_size != 1:
+            raise RuntimeError("Expert parallelism is already configured")
+        if dist.get_world_size(process_group) != ep_size:
+            raise ValueError(
+                "Expert-parallel process group size does not match model config: "
+                f"{dist.get_world_size(process_group)} != {ep_size}"
+            )
+
+        self.expert_parallel_size = ep_size
+        self.expert_parallel_rank = dist.get_rank(process_group)
+        self.expert_parallel_group = process_group
+        local_expert_count = self.num_experts // ep_size
+        local_expert_start = self.expert_parallel_rank * local_expert_count
+        self.local_expert_ids = tuple(
+            range(local_expert_start, local_expert_start + local_expert_count)
+        )
+        local_expert_ids = set(self.local_expert_ids)
+        for expert_id in range(self.num_experts):
+            if expert_id not in local_expert_ids:
+                self.experts[expert_id] = None
 
     def forward(
         self,
@@ -709,12 +755,48 @@ class SparseMoEFeedForward(nn.Module):
             1e-9
         )
 
+        if self.requested_expert_parallel_size > 1:
+            if self.expert_parallel_size == 1:
+                raise RuntimeError(
+                    "Expert parallelism was requested but has not been configured"
+                )
+            flat_output = self._forward_expert_parallel(
+                flat_x, top_indices, top_weights
+            )
+        else:
+            flat_output = self._forward_local(flat_x, top_indices, top_weights)
+
+        prob_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
+        prob_density = prob_density / load_weights.sum().clamp_min(1.0)
+        uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
+        self.last_balance_loss = self.num_experts * torch.sum(
+            (prob_density - uniform) ** 2
+        )
+        self._record_metrics(
+            router_probs,
+            top_indices,
+            load_weights,
+            flat_patch_lengths,
+            flat_patch_entropies,
+            flat_patch_byte_features,
+            congestion_price,
+            pre_congestion_router_probs,
+        )
+        return flat_output.reshape_as(x)
+
+    def _forward_local(
+        self,
+        flat_x: torch.Tensor,
+        top_indices: torch.Tensor,
+        top_weights: torch.Tensor,
+    ) -> torch.Tensor:
         flat_output = torch.zeros_like(flat_x)
         empty_expert_dependency = flat_x.new_zeros(())
         for expert_rank in range(self.top_k):
             rank_expert_ids = top_indices[:, expert_rank]
             rank_weights = top_weights[:, expert_rank].to(flat_x.dtype)
             for expert_id, expert in enumerate(self.experts):
+                assert expert is not None
                 token_ids = torch.where(rank_expert_ids == expert_id)[0]
                 if token_ids.numel() == 0:
                     if self.training:
@@ -734,24 +816,104 @@ class SparseMoEFeedForward(nn.Module):
 
         if self.training:
             flat_output = flat_output + empty_expert_dependency
+        return flat_output
 
-        prob_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
-        prob_density = prob_density / load_weights.sum().clamp_min(1.0)
-        uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
-        self.last_balance_loss = self.num_experts * torch.sum(
-            (prob_density - uniform) ** 2
+    def _forward_expert_parallel(
+        self,
+        flat_x: torch.Tensor,
+        top_indices: torch.Tensor,
+        top_weights: torch.Tensor,
+    ) -> torch.Tensor:
+        assert self.expert_parallel_group is not None
+        local_expert_count = self.num_experts // self.expert_parallel_size
+        flat_expert_ids = top_indices.reshape(-1)
+        flat_token_ids = (
+            torch.arange(flat_x.shape[0], device=flat_x.device)
+            .unsqueeze(-1)
+            .expand_as(top_indices)
+            .reshape(-1)
         )
-        self._record_metrics(
-            router_probs,
-            top_indices,
-            load_weights,
-            flat_patch_lengths,
-            flat_patch_entropies,
-            flat_patch_byte_features,
-            congestion_price,
-            pre_congestion_router_probs,
+        expert_owners = torch.div(
+            flat_expert_ids, local_expert_count, rounding_mode="floor"
         )
-        return flat_output.reshape_as(x)
+        send_order = torch.argsort(expert_owners)
+        send_counts = torch.bincount(expert_owners, minlength=self.expert_parallel_size)
+        recv_counts = torch.empty_like(send_counts)
+        dist.all_to_all_single(
+            recv_counts,
+            send_counts,
+            group=self.expert_parallel_group,
+        )
+        send_count_list = send_counts.tolist()
+        recv_count_list = recv_counts.tolist()
+
+        ordered_token_ids = flat_token_ids.index_select(0, send_order)
+        send_x = flat_x.index_select(0, ordered_token_ids).contiguous()
+        recv_x = flat_x.new_empty((sum(recv_count_list), flat_x.shape[-1]))
+        recv_x = all_to_all_single(
+            recv_x,
+            send_x,
+            output_split_sizes=recv_count_list,
+            input_split_sizes=send_count_list,
+            group=self.expert_parallel_group,
+        )
+
+        send_expert_ids = flat_expert_ids.index_select(0, send_order).contiguous()
+        recv_expert_ids = send_expert_ids.new_empty((sum(recv_count_list),))
+        dist.all_to_all_single(
+            recv_expert_ids,
+            send_expert_ids,
+            output_split_sizes=recv_count_list,
+            input_split_sizes=send_count_list,
+            group=self.expert_parallel_group,
+        )
+
+        recv_output = torch.zeros_like(recv_x)
+        empty_expert_dependency = flat_x.new_zeros(())
+        for expert_id in self.local_expert_ids:
+            expert = self.experts[expert_id]
+            assert expert is not None
+            token_ids = torch.where(recv_expert_ids == expert_id)[0]
+            expert_input = recv_x.index_select(0, token_ids)
+            expert_output = expert(expert_input)
+            if token_ids.numel() == 0:
+                # Expert-DP replicas must enter the same nested FSDP collectives.
+                empty_expert_dependency = (
+                    empty_expert_dependency + expert_output.sum() * 0.0
+                )
+            else:
+                recv_output.index_copy_(0, token_ids, expert_output)
+        recv_output = recv_output + empty_expert_dependency
+
+        returned_output = send_x.new_empty(send_x.shape)
+        returned_output = all_to_all_single(
+            returned_output,
+            recv_output,
+            output_split_sizes=send_count_list,
+            input_split_sizes=recv_count_list,
+            group=self.expert_parallel_group,
+        )
+        flat_assignment_output = torch.empty_like(returned_output)
+        flat_assignment_output.index_copy_(0, send_order, returned_output)
+        flat_assignment_output = flat_assignment_output * top_weights.reshape(-1, 1).to(
+            flat_x.dtype
+        )
+        flat_output = torch.zeros_like(flat_x)
+        flat_output.index_add_(0, flat_token_ids, flat_assignment_output)
+
+        self.last_expert_parallel_metrics = {
+            "ep_size": float(self.expert_parallel_size),
+            "ep_rank": float(self.expert_parallel_rank),
+            "ep_dispatched_assignments": float(send_x.shape[0]),
+            "ep_received_assignments": float(recv_x.shape[0]),
+            "ep_max_send_assignments": float(send_counts.max().item()),
+            "ep_max_recv_assignments": float(recv_counts.max().item()),
+            "ep_all_to_all_bytes": float(
+                2 * send_x.numel() * send_x.element_size()
+                + send_expert_ids.numel() * send_expert_ids.element_size()
+            ),
+        }
+        return flat_output
 
     def _prepare_patch_lengths(
         self, x: torch.Tensor, patch_lengths: Optional[torch.Tensor]
@@ -955,6 +1117,7 @@ class SparseMoEFeedForward(nn.Module):
             ),
             "router_z_loss_weight": self.router_z_loss_weight,
         }
+        self.last_metrics.update(self.last_expert_parallel_metrics)
         if congestion_price is not None and pre_congestion_router_probs is not None:
             pre_prob_density = (
                 pre_congestion_router_probs * load_weights.unsqueeze(-1)
@@ -1207,7 +1370,8 @@ class SparseMoEFeedForward(nn.Module):
                 b=3 * router_init_std,
             )
         for expert in self.experts:
-            expert.reset_parameters(init_std, factor)
+            if expert is not None:
+                expert.reset_parameters(init_std, factor)
 
 
 def _iter_sparse_moe_modules(module: nn.Module):
@@ -1285,6 +1449,7 @@ class TransformerBlock(nn.Module):
             dict(
                 num_experts=args.moe_num_experts,
                 top_k=args.moe_top_k,
+                expert_parallel_size=args.moe_ep_size,
                 router_jitter=args.moe_router_jitter,
                 router_congestion_weight=args.moe_router_congestion_weight,
                 router_z_loss_weight=args.moe_router_z_loss_weight,
