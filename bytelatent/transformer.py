@@ -21,12 +21,12 @@ try:
 except ImportError:
     AttentionBias = object
 
-from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     BaseTransformer,
     BaseTransformerArgs,
     cross_entropy,
 )
+from bytelatent.initialization import trunc_normal_
 from bytelatent.model.utils import create_causal_mask
 
 logger = logging.getLogger()

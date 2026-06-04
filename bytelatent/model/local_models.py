@@ -15,13 +15,13 @@ try:
 except ImportError:
     AttentionBias = object
 
-from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     BaseTransformerArgs,
     InitStdFactor,
     RotaryEmbedding,
     TransformerBlock,
 )
+from bytelatent.initialization import trunc_normal_
 from bytelatent.model.latent_transformer import CrossAttention
 from bytelatent.model.utils import create_causal_mask, downsample
 from bytelatent.tokenizers.blt_tokenizer import BOE_ID

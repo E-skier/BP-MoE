@@ -10,7 +10,6 @@ from torch import nn
 from torch.nn.attention.flex_attention import create_block_mask
 from typing_extensions import Self
 
-from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     PATCH_BYTE_TYPE_NAMES,
     BaseTransformerArgs,
@@ -18,6 +17,7 @@ from bytelatent.base_transformer import (
     SequenceModelWithOutput,
 )
 from bytelatent.data.patcher import Patcher, PatcherArgs
+from bytelatent.initialization import trunc_normal_
 from bytelatent.model.latent_transformer import GlobalTransformer
 from bytelatent.model.local_models import LocalDecoder, LocalEncoder, LocalModelArgs
 from bytelatent.model.utils import downsample

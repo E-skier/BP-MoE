@@ -12,7 +12,6 @@ try:
 except ImportError:
     AttentionBias = object
 
-from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     BaseTransformer,
     BaseTransformerArgs,
@@ -20,6 +19,7 @@ from bytelatent.base_transformer import (
     flex_attention_comp,
     repeat_kv,
 )
+from bytelatent.initialization import trunc_normal_
 from bytelatent.model.utils import create_causal_mask
 
 logger = logging.getLogger()
