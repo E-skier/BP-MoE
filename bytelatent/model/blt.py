@@ -10,6 +10,7 @@ from torch import nn
 from torch.nn.attention.flex_attention import create_block_mask
 from typing_extensions import Self
 
+from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     PATCH_BYTE_TYPE_NAMES,
     BaseTransformerArgs,
@@ -1165,7 +1166,7 @@ class ByteLatentTransformer(
 
         emb_std = self.local_encoder.dim ** (-0.5)
         for emb in self.encoder_hash_tok_embedding:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 emb.weight,
                 mean=0.0,
                 std=emb_std,

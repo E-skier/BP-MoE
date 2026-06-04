@@ -1,0 +1,74 @@
+# BLT-1B PatchMoE continued-pretraining configuration.
+#
+# Inherit the released BLT-1B architecture exactly, then replace selected
+# patch-level global Transformer FFNs with 8-expert Top-2 PatchMoE FFNs.
+# Paths and short-run sequence lengths are supplied by the launcher.
+
+config: /data/zydata/BP-MoE/hf-weights/blt_1b/params.json
+
+name: "patchmoe_blt1b_warmstart_entropy_all_layers"
+dump_dir: ???
+steps: 1000
+max_steps: 10
+
+optim:
+  lr: 5e-05
+  warmup: 100
+  lr_min_ratio: 0.1
+  clip: 1.0
+
+distributed:
+  fsdp_type: full_shard
+  dp_shard: 2
+  dp_replicate: 1
+  model_dtype: bf16
+  selective_activation_checkpointing: true
+  compile: false
+  tp_size: 1
+
+model:
+  # Preprocessed entropy patches are passed into forward by the dataloader.
+  patch_in_forward: false
+  log_patch_lengths: true
+
+  # First BLT-1B warm-start candidate: use the previously validated entropy
+  # router and byte-cost balance. All 25 global FFNs use MoE by default;
+  # moe_layer_frequency remains available for interleaved-MoE ablations. Newer
+  # byte-type/congestion/z-loss controls remain separate until formal completion.
+  moe_num_experts: 8
+  moe_top_k: 2
+  moe_layer_frequency: 1
+  # The launcher overrides this with EP_SIZE, defaulting to NPROC_PER_NODE.
+  moe_ep_size: 1
+  moe_balance_loss_weight: 0.05
+  moe_router_jitter: 0.01
+  moe_router_congestion_weight: 0.0
+  moe_router_z_loss_weight: 0.0
+  moe_router_use_patch_length: false
+  moe_router_use_patch_entropy: true
+  moe_router_use_patch_byte_features: false
+  moe_balance_cost: "byte"
+
+data:
+  root_dir: ???
+  sources:
+    fineweb_edu_10bt: 1.0
+  batch_size: 1
+  load_async: false
+  preprocess_dir: ???
+  entropy_model_name: "transformer_100m"
+
+checkpoint:
+  path: ???
+  init_ckpt_path: ???
+  dump:
+    every: 100
+    keep: 1
+  eval:
+    every: 100
+    keep: 1
+
+logging:
+  freq: 1
+
+eval: null

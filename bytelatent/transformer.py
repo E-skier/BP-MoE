@@ -20,6 +20,7 @@ try:
 except ImportError:
     AttentionBias = object
 
+from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     BaseTransformer,
     BaseTransformerArgs,
@@ -145,7 +146,7 @@ class LMTransformer(
     def init_weights(self):
         self.reset_parameters()
         init_std = self.dim ** (-0.5)
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.tok_embeddings.weight,
             mean=0.0,
             std=init_std,
@@ -155,7 +156,7 @@ class LMTransformer(
         super().init_weights()
 
         if not self.weight_tying:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.output.weight,
                 mean=0.0,
                 std=init_std,
@@ -181,9 +182,19 @@ def build_fsdp_grouping_plan(model_args: LMTransformerArgs):
 
         group_plan.append(("output", True))
     else:
+        group_plan.append(("local_encoder.tok_embeddings", False))
+        if model_args.cross_attn_encoder and model_args.cross_attn_init_by_pooling:
+            group_plan.append(("local_encoder.patch_embedding_projection", False))
+
         for i in range(model_args.n_layers_local_encoder):
             group_plan.append((f"local_encoder.layers.{i}", False))
             group_plan.append((f"local_encoder.cross_attn_layers.{i}", False))
+
+        if model_args.cross_attn_decoder:
+            group_plan.append(("local_decoder.patch_embedding_projection", False))
+        group_plan.append(("local_decoder.norm", False))
+        group_plan.append(("local_decoder.output", False))
+
         for i in range(model_args.n_layers_local_decoder):
             group_plan.append((f"local_decoder.layers.{i}", False))
             group_plan.append((f"local_decoder.cross_attn_layers.{i}", False))

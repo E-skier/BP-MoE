@@ -30,6 +30,7 @@ class PatchMoEWarmStartSpec:
     patch_features: tuple[str, ...] = ("entropy",)
     router_seed: int = 42
     init_std_factor: str = "current_depth"
+    expert_ffn_dim_multiplier: float | None = None
 
     def __post_init__(self):
         if self.num_experts <= 0:
@@ -43,6 +44,8 @@ class PatchMoEWarmStartSpec:
             raise ValueError(f"Unknown patch features: {sorted(unknown_features)}")
         if len(set(self.patch_features)) != len(self.patch_features):
             raise ValueError("patch_features must not contain duplicates")
+        if self.expert_ffn_dim_multiplier is not None and self.expert_ffn_dim_multiplier <= 0:
+            raise ValueError("expert_ffn_dim_multiplier must be positive")
         if self.init_std_factor not in {
             "disabled",
             "current_depth",
@@ -133,6 +136,24 @@ def _truncated_normal(
     return tensor.to(dtype=dtype)
 
 
+def _scale_dense_ffn_weight(
+    weight: torch.Tensor,
+    weight_name: str,
+    expert_ffn_dim_multiplier: float | None,
+) -> torch.Tensor:
+    if expert_ffn_dim_multiplier is None:
+        return weight
+    if weight_name in {"w1", "w3"}:
+        hidden_dim = weight.shape[0]
+        target_hidden_dim = int(math.ceil(hidden_dim * expert_ffn_dim_multiplier / 256) * 256)
+        return weight[:target_hidden_dim, :].contiguous()
+    if weight_name == "w2":
+        hidden_dim = weight.shape[1]
+        target_hidden_dim = int(math.ceil(hidden_dim * expert_ffn_dim_multiplier / 256) * 256)
+        return weight[:, :target_hidden_dim].contiguous()
+    raise ValueError(f"Unknown FFN weight: {weight_name}")
+
+
 def convert_dense_state_dict_to_patchmoe(
     dense_state_dict: Mapping[str, torch.Tensor],
     spec: PatchMoEWarmStartSpec,
@@ -158,8 +179,11 @@ def convert_dense_state_dict_to_patchmoe(
         layer_idx = int(match.group("layer"))
         weight_name = match.group("weight")
         prefix = f"global_transformer.layers.{layer_idx}.feed_forward"
+        expert_value = _scale_dense_ffn_weight(
+            value, weight_name, spec.expert_ffn_dim_multiplier
+        )
         for expert_idx in range(spec.num_experts):
-            converted[f"{prefix}.experts.{expert_idx}.{weight_name}.weight"] = value
+            converted[f"{prefix}.experts.{expert_idx}.{weight_name}.weight"] = expert_value
 
     for layer_idx in selected_layers:
         weights = layer_weights[layer_idx]

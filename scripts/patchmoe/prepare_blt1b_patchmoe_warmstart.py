@@ -41,6 +41,7 @@ def parse_args():
     )
     parser.add_argument("--router-seed", type=int, default=42)
     parser.add_argument("--init-std-factor", default="current_depth")
+    parser.add_argument("--expert-ffn-dim-multiplier", type=float, default=None)
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -66,6 +67,7 @@ def main():
         patch_features=patch_features,
         router_seed=args.router_seed,
         init_std_factor=args.init_std_factor,
+        expert_ffn_dim_multiplier=args.expert_ffn_dim_multiplier,
     )
     source = Path(args.source)
     if not source.is_file():

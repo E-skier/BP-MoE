@@ -12,6 +12,7 @@ try:
 except ImportError:
     AttentionBias = object
 
+from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     BaseTransformer,
     BaseTransformerArgs,
@@ -123,7 +124,7 @@ class CrossAttention(nn.Module):
     def init_weights(self, base_std: float, factor: float = 1.0):
         std = base_std or (self.dim ** (-0.5)) / factor
 
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.wq.weight,
             mean=0.0,
             std=std,
@@ -131,7 +132,7 @@ class CrossAttention(nn.Module):
             b=3 * std,
         )
 
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.wk.weight,
             mean=0.0,
             std=std,
@@ -139,7 +140,7 @@ class CrossAttention(nn.Module):
             b=3 * std,
         )
 
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.wv.weight,
             mean=0.0,
             std=std,
@@ -147,7 +148,7 @@ class CrossAttention(nn.Module):
             b=3 * std,
         )
 
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.wo.weight,
             mean=0.0,
             std=std,
@@ -224,7 +225,7 @@ class GlobalTransformer(BaseTransformer):
         super().init_weights()
         std = self.dim_token_emb ** (-0.5)
         if self.token_embedding_projection is not None:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.token_embedding_projection.weight,
                 mean=0.0,
                 std=std,

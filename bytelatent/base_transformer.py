@@ -47,6 +47,7 @@ except ImportError:
     AttentionBias = object
     fmha = None
 
+from bytelatent.initialization import trunc_normal_
 from bytelatent.tokenizers.constants import EOS_ID
 
 logger = logging.getLogger()
@@ -105,6 +106,7 @@ class BaseTransformerArgs(BaseModel):
     moe_top_k: int = 2
     moe_layer_frequency: int = 1
     moe_ep_size: int = 1
+    moe_ffn_dim_multiplier: float | None = None
     moe_balance_loss_weight: float = 0.0
     moe_router_jitter: float = 0.0
     moe_router_congestion_weight: float = 0.0
@@ -493,7 +495,7 @@ class Attention(nn.Module):
         init_std = init_std or (self.dim ** (-0.5)) / factor
 
         for w in [self.wq, self.wk, self.wv]:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 w.weight,
                 mean=0.0,
                 std=init_std,
@@ -501,7 +503,7 @@ class Attention(nn.Module):
                 b=3 * init_std,
             )
 
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.wo.weight,
             mean=0.0,
             std=init_std,
@@ -557,21 +559,21 @@ class FeedForward(nn.Module):
         in_init_std = init_std or (self.dim ** (-0.5)) / factor
         out_init_std = init_std or (self.hidden_dim ** (-0.5)) / factor
 
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.w1.weight,
             mean=0.0,
             std=in_init_std,
             a=-3 * in_init_std,
             b=3 * in_init_std,
         )
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.w2.weight,
             mean=0.0,
             std=out_init_std,
             a=-3 * out_init_std,
             b=3 * out_init_std,
         )
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.w3.weight,
             mean=0.0,
             std=in_init_std,
@@ -838,12 +840,18 @@ class SparseMoEFeedForward(nn.Module):
         )
         send_order = torch.argsort(expert_owners)
         send_counts = torch.bincount(expert_owners, minlength=self.expert_parallel_size)
-        recv_counts = torch.empty_like(send_counts)
-        dist.all_to_all_single(
-            recv_counts,
-            send_counts,
+        gathered_send_counts = torch.empty(
+            self.expert_parallel_size,
+            self.expert_parallel_size,
+            device=send_counts.device,
+            dtype=send_counts.dtype,
+        )
+        dist.all_gather_into_tensor(
+            gathered_send_counts,
+            send_counts.contiguous(),
             group=self.expert_parallel_group,
         )
+        recv_counts = gathered_send_counts[:, self.expert_parallel_rank].contiguous()
         send_count_list = send_counts.tolist()
         recv_count_list = recv_counts.tolist()
 
@@ -875,7 +883,7 @@ class SparseMoEFeedForward(nn.Module):
             assert expert is not None
             token_ids = torch.where(recv_expert_ids == expert_id)[0]
             expert_input = recv_x.index_select(0, token_ids)
-            expert_output = expert(expert_input)
+            expert_output = expert(expert_input).to(recv_output.dtype)
             if token_ids.numel() == 0:
                 # Expert-DP replicas must enter the same nested FSDP collectives.
                 empty_expert_dependency = (
@@ -1354,7 +1362,7 @@ class SparseMoEFeedForward(nn.Module):
 
     def reset_parameters(self, init_std=None, factor=1.0):
         router_init_std = init_std or (self.dim ** (-0.5)) / factor
-        nn.init.trunc_normal_(
+        trunc_normal_(
             self.router.weight,
             mean=0.0,
             std=router_init_std,
@@ -1362,7 +1370,7 @@ class SparseMoEFeedForward(nn.Module):
             b=3 * router_init_std,
         )
         if self.patch_feature_router is not None:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.patch_feature_router.weight,
                 mean=0.0,
                 std=router_init_std,
@@ -1450,6 +1458,11 @@ class TransformerBlock(nn.Module):
                 num_experts=args.moe_num_experts,
                 top_k=args.moe_top_k,
                 expert_parallel_size=args.moe_ep_size,
+                ffn_dim_multiplier=(
+                    args.moe_ffn_dim_multiplier
+                    if args.moe_ffn_dim_multiplier is not None
+                    else args.ffn_dim_multiplier
+                ),
                 router_jitter=args.moe_router_jitter,
                 router_congestion_weight=args.moe_router_congestion_weight,
                 router_z_loss_weight=args.moe_router_z_loss_weight,
@@ -1465,7 +1478,9 @@ class TransformerBlock(nn.Module):
             dim=args.dim,
             hidden_dim=4 * args.dim,
             multiple_of=args.multiple_of,
-            ffn_dim_multiplier=args.ffn_dim_multiplier,
+            ffn_dim_multiplier=(
+                args.ffn_dim_multiplier if not use_moe else ffn_kwargs.pop("ffn_dim_multiplier")
+            ),
             **ffn_kwargs,
         )
         self.attention_norm = RMSNorm(args.dim, eps=args.norm_eps)

@@ -26,6 +26,7 @@ CANDIDATE_NAME="${CANDIDATE_NAME:-candidate_entropy_router_entropy_byte}"
 STEPS="${STEPS:-100000}"
 MAX_STEPS="${MAX_STEPS:-$STEPS}"
 NPROC_PER_NODE="${NPROC_PER_NODE:-2}"
+EP_SIZE="${EP_SIZE:-$NPROC_PER_NODE}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
 SEQ_LEN="${SEQ_LEN:-2048}"
 GRAD_ACC_STEPS="${GRAD_ACC_STEPS:-1}"
@@ -54,9 +55,20 @@ KNOWN_VARIANTS="dense byte_hidden_only_w005 byte_entropy_w005 byte_type_w005 byt
 FORCE_TRAIN="${FORCE_TRAIN:-0}"
 FORCE_EVAL="${FORCE_EVAL:-0}"
 
+if (( EP_SIZE <= 0 || NPROC_PER_NODE % EP_SIZE != 0 )); then
+  echo "EP_SIZE must be positive and divide NPROC_PER_NODE" >&2
+  exit 2
+fi
+if (( 8 % EP_SIZE != 0 )); then
+  echo "EP_SIZE must divide the configured 8 experts" >&2
+  exit 2
+fi
+
 export PYTHONPATH="$ROOT_DIR:${PYTHONPATH:-}"
 export BLT_ALLOW_MISSING_FLEX_ATTENTION="${BLT_ALLOW_MISSING_FLEX_ATTENTION:-1}"
 export BLT_SUPPRESS_ATTN_ERROR="${BLT_SUPPRESS_ATTN_ERROR:-1}"
+export NCCL_P2P_DISABLE="${NCCL_P2P_DISABLE:-1}"
+export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
 
 final_step_dir="$(printf "%010d" "$STEPS")"
 preprocessed_source_dir="$PREPROCESS_DIR/$SOURCE/$ENTROPY_MODEL_NAME"
@@ -421,10 +433,13 @@ train_variant() {
     "data.preprocess_dir=$PREPROCESS_DIR" \
     "data.entropy_model_name=$ENTROPY_MODEL_NAME" \
     "data.tokenizer_args.init_kwargs.bpe_tokenizer_path=$TOKENIZER_PATH" \
+    "model.moe_ep_size=$EP_SIZE" \
     "checkpoint.path=$run_dir/checkpoints" \
     "distributed.dp_shard=$NPROC_PER_NODE" \
     "distributed.dp_replicate=1" \
     "eval_on_gpus=$NPROC_PER_NODE" \
+    "optim.fused=false" \
+    "optim.clip=0" \
     "env.ENABLE_INTRA_NODE_COMM=\"$ENABLE_INTRA_NODE_COMM\"" \
     "env.NCCL_DEBUG=WARN" \
     "${overrides[@]}"

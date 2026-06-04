@@ -27,7 +27,7 @@ def load_entropy_model(entropy_model_checkpoint_dir, state_dict_path, device="cp
         ffn_dim_multiplier=model_params["ffn_dim_multiplier"],
         vocab_size=model_params["vocab_size"],
         attn_bias_type="local_block_causal",
-        attn_impl="xformers",
+        attn_impl=os.environ.get("ENTROPY_MODEL_ATTN_IMPL", "xformers"),
         sliding_window=512,
     )
     entropy_model = LMTransformer(entropy_model_args)

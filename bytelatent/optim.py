@@ -19,6 +19,7 @@ class OptimArgs(BaseModel):
     beta1: float = 0.9
     beta2: float = 0.95
     clip: float = 1.0
+    fused: bool = True
 
     scheduler: str = "cosine"
     warmup: int = 2000
@@ -151,7 +152,7 @@ def build_optimizer(model: nn.Module, args: OptimArgs, n_steps: int):
         betas=(args.beta1, args.beta2),
         weight_decay=args.weight_decay,
         eps=args.epsilon,
-        fused=True,  # Faster optim.step but can throw errors
+        fused=args.fused,  # Faster optim.step but can throw errors
     )
 
     # scheduler

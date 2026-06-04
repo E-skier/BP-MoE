@@ -592,24 +592,27 @@ def train(args: TrainArgs):
             step_tok_losses.append(tok_loss / train_state.scale)
 
             trace_train_phase(trace_step, train_state.acc_step, "before_grad_clip")
-            world_size = get_world_size()
-            if 1 < world_size <= 8:
-                # For some reason, there are errors in reduces due to
-                # not working for non-bf16 numbers. This function is a patched
-                # version that converts gradients to bf16 before computing norms.
-                # The error only happens in distributed training on one node,
-                # hence the guard
-                grad_norm = fixed_clip_grad_norm_(
-                    model.parameters(), max_norm=args.optim.clip, foreach=True
-                )
+            if args.optim.clip <= 0:
+                grad_norm = 0.0
             else:
-                grad_norm = torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), max_norm=args.optim.clip, foreach=True
-                )
+                world_size = get_world_size()
+                if 1 < world_size <= 8:
+                    # For some reason, there are errors in reduces due to
+                    # not working for non-bf16 numbers. This function is a patched
+                    # version that converts gradients to bf16 before computing norms.
+                    # The error only happens in distributed training on one node,
+                    # hence the guard
+                    grad_norm = fixed_clip_grad_norm_(
+                        model.parameters(), max_norm=args.optim.clip, foreach=True
+                    )
+                else:
+                    grad_norm = torch.nn.utils.clip_grad_norm_(
+                        model.parameters(), max_norm=args.optim.clip, foreach=True
+                    )
 
-            grad_norm = (
-                grad_norm.full_tensor() if isinstance(grad_norm, DTensor) else grad_norm
-            ).item()
+                grad_norm = (
+                    grad_norm.full_tensor() if isinstance(grad_norm, DTensor) else grad_norm
+                ).item()
             trace_train_phase(trace_step, train_state.acc_step, "after_grad_clip")
 
             # optimizer step

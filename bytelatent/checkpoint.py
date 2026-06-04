@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import time
 
 import fsspec
 import s3fs
@@ -38,6 +39,15 @@ CONSOLIDATE_NAME = "consolidated.pth"
 CONFIG_NAME = "params.json"
 TRAIN_STATE_NAME = "train_state_{:05d}.json"
 RE_DIGITS = re.compile(r"\d+")
+
+
+def _dist_barrier() -> None:
+    if not dist.is_initialized():
+        return
+    if torch.cuda.is_available():
+        dist.barrier(device_ids=[torch.cuda.current_device()])
+    else:
+        dist.barrier()
 
 
 class SaveEvery(BaseModel):
@@ -180,7 +190,7 @@ class CheckpointManager:
                         self.fs.rmdir(file)
                 self.fs.rmdir(folder)
 
-        dist.barrier()
+        _dist_barrier()
 
         self.existing_saves = list(folder_to_keep)
         self.existing_saves.sort(key=lambda p: _get_key_step(os.path.basename(p)))
@@ -199,7 +209,7 @@ class CheckpointManager:
         if get_is_master():
             self.fs.mkdirs(folder, exist_ok=True)
         if dist.is_initialized():
-            dist.barrier()
+            _dist_barrier()
         return folder
 
     def _get_dp_tp_mesh(self, device_mesh: DeviceMesh | None = None) -> tuple[int, int]:
@@ -240,7 +250,7 @@ class CheckpointManager:
         logger.info(f"Saving to: {curr_save_dir}")
 
         if dist.is_initialized():
-            dist.barrier()
+            _dist_barrier()
 
         logger.info("Saving...")
         state_dict = self.get_state_dict(model, optimizer)
@@ -248,7 +258,7 @@ class CheckpointManager:
         logger.info("State dict saved!")
 
         if dist.is_initialized():
-            dist.barrier()
+            _dist_barrier()
 
         print("config type", type(config))
         if get_is_master():
@@ -271,7 +281,7 @@ class CheckpointManager:
         self.clean_up()
 
         if dist.is_initialized():
-            dist.barrier()
+            _dist_barrier()
         return True
 
     @torch.no_grad()
@@ -321,7 +331,11 @@ class CheckpointManager:
     def instantiate_and_make_dir(cls, args: CheckpointArgs):
         if get_is_master():
             os.makedirs(args.path, exist_ok=True)
-        dist.barrier()
+        deadline = time.monotonic() + 60.0
+        while args.path is not None and not os.path.isdir(args.path):
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"Timed out waiting for checkpoint path: {args.path}")
+            time.sleep(0.1)
 
         return cls(args)
 

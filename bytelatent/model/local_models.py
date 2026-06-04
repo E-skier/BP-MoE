@@ -15,6 +15,7 @@ try:
 except ImportError:
     AttentionBias = object
 
+from bytelatent.initialization import trunc_normal_
 from bytelatent.base_transformer import (
     BaseTransformerArgs,
     InitStdFactor,
@@ -148,7 +149,7 @@ class LocalModelBase(nn.Module):
 
         init_std = init_std or (self.dim ** (-0.5))
         if hasattr(self, "tok_embeddings"):
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.tok_embeddings.weight,
                 mean=0.0,
                 std=init_std,
@@ -156,7 +157,7 @@ class LocalModelBase(nn.Module):
                 b=3 * init_std,
             )
         if self.pos_embeddings is not None:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.pos_embeddings.weight,
                 mean=0.0,
                 std=init_std,
@@ -175,7 +176,7 @@ class LocalModelBase(nn.Module):
             layer.init_weights(None, factor)
 
         if hasattr(self, "output"):
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.output.weight,
                 mean=0.0,
                 std=init_std,
@@ -184,7 +185,7 @@ class LocalModelBase(nn.Module):
             )
 
         if self.token_embedding_projection is not None:
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.token_embedding_projection.weight,
                 mean=0.0,
                 std=init_std,
@@ -194,7 +195,7 @@ class LocalModelBase(nn.Module):
 
         if self.patch_embedding_projection is not None:
             patch_emb_std = self.dim_patch_emb ** (-0.5)
-            nn.init.trunc_normal_(
+            trunc_normal_(
                 self.patch_embedding_projection.weight,
                 mean=0.0,
                 std=patch_emb_std,

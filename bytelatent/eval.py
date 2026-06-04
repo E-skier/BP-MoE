@@ -41,6 +41,7 @@ from bytelatent.distributed import (
     dist_mean_dict,
     dist_sum,
     get_device_mesh,
+    get_expert_parallel_mesh,
     get_global_rank,
     get_world_size,
     setup_torch_distributed,
@@ -66,6 +67,41 @@ def all_dicts_same(dict_list):
     # Compare each dictionary to the first one
     first_dict = dict_list[0]
     return all(d == first_dict for d in dict_list)
+
+
+def configure_eval_expert_parallel(model, train_cfg: TrainArgs) -> None:
+    if train_cfg.train_entropy_model or train_cfg.model is None:
+        return
+    expert_parallel_size = train_cfg.model.moe_ep_size
+    if expert_parallel_size == 1:
+        return
+    sparse_moe_modules = [
+        module for module in model.modules() if getattr(module, "is_sparse_moe", False)
+    ]
+    if len(sparse_moe_modules) == 0:
+        raise RuntimeError(
+            "Expert parallelism was requested but the model has no MoE layers"
+        )
+    if get_world_size() < expert_parallel_size:
+        for module in sparse_moe_modules:
+            module.requested_expert_parallel_size = 1
+        logger.info(
+            "Using local full-expert eval for EP checkpoint: train_ep_size=%s local_moe_layers=%s",
+            expert_parallel_size,
+            len(sparse_moe_modules),
+        )
+        return
+
+    expert_parallel_mesh = get_expert_parallel_mesh(expert_parallel_size)
+    assert expert_parallel_mesh is not None
+    ep_group = expert_parallel_mesh["ep"].get_group()
+    for module in sparse_moe_modules:
+        module.configure_expert_parallel(ep_group)
+    logger.info(
+        "Configured eval expert parallelism: ep_size=%s local_moe_layers=%s",
+        expert_parallel_mesh["ep"].size(),
+        len(sparse_moe_modules),
+    )
 
 
 class MockAccelerator:
@@ -279,6 +315,7 @@ def launch_eval(eval_args: EvalArgs):
     model, tokenizer, train_cfg = load_consolidated_model_and_tokenizer(
         consolidate_path,
     )
+    configure_eval_expert_parallel(model, train_cfg)
     pad_id = 0 if train_cfg.data.tokenizer_args.name == "bytes" else tokenizer.boe_id
     model.eval()
     logger.info("Model loaded")
