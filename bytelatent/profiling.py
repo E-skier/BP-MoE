@@ -10,6 +10,7 @@ import torch.distributed
 import wandb
 from pydantic import BaseModel
 from torch.profiler.profiler import profile
+
 try:
     import xformers.profiler as xformers_profiler
     from xformers.profiler import MemSnapshotsProfiler, PyTorchProfiler
@@ -21,6 +22,7 @@ except ImportError:
 
     class MemSnapshotsProfiler:
         pass
+
 
 from bytelatent.distributed import get_is_master
 

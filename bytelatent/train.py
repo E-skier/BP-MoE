@@ -611,7 +611,9 @@ def train(args: TrainArgs):
                     )
 
                 grad_norm = (
-                    grad_norm.full_tensor() if isinstance(grad_norm, DTensor) else grad_norm
+                    grad_norm.full_tensor()
+                    if isinstance(grad_norm, DTensor)
+                    else grad_norm
                 ).item()
             trace_train_phase(trace_step, train_state.acc_step, "after_grad_clip")
 

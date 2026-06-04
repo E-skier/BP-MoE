@@ -1479,7 +1479,9 @@ class TransformerBlock(nn.Module):
             hidden_dim=4 * args.dim,
             multiple_of=args.multiple_of,
             ffn_dim_multiplier=(
-                args.ffn_dim_multiplier if not use_moe else ffn_kwargs.pop("ffn_dim_multiplier")
+                args.ffn_dim_multiplier
+                if not use_moe
+                else ffn_kwargs.pop("ffn_dim_multiplier")
             ),
             **ffn_kwargs,
         )

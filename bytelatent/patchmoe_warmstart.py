@@ -44,7 +44,10 @@ class PatchMoEWarmStartSpec:
             raise ValueError(f"Unknown patch features: {sorted(unknown_features)}")
         if len(set(self.patch_features)) != len(self.patch_features):
             raise ValueError("patch_features must not contain duplicates")
-        if self.expert_ffn_dim_multiplier is not None and self.expert_ffn_dim_multiplier <= 0:
+        if (
+            self.expert_ffn_dim_multiplier is not None
+            and self.expert_ffn_dim_multiplier <= 0
+        ):
             raise ValueError("expert_ffn_dim_multiplier must be positive")
         if self.init_std_factor not in {
             "disabled",
@@ -145,11 +148,15 @@ def _scale_dense_ffn_weight(
         return weight
     if weight_name in {"w1", "w3"}:
         hidden_dim = weight.shape[0]
-        target_hidden_dim = int(math.ceil(hidden_dim * expert_ffn_dim_multiplier / 256) * 256)
+        target_hidden_dim = int(
+            math.ceil(hidden_dim * expert_ffn_dim_multiplier / 256) * 256
+        )
         return weight[:target_hidden_dim, :].contiguous()
     if weight_name == "w2":
         hidden_dim = weight.shape[1]
-        target_hidden_dim = int(math.ceil(hidden_dim * expert_ffn_dim_multiplier / 256) * 256)
+        target_hidden_dim = int(
+            math.ceil(hidden_dim * expert_ffn_dim_multiplier / 256) * 256
+        )
         return weight[:, :target_hidden_dim].contiguous()
     raise ValueError(f"Unknown FFN weight: {weight_name}")
 
@@ -183,7 +190,9 @@ def convert_dense_state_dict_to_patchmoe(
             value, weight_name, spec.expert_ffn_dim_multiplier
         )
         for expert_idx in range(spec.num_experts):
-            converted[f"{prefix}.experts.{expert_idx}.{weight_name}.weight"] = expert_value
+            converted[f"{prefix}.experts.{expert_idx}.{weight_name}.weight"] = (
+                expert_value
+            )
 
     for layer_idx in selected_layers:
         weights = layer_weights[layer_idx]

@@ -334,7 +334,9 @@ class CheckpointManager:
         deadline = time.monotonic() + 60.0
         while args.path is not None and not os.path.isdir(args.path):
             if time.monotonic() > deadline:
-                raise TimeoutError(f"Timed out waiting for checkpoint path: {args.path}")
+                raise TimeoutError(
+                    f"Timed out waiting for checkpoint path: {args.path}"
+                )
             time.sleep(0.1)
 
         return cls(args)
