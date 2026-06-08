@@ -19,6 +19,7 @@ DENSE_GLOBAL_FFN_RE = re.compile(
     r"feed_forward\.(?P<weight>w[123])\.weight$"
 )
 PATCH_FEATURE_CHOICES = ("length", "entropy", "byte_type")
+EXPERT_INIT_MODES = ("replicated_prefix", "paired_partition")
 MANIFEST_NAME = "patchmoe_warmstart_manifest.json"
 
 
@@ -31,6 +32,7 @@ class PatchMoEWarmStartSpec:
     router_seed: int = 42
     init_std_factor: str = "current_depth"
     expert_ffn_dim_multiplier: float | None = None
+    expert_init_mode: str = "replicated_prefix"
 
     def __post_init__(self):
         if self.num_experts <= 0:
@@ -56,6 +58,19 @@ class PatchMoEWarmStartSpec:
             "dim_ratio",
         }:
             raise ValueError(f"Unsupported init_std_factor: {self.init_std_factor}")
+        if self.expert_init_mode not in EXPERT_INIT_MODES:
+            raise ValueError(
+                f"expert_init_mode must be one of: {', '.join(EXPERT_INIT_MODES)}"
+            )
+        if self.expert_init_mode == "paired_partition":
+            if self.top_k != 2:
+                raise ValueError("paired_partition requires top_k=2")
+            if self.num_experts % 2 != 0:
+                raise ValueError("paired_partition requires an even num_experts")
+            if self.expert_ffn_dim_multiplier != 0.5:
+                raise ValueError(
+                    "paired_partition requires expert_ffn_dim_multiplier=0.5"
+                )
 
     @property
     def patch_feature_count(self) -> int:
@@ -161,6 +176,43 @@ def _scale_dense_ffn_weight(
     raise ValueError(f"Unknown FFN weight: {weight_name}")
 
 
+def _paired_partition_ffn_weight(
+    weight: torch.Tensor,
+    weight_name: str,
+    expert_idx: int,
+) -> torch.Tensor:
+    split_dim = 0 if weight_name in {"w1", "w3"} else 1
+    hidden_dim = weight.shape[split_dim]
+    if hidden_dim % 2 != 0:
+        raise ValueError(
+            f"paired_partition requires an even FFN hidden dimension, got {hidden_dim}"
+        )
+    partition_idx = expert_idx % 2
+    start = partition_idx * (hidden_dim // 2)
+    expert_weight = weight.narrow(split_dim, start, hidden_dim // 2).contiguous()
+    if weight_name == "w2":
+        # Top-2 gives paired experts equal 0.5 weights at initialization.
+        expert_weight = expert_weight * 2
+    return expert_weight
+
+
+def _paired_router_weight(
+    *,
+    num_experts: int,
+    input_dim: int,
+    dtype: torch.dtype,
+    std: float,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    pair_weight = _truncated_normal(
+        (num_experts // 2, input_dim),
+        dtype=dtype,
+        std=std,
+        generator=generator,
+    )
+    return pair_weight.repeat_interleave(2, dim=0)
+
+
 def convert_dense_state_dict_to_patchmoe(
     dense_state_dict: Mapping[str, torch.Tensor],
     spec: PatchMoEWarmStartSpec,
@@ -186,10 +238,15 @@ def convert_dense_state_dict_to_patchmoe(
         layer_idx = int(match.group("layer"))
         weight_name = match.group("weight")
         prefix = f"global_transformer.layers.{layer_idx}.feed_forward"
-        expert_value = _scale_dense_ffn_weight(
-            value, weight_name, spec.expert_ffn_dim_multiplier
-        )
         for expert_idx in range(spec.num_experts):
+            if spec.expert_init_mode == "paired_partition":
+                expert_value = _paired_partition_ffn_weight(
+                    value, weight_name, expert_idx
+                )
+            else:
+                expert_value = _scale_dense_ffn_weight(
+                    value, weight_name, spec.expert_ffn_dim_multiplier
+                )
             converted[f"{prefix}.experts.{expert_idx}.{weight_name}.weight"] = (
                 expert_value
             )
@@ -205,19 +262,38 @@ def convert_dense_state_dict_to_patchmoe(
             global_layer_count=len(global_layers),
             init_std_factor=spec.init_std_factor,
         )
-        converted[f"{prefix}.router.weight"] = _truncated_normal(
-            (spec.num_experts, dim),
-            dtype=dtype,
-            std=router_std,
-            generator=generator,
-        )
-        if spec.patch_feature_count > 0:
-            patch_feature_router = _truncated_normal(
-                (spec.num_experts, spec.patch_feature_count),
+        if spec.expert_init_mode == "paired_partition":
+            router_weight = _paired_router_weight(
+                num_experts=spec.num_experts,
+                input_dim=dim,
                 dtype=dtype,
                 std=router_std,
                 generator=generator,
             )
+        else:
+            router_weight = _truncated_normal(
+                (spec.num_experts, dim),
+                dtype=dtype,
+                std=router_std,
+                generator=generator,
+            )
+        converted[f"{prefix}.router.weight"] = router_weight
+        if spec.patch_feature_count > 0:
+            if spec.expert_init_mode == "paired_partition":
+                patch_feature_router = _paired_router_weight(
+                    num_experts=spec.num_experts,
+                    input_dim=spec.patch_feature_count,
+                    dtype=dtype,
+                    std=router_std,
+                    generator=generator,
+                )
+            else:
+                patch_feature_router = _truncated_normal(
+                    (spec.num_experts, spec.patch_feature_count),
+                    dtype=dtype,
+                    std=router_std,
+                    generator=generator,
+                )
             converted[f"{prefix}.patch_feature_router.weight"] = patch_feature_router
             # SparseMoEFeedForward keeps this compatibility alias in its state dict.
             converted[f"{prefix}.patch_length_router.weight"] = patch_feature_router

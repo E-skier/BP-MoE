@@ -43,6 +43,11 @@ def parse_args():
     parser.add_argument("--init-std-factor", default="current_depth")
     parser.add_argument("--expert-ffn-dim-multiplier", type=float, default=None)
     parser.add_argument(
+        "--expert-init-mode",
+        default="replicated_prefix",
+        choices=("replicated_prefix", "paired_partition"),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Inspect the mapping and parameter counts without writing the DCP checkpoint.",
@@ -68,6 +73,7 @@ def main():
         router_seed=args.router_seed,
         init_std_factor=args.init_std_factor,
         expert_ffn_dim_multiplier=args.expert_ffn_dim_multiplier,
+        expert_init_mode=args.expert_init_mode,
     )
     source = Path(args.source)
     if not source.is_file():

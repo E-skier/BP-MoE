@@ -93,6 +93,90 @@ def test_dense_to_patchmoe_initial_ffn_is_functionally_equivalent():
     torch.testing.assert_close(actual, expected)
 
 
+def test_paired_partition_is_functionally_equivalent_per_sample():
+    torch.manual_seed(0)
+    dense = FeedForward(
+        dim=8,
+        hidden_dim=24,
+        multiple_of=1,
+        ffn_dim_multiplier=1.0,
+    )
+    prefix = "global_transformer.layers.0.feed_forward"
+    dense_state = {
+        f"{prefix}.{name}": value for name, value in dense.state_dict().items()
+    }
+    spec = PatchMoEWarmStartSpec(
+        num_experts=8,
+        top_k=2,
+        patch_features=("entropy",),
+        expert_ffn_dim_multiplier=0.5,
+        expert_init_mode="paired_partition",
+    )
+    converted, _ = convert_dense_state_dict_to_patchmoe(dense_state, spec)
+
+    moe = SparseMoEFeedForward(
+        dim=8,
+        hidden_dim=24,
+        multiple_of=1,
+        ffn_dim_multiplier=0.5,
+        num_experts=8,
+        top_k=2,
+        router_use_patch_entropy=True,
+        balance_cost="byte",
+    )
+    moe.router.weight.data.copy_(converted[f"{prefix}.router.weight"])
+    moe.patch_feature_router.weight.data.copy_(
+        converted[f"{prefix}.patch_feature_router.weight"]
+    )
+    for expert_idx, expert in enumerate(moe.experts):
+        expert.load_state_dict(
+            {
+                name: converted[f"{prefix}.experts.{expert_idx}.{name}"]
+                for name in dense.state_dict()
+            }
+        )
+
+    router_weight = moe.router.weight.detach()
+    feature_weight = moe.patch_feature_router.weight.detach()
+    for pair_start in range(0, 8, 2):
+        torch.testing.assert_close(
+            router_weight[pair_start], router_weight[pair_start + 1]
+        )
+        torch.testing.assert_close(
+            feature_weight[pair_start], feature_weight[pair_start + 1]
+        )
+
+    x = torch.randn(2, 3, 8)
+    patch_lengths = torch.tensor([[1, 4, 2], [3, 1, 5]])
+    patch_entropies = torch.rand(2, 3) * 4
+    flat_x = x.reshape(-1, x.shape[-1])
+    normalized_entropy = (
+        patch_entropies.reshape(-1) / patch_entropies.mean().clamp_min(1.0)
+    ).unsqueeze(-1)
+    logits = moe.router(flat_x) + moe.patch_feature_router(normalized_entropy)
+    top_indices = logits.topk(k=2, dim=-1).indices
+    assert torch.equal(top_indices[:, 0] // 2, top_indices[:, 1] // 2)
+
+    expected = dense(x)
+    actual = moe(
+        x,
+        patch_lengths=patch_lengths,
+        patch_entropies=patch_entropies,
+    )
+    torch.testing.assert_close(actual, expected, rtol=1e-5, atol=1e-6)
+
+
+def test_paired_partition_rejects_incompatible_specs():
+    with pytest.raises(ValueError, match="requires top_k=2"):
+        PatchMoEWarmStartSpec(
+            top_k=1,
+            expert_ffn_dim_multiplier=0.5,
+            expert_init_mode="paired_partition",
+        )
+    with pytest.raises(ValueError, match="requires expert_ffn_dim_multiplier=0.5"):
+        PatchMoEWarmStartSpec(expert_init_mode="paired_partition")
+
+
 def test_dense_to_patchmoe_router_initialization_is_deterministic():
     dense = dense_global_state_dict()
     spec = PatchMoEWarmStartSpec(router_seed=123)
