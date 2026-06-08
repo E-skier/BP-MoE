@@ -104,6 +104,7 @@ model:
   moe_top_k: 2
   moe_layer_frequency: 1
   moe_balance_loss_weight: 0.05
+  moe_assignment_balance_loss_weight: 0.0
   moe_router_jitter: 0.01
   moe_router_congestion_weight: 0.0
   moe_router_z_loss_weight: 0.0

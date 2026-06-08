@@ -168,6 +168,7 @@ figures/
 internal/
 jobs_parallel-copy/
 wandb/
+/opencompass/
 *.ipynb
 # Local datasets, model weights, checkpoints, and generated run artifacts
 /data/

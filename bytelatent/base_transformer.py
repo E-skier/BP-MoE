@@ -108,6 +108,7 @@ class BaseTransformerArgs(BaseModel):
     moe_ep_size: int = 1
     moe_ffn_dim_multiplier: float | None = None
     moe_balance_loss_weight: float = 0.0
+    moe_assignment_balance_loss_weight: float = 0.0
     moe_router_jitter: float = 0.0
     moe_router_congestion_weight: float = 0.0
     moe_router_z_loss_weight: float = 0.0
@@ -592,6 +593,7 @@ class SparseMoEFeedForward(nn.Module):
         num_experts: int,
         top_k: int,
         expert_parallel_size: int = 1,
+        assignment_balance_loss_weight: float = 0.0,
         router_jitter: float = 0.0,
         router_congestion_weight: float = 0.0,
         router_z_loss_weight: float = 0.0,
@@ -612,6 +614,8 @@ class SparseMoEFeedForward(nn.Module):
                 "num_experts must be divisible by expert_parallel_size, got "
                 f"{num_experts} experts and EP size {expert_parallel_size}"
             )
+        if assignment_balance_loss_weight < 0:
+            raise ValueError("assignment_balance_loss_weight must be non-negative")
         if router_congestion_weight < 0:
             raise ValueError("router_congestion_weight must be non-negative")
         if router_z_loss_weight < 0:
@@ -627,6 +631,7 @@ class SparseMoEFeedForward(nn.Module):
         self.expert_parallel_rank = 0
         self.expert_parallel_group = None
         self.local_expert_ids = tuple(range(num_experts))
+        self.assignment_balance_loss_weight = assignment_balance_loss_weight
         self.router_jitter = router_jitter
         self.router_congestion_weight = router_congestion_weight
         self.router_z_loss_weight = router_z_loss_weight
@@ -664,6 +669,7 @@ class SparseMoEFeedForward(nn.Module):
             ]
         )
         self.last_balance_loss: Optional[torch.Tensor] = None
+        self.last_assignment_balance_loss: Optional[torch.Tensor] = None
         self.last_router_z_loss: Optional[torch.Tensor] = None
         self.last_metrics: dict[str, float] = {}
         self.last_expert_parallel_metrics: dict[str, float] = {}
@@ -773,6 +779,9 @@ class SparseMoEFeedForward(nn.Module):
         uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
         self.last_balance_loss = self.num_experts * torch.sum(
             (prob_density - uniform) ** 2
+        )
+        self.last_assignment_balance_loss = self._assignment_balance_loss(
+            router_probs, top_indices, load_weights
         )
         self._record_metrics(
             router_probs,
@@ -1056,6 +1065,27 @@ class SparseMoEFeedForward(nn.Module):
         has_load = (total_load > 0).to(load_density.dtype)
         return (self.num_experts * load_density - 1.0).mul(has_load).detach()
 
+    def _assignment_balance_loss(
+        self,
+        router_probs: torch.Tensor,
+        top_indices: torch.Tensor,
+        load_weights: torch.Tensor,
+    ) -> torch.Tensor:
+        total_load = load_weights.sum()
+        top_mask = torch.zeros_like(router_probs)
+        top_mask.scatter_(1, top_indices, 1.0)
+        selected_density = (router_probs * top_mask * load_weights.unsqueeze(-1)).sum(
+            dim=0
+        )
+        selected_density = selected_density / total_load.clamp_min(1.0)
+        target_density = selected_density.sum().detach() / self.num_experts
+        has_load = (total_load > 0).to(selected_density.dtype)
+        return (
+            self.num_experts
+            * torch.sum((selected_density - target_density) ** 2)
+            * has_load
+        )
+
     @torch.no_grad()
     def _record_metrics(
         self,
@@ -1112,6 +1142,12 @@ class SparseMoEFeedForward(nn.Module):
                 if self.last_balance_loss is not None
                 else 0.0
             ),
+            "assignment_balance_loss": (
+                self.last_assignment_balance_loss.detach().item()
+                if self.last_assignment_balance_loss is not None
+                else 0.0
+            ),
+            "assignment_balance_loss_weight": self.assignment_balance_loss_weight,
             "routed_units": float(routed_units),
             "total_units": float(load_weights.numel()),
             "load_weight_mean": load_weight_mean,
@@ -1410,6 +1446,17 @@ def get_moe_router_z_loss(module: nn.Module) -> Optional[torch.Tensor]:
     return torch.stack(losses).mean()
 
 
+def get_moe_assignment_balance_loss(module: nn.Module) -> Optional[torch.Tensor]:
+    losses = [
+        child.last_assignment_balance_loss
+        for _, child in _iter_sparse_moe_modules(module)
+        if child.last_assignment_balance_loss is not None
+    ]
+    if len(losses) == 0:
+        return None
+    return torch.stack(losses).mean()
+
+
 def get_moe_metrics(module: nn.Module) -> dict[str, float]:
     metrics = [
         child.last_metrics
@@ -1458,6 +1505,9 @@ class TransformerBlock(nn.Module):
                 num_experts=args.moe_num_experts,
                 top_k=args.moe_top_k,
                 expert_parallel_size=args.moe_ep_size,
+                assignment_balance_loss_weight=(
+                    args.moe_assignment_balance_loss_weight
+                ),
                 ffn_dim_multiplier=(
                     args.moe_ffn_dim_multiplier
                     if args.moe_ffn_dim_multiplier is not None

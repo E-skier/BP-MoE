@@ -30,7 +30,7 @@ TOKENIZER_PATH="${TOKENIZER_PATH:-/tmp/unused.tokenizer.model}"
 
 SEEDS="${SEEDS:-779}"
 VARIANTS="${VARIANTS:-dense byte_hidden_only_w005 byte_entropy_w005 byte_type_w005 byte_entropy_type_w005}"
-KNOWN_VARIANTS="dense dense_compute_matched byte_hidden_only_w005 byte_length_w005 byte_entropy_w005 byte_type_w005 byte_entropy_type_w005 byte_entropy_type_congestion_w05 byte_entropy_type_congestion_zloss_w0001 byte_entropy_length_w005 byte_entropy_length_type_w005 entropy_byte_entropy_length_w0005 entropy_byte_entropy_length_w001"
+KNOWN_VARIANTS="dense dense_compute_matched byte_hidden_only_w005 byte_length_w005 byte_entropy_w005 byte_type_w005 byte_entropy_type_w005 byte_entropy_type_congestion_w05 byte_entropy_type_congestion_zloss_w0001 byte_entropy_assignment_w005 byte_entropy_assignment_congestion_zloss_w005 byte_entropy_type_assignment_congestion_zloss_w005 byte_entropy_length_w005 byte_entropy_length_type_w005 entropy_byte_entropy_length_w0005 entropy_byte_entropy_length_w001"
 
 STEPS="${STEPS:-200000}"
 MAX_STEPS="${MAX_STEPS:-$STEPS}"
@@ -199,6 +199,48 @@ variant_overrides() {
         model.moe_num_experts=8 \
         model.moe_top_k=2 \
         model.moe_balance_loss_weight=0.05 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.001 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=true \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_assignment_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_assignment_balance_loss_weight=0.05 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.0 \
+        model.moe_router_z_loss_weight=0.0 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_assignment_congestion_zloss_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_assignment_balance_loss_weight=0.05 \
+        model.moe_router_jitter=0.01 \
+        model.moe_router_congestion_weight=0.5 \
+        model.moe_router_z_loss_weight=0.001 \
+        model.moe_router_use_patch_length=false \
+        model.moe_router_use_patch_entropy=true \
+        model.moe_router_use_patch_byte_features=false \
+        model.moe_balance_cost=byte
+      ;;
+    byte_entropy_type_assignment_congestion_zloss_w005)
+      printf "%s\n" \
+        model.moe_num_experts=8 \
+        model.moe_top_k=2 \
+        model.moe_balance_loss_weight=0.05 \
+        model.moe_assignment_balance_loss_weight=0.05 \
         model.moe_router_jitter=0.01 \
         model.moe_router_congestion_weight=0.5 \
         model.moe_router_z_loss_weight=0.001 \

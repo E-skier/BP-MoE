@@ -20,7 +20,7 @@ This is a realistic A-conference direction because it combines:
 1. **A timely architecture shift**: token-based LMs → byte/patch-based LMs.
 2. **A mature scaling mechanism**: dense Transformer → sparse MoE Transformer.
 3. **A clear missing interface**: MoE routing is still largely designed around tokens, not dynamic byte patches.
-4. **A feasible experimental scope**: controlled training at 300M–1.5B active scale on 8×A100, plus strong ablations and system analysis.
+4. **A feasible experimental scope**: controlled BLT-1B continued-pretraining and active-FLOP-matched PatchMoE experiments on 2x6000 Pro plus 6xA100, with strong ablations and system analysis.
 
 ---
 
@@ -282,10 +282,19 @@ Instead, claim:
 
 Available hardware:
 
-- 8× NVIDIA A100 80GB;
-- likely single-node NVLink/NCCL communication;
-- enough to train controlled 300M–1.5B active-parameter models;
-- not enough for full-scale 8B/4T-byte BLT pretraining.
+- one 2-GPU 6000 Pro server;
+- one 6-GPU A100 server;
+- enough for controlled BLT-1B continued-pretraining, active-FLOP-matched PatchMoE comparisons, and smaller multi-seed ablations;
+- not enough for full-scale 8B/4T-byte BLT pretraining or broad 1B-scale sweeps over every router feature.
+
+The old 8xA100 assumption is no longer the planning target. The six-A100 server should not be treated as an eight-way expert-parallel run unless the expert count changes. With the current 8-expert PatchMoE implementation, the preferred six-A100 layout is:
+
+- `NPROC_PER_NODE=6`;
+- `EP_SIZE=2`;
+- 8 experts partitioned over the 2 expert-parallel ranks;
+- 3 data-parallel replicas over the six ranks.
+
+Do not set `EP_SIZE=6` with 8 experts; the launcher correctly rejects this because the expert count is not divisible by 6. The 2x6000 Pro machine should use `NPROC_PER_NODE=2`, `EP_SIZE=2` for MoE runs and should be reserved for reproducibility, queue backfilling, short validation, held-out evaluation, and mechanism ablations.
 
 Therefore, the experimental design must emphasize **controlled comparison**, not absolute scale.
 
@@ -293,59 +302,74 @@ Therefore, the experimental design must emphasize **controlled comparison**, not
 
 ## 5.2 Model Scales
 
-### Stage-0 Debug Scale
+The formal plan now uses four compute tiers. Budgets must be reported in training bytes and active FLOPs per byte, not just optimizer steps, because changing from 2 GPUs to 6 GPUs changes the global batch.
 
-Purpose: verify implementation.
+### Tier F0: Locked Pilot Evidence
 
-| Item | Value |
-|---|---:|
-| Active params | 50M–100M |
-| Total MoE params | 150M–300M |
-| Experts | 4–8 |
-| Top-K | 1 or 2 |
-| Training bytes | 1B–5B |
-| Runtime | hours to 1–2 days |
-
-### Stage-1 Main Ablation Scale
-
-Purpose: run many ablations.
+Purpose: preserve the currently verified result as the starting hypothesis.
 
 | Item | Value |
 |---|---:|
-| Active params | 300M–500M |
-| Total MoE params | 800M–1.5B |
-| Experts | 8 |
-| Top-K | 2 |
-| Training bytes | 10B–30B |
-| Runtime | several days per major setting |
+| Model family | BLT-1B continued-pretraining / warm-start PatchMoE |
+| Required variants | dense BLT-1B, hidden-only PatchMoE, entropy-only PatchMoE |
+| Current data | `fineweb_edu_10bt` entropy-preprocessed chunks 00000-00001 |
+| Current conclusion | entropy-only > dense BLT-1B > hidden-only under same-FLOP controls |
+| Paper role | pilot evidence only until reproduced with frozen held-out evaluation |
 
-### Stage-2 Main Paper Scale
+### Tier F1: Reproducibility And Variance
 
-Purpose: primary result.
-
-| Item | Value |
-|---|---:|
-| Active params | 500M–800M |
-| Total MoE params | 1B–3B |
-| Experts | 8 or 16 |
-| Top-K | 2 |
-| Training bytes | 50B–100B |
-| Runtime | about 1–2 weeks depending on implementation efficiency |
-
-### Stage-3 Scaling Evidence
-
-Purpose: show trend, not full convergence.
+Purpose: turn the pilot conclusion into defensible evidence.
 
 | Item | Value |
 |---|---:|
-| Active params | 1B–1.5B |
-| Total MoE params | 3B–6B |
-| Experts | 16 |
-| Top-K | 2 |
-| Training bytes | 50B–150B |
-| Runtime | 2–6 weeks, optional |
+| Hardware | 2x6000 Pro |
+| Model family | BLT-1B active-FLOP-matched triad |
+| Variants | dense BLT-1B, hidden-only PatchMoE, entropy-only PatchMoE |
+| Experts / Top-K | 8 experts / Top-2 for MoE variants |
+| Parallel layout | `NPROC_PER_NODE=2`, `EP_SIZE=2` |
+| Data | train on chunks 00000-00001; evaluate on disjoint held-out chunks 00002-00003 when available |
+| Seeds | at least 3 short seeds before any optional ablation is promoted |
+| Role | variance bars, failure-mode detection, checkpoint/eval reproducibility |
 
-Stage-3 should only be attempted after Stage-1 and Stage-2 are stable.
+### Tier F2: Main Formal Result
+
+Purpose: produce the primary paper table.
+
+| Item | Value |
+|---|---:|
+| Hardware | 6xA100 |
+| Model family | BLT-1B active-FLOP-matched triad |
+| Variants | dense BLT-1B, hidden-only PatchMoE, entropy-only PatchMoE |
+| Experts / Top-K | 8 experts / Top-2 for MoE variants |
+| Parallel layout | `NPROC_PER_NODE=6`, `EP_SIZE=2`, 3 DP replicas |
+| Budget | one fixed training-byte budget shared by all variants; optionally a longer entropy-only continuation |
+| Data | use the same chunk split first; expand to more FineWeb-Edu chunks only after the triad is complete |
+| Role | main BPB/loss, active FLOPs per byte, throughput, memory, and expert-load table |
+
+### Tier F3: Mechanism Ablations
+
+Purpose: explain why entropy helps without spending A100 weeks on nonessential variants.
+
+| Item | Value |
+|---|---:|
+| Hardware | 2x6000 Pro by default; 6xA100 only for finalist ablations |
+| Model family | Stage-1 candidate and/or shorter BLT-1B warm-start runs |
+| Mandatory ablations | hidden-only vs entropy-only |
+| Conditional ablations | length, byte type, entropy+type, entropy+length, congestion price, router z-loss |
+| Promotion rule | run on 6xA100 only if it changes BPB, load stability, or specialization beyond entropy-only |
+| Role | ablation table and expert-specialization figures |
+
+### Tier F4: Systems And Robustness Evidence
+
+Purpose: support the patch-native MoE claim beyond BPB.
+
+| Item | Value |
+|---|---:|
+| Hardware | 6xA100 for profile; 2x6000 Pro for held-out eval/backfill |
+| Variants | dense BLT-1B and entropy-only PatchMoE first; hidden-only if capacity allows |
+| Metrics | active FLOPs/byte, bytes/sec, patches/sec, memory, load imbalance, dispatch overhead |
+| Robustness | typo/noise, rare string/code-like spans, non-ASCII byte patterns |
+| Role | system table, robustness appendix, specialization analysis |
 
 ---
 
@@ -400,23 +424,94 @@ Full model:
 
 ## 5.4 Main Comparisons
 
-The main experimental table should compare:
+The main formal table should now be the BLT-1B active-FLOP-matched triad, because the current verified signal is `entropy-only > dense BLT-1B > hidden-only` on `fineweb_edu_10bt` chunks 00000-00001.
 
-| Model | Tokenizer? | Unit | Sparse? | Routing feature | Active params | Training bytes | BPB/loss | Throughput | Memory | Load imbalance |
+| Model | Init | Unit | Sparse? | Routing feature | MoE experts / Top-K | Training bytes | Active FLOPs/byte | BPB/loss | Throughput | Load imbalance |
 |---|---|---|---|---|---:|---:|---:|---:|---:|---:|
-| Dense Token | yes | token | no | none | matched | matched |  |  |  |  |
-| Token-MoE | yes | token | yes | token hidden | matched | matched |  |  |  |  |
-| Dense Byte/Patch | no | patch | no | none | matched | matched |  |  |  |  |
-| Naive Patch-MoE | no | patch | yes | patch hidden | matched | matched |  |  |  |  |
-| PatchMoE | no | patch | yes | hidden + entropy + length + cost | matched | matched |  |  |  |  |
+| Dense BLT-1B | official dense BLT-1B | patch | no | none | 0 / 1 | matched | measured |  |  | n/a |
+| Hidden-only PatchMoE | BLT-1B warm-start, active-matched experts | patch | yes | patch hidden only | 8 / 2 | matched | measured |  |  |  |
+| Entropy-only PatchMoE | BLT-1B warm-start, active-matched experts | patch | yes | patch hidden + entropy | 8 / 2 | matched | measured |  |  |  |
+
+Secondary tables should be conditional:
+
+| Table | Variants | Purpose | Hardware |
+|---|---|---|---|
+| Stage-1 mechanism ablation | hidden, entropy, length, byte type, entropy+type, entropy+length | explain router side features | 2x6000 Pro first |
+| Cost/load ablation | byte balance, entropy-byte balance, congestion price, z-loss | load stability and collapse control | 2x6000 Pro first |
+| Systems profile | dense BLT-1B, entropy-only PatchMoE, hidden-only if capacity allows | throughput, dispatch overhead, memory | 6xA100 |
+| Token baseline appendix | dense token Transformer, token MoE | context only, not the top-line claim | smallest stable scale |
 
 The fairness rule:
 
-> Compare models under matched active parameters, matched training bytes, and matched or reported active FLOPs per byte.
+> Compare under matched training bytes and measured active FLOPs per byte. Within the BLT-1B triad, keep the data order, optimizer, sequence length, batch shape, checkpoint cadence, and evaluation set identical. Across 2-GPU and 6-GPU runs, do not compare by step count alone; report consumed bytes and active FLOPs/byte.
 
 ---
 
-## 5.5 Datasets
+## 5.5 AAAI Workload Assessment And Parallel Execution
+
+### AAAI Workload Assessment
+
+The redesigned formal plan is sufficient for an AAAI-style submission if it is executed as a mechanism paper rather than a scale paper. The workload is credible because it combines:
+
+1. a BLT-1B active-FLOP-matched main triad;
+2. reproduction and seed-aware variance on a separate machine;
+3. held-out validation on disjoint FineWeb-Edu chunks;
+4. targeted router/load-balancing ablations;
+5. expert-specialization analysis;
+6. throughput, memory, and dispatch-overhead profiling;
+7. robustness checks on byte-sensitive inputs.
+
+Minimum acceptable AAAI evidence:
+
+| Evidence block | Minimum requirement | Paper role |
+|---|---|---|
+| Main quality table | six-A100 BLT-1B triad: dense, hidden-only, entropy-only | primary claim |
+| Reproducibility | at least one reproduced triad run on 2x6000 Pro; preferably 3 short seeds | confidence / error bars |
+| Held-out evaluation | chunks 00002-00003 or another frozen disjoint held-out split via native `bytelatent.eval` | prevents train-split overclaim |
+| Downstream benchmarks | OpenCompass table for MMLU, BoolQ, OpenBookQA, ARC, HellaSwag, PIQA; aggregate with `scripts/patchmoe/summarize_opencompass_results.py` | A-conference standard benchmark evidence |
+| Compute accounting | training bytes, active FLOPs/byte, wall time, peak memory | fairness |
+| Mechanism ablation | hidden-only vs entropy-only plus at least two optional controls | explains why entropy helps |
+| Expert analysis | entropy-bucket utilization, load imbalance, specialization plots | patch-native MoE evidence |
+| Systems profile | dense BLT-1B vs entropy-only PatchMoE on 6xA100 | efficiency claim |
+| Robustness | typo/noise, rare strings, code-like spans, non-ASCII bytes | byte-level motivation |
+
+This is likely enough work for AAAI if the final results remain positive and the paper is framed as a controlled conditional-computation study. It is not enough if the paper claims broad foundation-model scaling, tokenizer replacement, or general SOTA. The claim must stay narrow:
+
+> Entropy-aware patch routing improves the quality-efficiency tradeoff of BLT-style byte-patch models under matched active compute, and exposes patch-structured expert behavior.
+
+Hard submission gate:
+
+- do not submit with only the current chunks 00000-00001 pilot result;
+- do not submit without frozen held-out evaluation;
+- do not submit without active-FLOP accounting;
+- do not submit if entropy-only only beats hidden-only but not dense BLT-1B in the formal triad;
+- do not promote byte-type/congestion/z-loss to the main claim unless they beat entropy-only or explain a clear stability issue.
+
+### Two-Server Parallel Execution Plan
+
+The two servers should be used concurrently. The six-A100 machine is the scarce main-result machine; the 2x6000 Pro machine should continuously remove uncertainty around it.
+
+| Phase | 2x6000 Pro server | 6xA100 server | Can run in parallel? | Dependency |
+|---|---|---|---|---|
+| P0: readiness | verify data, held-out preprocessing, checkpoint load, eval scripts | six-A100 CUDA smoke with `NPROC_PER_NODE=6`, `EP_SIZE=2` | yes | none |
+| P1: pilot reproduction | triad short seeds on chunks 00000-00001; held-out eval on 00002-00003 | idle or smoke/profile dry run | yes | current pilot checkpoints/data |
+| P2: main triad | backfill failed seed, monitor eval, run short mechanism checks | formal dense BLT-1B, hidden-only, entropy-only triad | yes | P0 smoke plus frozen config |
+| P3: mechanism ablations | length, byte type, entropy+type, entropy+length, congestion, z-loss | continue/finish main triad | yes | P1 confirms entropy-only signal |
+| P4: systems profile | held-out eval, robustness eval, analysis aggregation | dense vs entropy-only throughput/memory/dispatch profile | yes | at least one completed formal checkpoint |
+| P5: data-scale confirmation | evaluate expanded-heldout or smaller controls | expanded chunk confirmation or longer entropy-only continuation | yes | F2 main triad stable |
+| P6: paper assembly | plots, tables, seed summaries, failure cases | optional final rerun/profile only | yes | all mandatory evidence blocks |
+
+Scheduling rules:
+
+- Never block the six-A100 machine on optional ablations while the BLT-1B triad is incomplete.
+- Keep 2x6000 Pro occupied with reproducibility, held-out evaluation, short ablations, and analysis jobs.
+- Promote a 2x6000 Pro ablation to 6xA100 only if it changes held-out BPB, load stability, or expert-specialization interpretation.
+- Record every cross-server comparison by training bytes and active FLOPs/byte, not by step count.
+- Use the same held-out split for both servers so server-to-server differences are diagnosable.
+
+---
+
+## 5.6 Datasets
 
 Use a mixture that tests byte-level advantages.
 
@@ -450,11 +545,16 @@ Use several categories:
    - optionally token-normalized perplexity for compatibility.
 
 2. **Downstream reasoning/knowledge**
-   - MMLU subset;
-   - ARC;
+   - run through OpenCompass using `bytelatent.opencompass.ByteLatentOpenCompassModel`;
+   - MMLU;
+   - BoolQ;
+   - OpenBookQA;
+   - ARC-Easy and ARC-Challenge;
    - HellaSwag;
    - PIQA;
-   - WinoGrande.
+   - optional WinoGrande.
+
+   Each formal checkpoint should write an OpenCompass run under `runs/opencompass/<run_name>`, then merge all completed runs with `scripts/patchmoe/summarize_opencompass_results.py` to produce `opencompass_long.csv` and `opencompass_paper_table.csv`.
 
 3. **Robustness**
    - character noise;
@@ -471,11 +571,11 @@ Use several categories:
    - numeric strings;
    - corrupted text recovery.
 
-For an A-conference paper, robustness and byte-specific evaluation are important because they justify why byte-level modeling matters.
+For an A-conference paper, robustness and byte-specific evaluation are important because they justify why byte-level modeling matters. OpenCompass should be used for the standard downstream benchmark table, while native PatchMoE evaluation remains authoritative for BPB, active FLOPs/byte, routing, expert-load, and system metrics.
 
 ---
 
-## 5.6 Metrics
+## 5.7 Metrics
 
 ### Modeling Metrics
 
@@ -526,19 +626,23 @@ The paper must include strong ablations. Suggested ablations:
 
 ### 6.1 Routing Features
 
-Compare:
+Compare in priority order:
 
 1. hidden-only router;
 2. hidden + entropy;
 3. hidden + patch length;
 4. hidden + byte type;
-5. hidden + entropy + length + cost;
-6. learned side-feature projection vs hand-designed score term.
+5. hidden + entropy + byte type;
+6. hidden + entropy + length;
+7. hidden + entropy + congestion price / z-loss, only if load collapse or instability appears.
+
+The mandatory formal contrast is hidden-only vs entropy-only. Length, byte-type, congestion, and z-loss are mechanism ablations, not top-line variants, unless they beat entropy-only on held-out BPB or materially improve load stability at matched active FLOPs.
 
 Expected result:
 
-- entropy/length-aware routing improves quality-efficiency and load balance;
-- side features improve expert specialization interpretability.
+- entropy-aware routing improves quality-efficiency over hidden-only routing;
+- additional side features either explain specialization or are reported as negative/neutral controls;
+- no optional feature should consume six-A100 main-run budget before the BLT-1B triad is reproduced.
 
 ### 6.2 Load Balancing Definition
 
@@ -779,24 +883,33 @@ Completed integration:
 - `scripts/patchmoe/formal_status_report.py` emits CSV/JSON status for Stage-1, 200k, and external dense-compute controls, including done/partial/todo state and held-out BPB when available.
 - BLT-1B warm-start integration has started: `scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py` converts the released dense BLT-1B checkpoint into a PatchMoE DCP initialization by preserving the byte/local/global/local-decoder trunk, expanding selected patch-level global FFNs into copied experts, and initializing new routers deterministically. `scripts/patchmoe/verify_blt1b_patchmoe_warmstart.py` verifies the full DCP key set and representative loaded tensors. The first guarded BLT-1B launcher uses the validated entropy router with byte-cost balancing on all 25 global FFN layers by default, keeps `moe_layer_frequency` as the interleaved-MoE ablation switch, and supports a locked one-time `MODE=wait` queue while GPUs are occupied.
 - A CPU-side production-loader audit materialized and loaded the complete all-layer BLT-1B PatchMoE model (`10,589,816,008` parameters, `986` state keys). It exposed and fixed the inherited dense-only top-level RoPE reset assumption: warm-start loading now calls `model.reset_rope_embeddings()`, which resets all three non-persistent BLT RoPE buffers before training.
-- All-layer BLT-1B PatchMoE now has an expert-parallel execution path. `model.moe_ep_size` partitions the eight experts across EP ranks, patch assignments use differentiable all-to-all dispatch and return collectives, and local experts are wrapped first on the orthogonal `expert_dp` mesh so outer FSDP continues to shard the shared BLT trunk without materializing every expert on every rank. Rank-local model and AdamW states save and restore through DCP while preserving complete consolidated expert keys. The guarded BLT-1B launcher defaults `EP_SIZE` to `NPROC_PER_NODE`, yielding `EP=8` for the intended eight-A100 launch. CPU/gloo equivalence, gradient, and DCP regression tests pass; the CUDA nested-FSDP smoke remains pending until GPUs are free.
+- All-layer BLT-1B PatchMoE now has an expert-parallel execution path. `model.moe_ep_size` partitions the eight experts across EP ranks, patch assignments use differentiable all-to-all dispatch and return collectives, and local experts are wrapped first on the orthogonal `expert_dp` mesh so outer FSDP continues to shard the shared BLT trunk without materializing every expert on every rank. Rank-local model and AdamW states save and restore through DCP while preserving complete consolidated expert keys. For the current hardware, the two-GPU smoke path can use `EP_SIZE=2`; the six-A100 formal path must set `EP_SIZE=2` explicitly so the 8 experts divide the EP group while the six ranks form three data-parallel replicas. CPU/gloo equivalence, gradient, and DCP regression tests pass; the six-A100 CUDA nested-FSDP smoke remains pending.
 
-Formal Stage-1 queue:
+### Formal experiments queue: 2026-06-05 compute-aware redesign
 
-1. Compare `dense`, `byte_hidden_only_w005`, `byte_entropy_w005`, `byte_type_w005`, and `byte_entropy_type_w005` under matched training bytes.
-2. Profile `byte_entropy_type_w005` against the existing matched-compute controls.
-3. Run `byte_entropy_length_type_w005` only if the decisive controls justify the extra ablation.
-4. Evaluate `byte_entropy_type_congestion_w05` as a non-default congestion-price ablation after the byte-type controls establish the base candidate.
-5. Evaluate `byte_entropy_type_congestion_zloss_w0001` only if congestion improves stability or router collapse appears at Stage-1 scale.
+Validated starting point:
+
+- On `data/entropy_preprocessed_stage1/fineweb_edu_10bt` chunks 00000-00001, the observed ordering is `entropy-only > dense BLT-1B > hidden-only` under the same-FLOP controls.
+- Treat this as pilot evidence. It becomes paper evidence only after frozen held-out evaluation and at least one reproduction run with identical accounting.
+
+Main queue:
+
+1. Freeze the BLT-1B triad and accounting: dense BLT-1B, hidden-only active-matched PatchMoE, and entropy-only active-matched PatchMoE. Every result table must include training bytes, active FLOPs/byte, wall time, peak memory, BPB/loss, and exact data split.
+2. Run F1 on 2x6000 Pro: reproduce the triad on chunks 00000-00001 and evaluate on disjoint held-out chunks 00002-00003. Use this machine for multi-seed variance, checkpoint validation, and queue backfilling.
+3. Run F2 on 6xA100: launch the same triad with `NPROC_PER_NODE=6` and `EP_SIZE=2`. Keep the 8-expert Top-2 MoE shape fixed. Compare variants only at the same training-byte budget.
+4. After the triad completes, run one data-scale confirmation: either repeat the triad on an expanded FineWeb-Edu chunk set or continue only dense BLT-1B and entropy-only PatchMoE if the hidden-only gap is already stable.
+5. Run F3 mechanism ablations only after the main ordering is stable: length, byte type, entropy+type, entropy+length, congestion price, and z-loss stay on 2x6000 Pro unless they materially improve BPB or load stability.
+6. Run F4 systems profile on 6xA100: profile dense BLT-1B vs entropy-only PatchMoE first, then hidden-only if capacity allows.
 
 Pending exit-criteria evidence:
 
-- Stage-1 BPB and active-compute comparison for the new byte-type controls;
-- Stage-1 BPB/load-stability comparison for the optional congestion-price control;
-- Stage-1 stability and BPB comparison for the optional router z-loss control;
-- expert utilization stability and byte-type specialization at Stage-1 scale;
-- profile results for throughput, memory, and dispatch overhead;
-- guarded eight-A100 CUDA smoke for all-layer BLT-1B `EP=8` warm-start, nested FSDP materialization, and one optimizer step.
+- frozen held-out BPB/loss for the BLT-1B triad on chunks 00002-00003 or another disjoint held-out set;
+- at least one reproduced triad run showing the same ordering as the pilot;
+- six-A100 CUDA smoke for all-layer BLT-1B PatchMoE with `NPROC_PER_NODE=6`, `EP_SIZE=2`, nested FSDP materialization, and one optimizer step;
+- main six-A100 active-FLOP-matched triad table;
+- expert utilization and entropy-bucket specialization for entropy-only versus hidden-only;
+- throughput, memory, and dispatch-overhead profile for dense BLT-1B versus entropy-only PatchMoE;
+- seed-aware BLT-1B queue support if the current active-matched launcher does not expose seed-specific run names and `seed=` overrides.
 
 ---
 
@@ -1225,7 +1338,7 @@ The method section should avoid appearing as a simple module insertion.
 
 Problem:
 
-- 8×A100 cannot match industrial scale.
+- the available 2x6000 Pro plus 6xA100 setup cannot match industrial scale.
 
 Mitigation:
 

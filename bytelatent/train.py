@@ -30,6 +30,7 @@ from torch.optim import lr_scheduler
 
 from bytelatent.args import TrainArgs
 from bytelatent.base_transformer import (
+    get_moe_assignment_balance_loss,
     get_moe_aux_loss,
     get_moe_metrics,
     get_moe_router_z_loss,
@@ -545,6 +546,7 @@ def train(args: TrainArgs):
                 ), "Probe model shouldn't have grads at this point"
 
             moe_aux_loss_log = None
+            moe_assignment_balance_loss_log = None
             moe_router_z_loss_log = None
             trace_train_phase(trace_step, train_state.acc_step, "before_forward")
             if args.train_entropy_model:
@@ -566,6 +568,18 @@ def train(args: TrainArgs):
                     loss = loss + args.model.moe_balance_loss_weight * moe_aux_loss
                 elif moe_aux_loss is not None:
                     moe_aux_loss_log = moe_aux_loss.detach()
+
+                moe_assignment_balance_loss = get_moe_assignment_balance_loss(model)
+                if moe_assignment_balance_loss is not None:
+                    moe_assignment_balance_loss_log = (
+                        moe_assignment_balance_loss.detach()
+                    )
+                    if args.model.moe_assignment_balance_loss_weight > 0:
+                        loss = (
+                            loss
+                            + args.model.moe_assignment_balance_loss_weight
+                            * moe_assignment_balance_loss
+                        )
 
                 moe_router_z_loss = get_moe_router_z_loss(model)
                 if moe_router_z_loss is not None:
@@ -809,6 +823,10 @@ def train(args: TrainArgs):
                     moe_metrics = get_moe_metrics(model)
                     if moe_aux_loss_log is not None:
                         moe_metrics["aux_loss"] = to_py_num(moe_aux_loss_log)
+                    if moe_assignment_balance_loss_log is not None:
+                        moe_metrics["assignment_aux_loss"] = to_py_num(
+                            moe_assignment_balance_loss_log
+                        )
                     if moe_router_z_loss_log is not None:
                         moe_metrics["router_z_loss_aux"] = to_py_num(
                             moe_router_z_loss_log

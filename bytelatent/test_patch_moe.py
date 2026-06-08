@@ -5,6 +5,7 @@ from bytelatent.base_transformer import (
     BaseTransformer,
     BaseTransformerArgs,
     SparseMoEFeedForward,
+    get_moe_assignment_balance_loss,
     get_moe_aux_loss,
     get_moe_metrics,
     get_moe_router_z_loss,
@@ -33,6 +34,54 @@ def test_sparse_moe_feed_forward_forward_backward():
     assert x.grad is not None
     assert moe.router.weight.grad is not None
     assert len(get_moe_metrics(moe)) > 0
+
+
+def test_sparse_moe_assignment_balance_loss_penalizes_topk_tie_skew():
+    moe = SparseMoEFeedForward(
+        dim=8,
+        hidden_dim=16,
+        multiple_of=1,
+        ffn_dim_multiplier=1.0,
+        num_experts=4,
+        top_k=2,
+        assignment_balance_loss_weight=0.05,
+    )
+    with torch.no_grad():
+        moe.router.weight.zero_()
+
+    x = torch.randn(2, 3, 8, requires_grad=True)
+    out = moe(x)
+    assignment_loss = get_moe_assignment_balance_loss(moe)
+
+    assert assignment_loss is not None
+    assert assignment_loss.item() > 0.0
+    assert moe.last_metrics["assignment_balance_loss"] == assignment_loss.item()
+    assert moe.last_metrics["assignment_balance_loss_weight"] == 0.05
+
+    loss = out.square().mean() + 0.05 * assignment_loss
+    loss.backward()
+
+    assert x.grad is not None
+    assert moe.router.weight.grad is not None
+
+
+def test_sparse_moe_rejects_negative_assignment_balance_loss_weight():
+    try:
+        SparseMoEFeedForward(
+            dim=4,
+            hidden_dim=8,
+            multiple_of=1,
+            ffn_dim_multiplier=1.0,
+            num_experts=2,
+            top_k=1,
+            assignment_balance_loss_weight=-0.1,
+        )
+    except ValueError as exc:
+        assert "assignment_balance_loss_weight must be non-negative" in str(exc)
+    else:
+        raise AssertionError(
+            "Expected negative assignment balance loss weight to raise ValueError"
+        )
 
 
 def test_base_transformer_replaces_frequency_layers_with_moe():

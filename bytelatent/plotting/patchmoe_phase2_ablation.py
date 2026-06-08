@@ -81,6 +81,13 @@ def build_summary(df: pd.DataFrame, tail_steps: int) -> pd.DataFrame:
             "moe_max_load_fraction": final.get("moe/max_load_fraction_mean"),
             "moe_min_load_fraction": final.get("moe/min_load_fraction_mean"),
             "moe_side_feature_count": final.get("moe/side_feature_count_mean"),
+            "moe_assignment_balance_loss": final.get(
+                "moe/assignment_balance_loss_mean"
+            ),
+            "moe_assignment_aux_loss": final.get("moe/assignment_aux_loss"),
+            "moe_assignment_balance_loss_weight": final.get(
+                "moe/assignment_balance_loss_weight_mean"
+            ),
             "moe_congestion_weight": final.get("moe/congestion_weight_mean"),
             "moe_router_z_loss": final.get("moe/router_z_loss_mean"),
             "moe_router_z_loss_aux": final.get("moe/router_z_loss_aux"),
