@@ -43,9 +43,26 @@ def parse_args():
     parser.add_argument("--init-std-factor", default="current_depth")
     parser.add_argument("--expert-ffn-dim-multiplier", type=float, default=None)
     parser.add_argument(
+        "--patch-feature-bias",
+        action="store_true",
+        help="Add an affine bias to the patch-feature router.",
+    )
+    parser.add_argument(
         "--expert-init-mode",
         default="replicated_prefix",
         choices=("replicated_prefix", "paired_partition"),
+    )
+    parser.add_argument(
+        "--patch-feature-init",
+        default="random",
+        choices=("random", "entropy_bands"),
+        help="Initialize patch-feature router randomly or with entropy-ordered expert-pair bands.",
+    )
+    parser.add_argument(
+        "--entropy-band-logit-scale",
+        type=float,
+        default=1.0,
+        help="Logit scale for --patch-feature-init entropy_bands.",
     )
     parser.add_argument(
         "--dry-run",
@@ -74,6 +91,9 @@ def main():
         init_std_factor=args.init_std_factor,
         expert_ffn_dim_multiplier=args.expert_ffn_dim_multiplier,
         expert_init_mode=args.expert_init_mode,
+        patch_feature_bias=args.patch_feature_bias,
+        patch_feature_init=args.patch_feature_init,
+        entropy_band_logit_scale=args.entropy_band_logit_scale,
     )
     source = Path(args.source)
     if not source.is_file():

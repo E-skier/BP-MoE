@@ -73,6 +73,7 @@ def test_dense_to_patchmoe_initial_ffn_is_functionally_equivalent():
         ffn_dim_multiplier=1.0,
         num_experts=4,
         top_k=2,
+        router_patch_feature_bias=True,
         router_use_patch_entropy=True,
         balance_cost="byte",
     )
@@ -111,6 +112,7 @@ def test_paired_partition_is_functionally_equivalent_per_sample():
         patch_features=("entropy",),
         expert_ffn_dim_multiplier=0.5,
         expert_init_mode="paired_partition",
+        patch_feature_bias=True,
     )
     converted, _ = convert_dense_state_dict_to_patchmoe(dense_state, spec)
 
@@ -121,12 +123,16 @@ def test_paired_partition_is_functionally_equivalent_per_sample():
         ffn_dim_multiplier=0.5,
         num_experts=8,
         top_k=2,
+        router_patch_feature_bias=True,
         router_use_patch_entropy=True,
         balance_cost="byte",
     )
     moe.router.weight.data.copy_(converted[f"{prefix}.router.weight"])
     moe.patch_feature_router.weight.data.copy_(
         converted[f"{prefix}.patch_feature_router.weight"]
+    )
+    moe.patch_feature_router.bias.data.copy_(
+        converted[f"{prefix}.patch_feature_router.bias"]
     )
     for expert_idx, expert in enumerate(moe.experts):
         expert.load_state_dict(
@@ -138,12 +144,16 @@ def test_paired_partition_is_functionally_equivalent_per_sample():
 
     router_weight = moe.router.weight.detach()
     feature_weight = moe.patch_feature_router.weight.detach()
+    feature_bias = moe.patch_feature_router.bias.detach()
     for pair_start in range(0, 8, 2):
         torch.testing.assert_close(
             router_weight[pair_start], router_weight[pair_start + 1]
         )
         torch.testing.assert_close(
             feature_weight[pair_start], feature_weight[pair_start + 1]
+        )
+        torch.testing.assert_close(
+            feature_bias[pair_start], feature_bias[pair_start + 1]
         )
 
     x = torch.randn(2, 3, 8)
@@ -164,6 +174,52 @@ def test_paired_partition_is_functionally_equivalent_per_sample():
         patch_entropies=patch_entropies,
     )
     torch.testing.assert_close(actual, expected, rtol=1e-5, atol=1e-6)
+
+
+def test_entropy_band_patch_feature_init_orders_expert_pairs():
+    dense = dense_global_state_dict(n_layers=1)
+    spec = PatchMoEWarmStartSpec(
+        num_experts=8,
+        top_k=2,
+        patch_features=("entropy",),
+        expert_ffn_dim_multiplier=0.5,
+        expert_init_mode="paired_partition",
+        patch_feature_bias=True,
+        patch_feature_init="entropy_bands",
+        entropy_band_logit_scale=2.0,
+    )
+
+    converted, _ = convert_dense_state_dict_to_patchmoe(dense, spec)
+
+    prefix = "global_transformer.layers.0.feed_forward"
+    weight = converted[f"{prefix}.patch_feature_router.weight"]
+    bias = converted[f"{prefix}.patch_feature_router.bias"]
+    entropies = torch.tensor([[0.25], [1.25], [2.25], [3.75]])
+    logits = entropies @ weight.float().T + bias.float()
+    top_indices = logits.topk(k=2, dim=-1).indices
+    selected_pairs = top_indices.div(2, rounding_mode="floor")
+
+    assert torch.equal(selected_pairs[:, 0], selected_pairs[:, 1])
+    assert torch.equal(
+        selected_pairs[:, 0],
+        torch.tensor([0, 1, 2, 3]),
+    )
+
+
+def test_entropy_band_patch_feature_init_rejects_incompatible_specs():
+    with pytest.raises(ValueError, match="requires patch_feature_bias"):
+        PatchMoEWarmStartSpec(
+            patch_features=("entropy",),
+            expert_ffn_dim_multiplier=0.5,
+            expert_init_mode="paired_partition",
+            patch_feature_init="entropy_bands",
+        )
+    with pytest.raises(ValueError, match="requires entropy"):
+        PatchMoEWarmStartSpec(
+            patch_features=("length",),
+            patch_feature_bias=True,
+            patch_feature_init="entropy_bands",
+        )
 
 
 def test_paired_partition_rejects_incompatible_specs():

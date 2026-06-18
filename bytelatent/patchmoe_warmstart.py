@@ -20,6 +20,7 @@ DENSE_GLOBAL_FFN_RE = re.compile(
 )
 PATCH_FEATURE_CHOICES = ("length", "entropy", "byte_type")
 EXPERT_INIT_MODES = ("replicated_prefix", "paired_partition")
+PATCH_FEATURE_INIT_MODES = ("random", "entropy_bands")
 MANIFEST_NAME = "patchmoe_warmstart_manifest.json"
 
 
@@ -33,6 +34,9 @@ class PatchMoEWarmStartSpec:
     init_std_factor: str = "current_depth"
     expert_ffn_dim_multiplier: float | None = None
     expert_init_mode: str = "replicated_prefix"
+    patch_feature_bias: bool = False
+    patch_feature_init: str = "random"
+    entropy_band_logit_scale: float = 1.0
 
     def __post_init__(self):
         if self.num_experts <= 0:
@@ -62,6 +66,26 @@ class PatchMoEWarmStartSpec:
             raise ValueError(
                 f"expert_init_mode must be one of: {', '.join(EXPERT_INIT_MODES)}"
             )
+        if self.patch_feature_init not in PATCH_FEATURE_INIT_MODES:
+            raise ValueError(
+                "patch_feature_init must be one of: "
+                f"{', '.join(PATCH_FEATURE_INIT_MODES)}"
+            )
+        if self.entropy_band_logit_scale <= 0:
+            raise ValueError("entropy_band_logit_scale must be positive")
+        if self.patch_feature_init == "entropy_bands":
+            if "entropy" not in self.patch_features:
+                raise ValueError("entropy_bands patch_feature_init requires entropy")
+            if self.top_k != 2:
+                raise ValueError("entropy_bands patch_feature_init requires top_k=2")
+            if self.num_experts % 2 != 0:
+                raise ValueError(
+                    "entropy_bands patch_feature_init requires an even num_experts"
+                )
+            if not self.patch_feature_bias:
+                raise ValueError(
+                    "entropy_bands patch_feature_init requires patch_feature_bias"
+                )
         if self.expert_init_mode == "paired_partition":
             if self.top_k != 2:
                 raise ValueError("paired_partition requires top_k=2")
@@ -213,6 +237,31 @@ def _paired_router_weight(
     return pair_weight.repeat_interleave(2, dim=0)
 
 
+def _entropy_band_patch_feature_router(
+    spec: PatchMoEWarmStartSpec,
+    *,
+    dtype: torch.dtype,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    entropy_feature_idx = spec.patch_features.index("entropy")
+    pair_count = spec.num_experts // 2
+    # The router uses linear logits. These lines are the upper envelope of
+    # -scale * (entropy - center)^2, dropping the common -entropy^2 term.
+    # With duplicated lines per pair, Top-2 selects both paired experts while
+    # different entropy ranges prefer different pairs.
+    centers = torch.linspace(0.5, 3.5, pair_count, dtype=torch.float32)
+    slopes = 2.0 * spec.entropy_band_logit_scale * centers
+    biases = -spec.entropy_band_logit_scale * centers.square()
+    weight = torch.zeros(
+        spec.num_experts, spec.patch_feature_count, dtype=torch.float32
+    )
+    bias = torch.zeros(spec.num_experts, dtype=torch.float32)
+    for pair_idx in range(pair_count):
+        start = 2 * pair_idx
+        weight[start : start + 2, entropy_feature_idx] = slopes[pair_idx]
+        bias[start : start + 2] = biases[pair_idx]
+    return weight.to(dtype=dtype), bias.to(dtype=dtype)
+
+
 def convert_dense_state_dict_to_patchmoe(
     dense_state_dict: Mapping[str, torch.Tensor],
     spec: PatchMoEWarmStartSpec,
@@ -279,7 +328,12 @@ def convert_dense_state_dict_to_patchmoe(
             )
         converted[f"{prefix}.router.weight"] = router_weight
         if spec.patch_feature_count > 0:
-            if spec.expert_init_mode == "paired_partition":
+            patch_feature_bias = None
+            if spec.patch_feature_init == "entropy_bands":
+                patch_feature_router, patch_feature_bias = (
+                    _entropy_band_patch_feature_router(spec, dtype=dtype)
+                )
+            elif spec.expert_init_mode == "paired_partition":
                 patch_feature_router = _paired_router_weight(
                     num_experts=spec.num_experts,
                     input_dim=spec.patch_feature_count,
@@ -295,6 +349,25 @@ def convert_dense_state_dict_to_patchmoe(
                     generator=generator,
                 )
             converted[f"{prefix}.patch_feature_router.weight"] = patch_feature_router
+            if spec.patch_feature_bias:
+                if patch_feature_bias is None:
+                    if spec.expert_init_mode == "paired_partition":
+                        patch_feature_bias = _paired_router_weight(
+                            num_experts=spec.num_experts,
+                            input_dim=1,
+                            dtype=dtype,
+                            std=router_std,
+                            generator=generator,
+                        ).squeeze(-1)
+                    else:
+                        patch_feature_bias = _truncated_normal(
+                            (spec.num_experts,),
+                            dtype=dtype,
+                            std=router_std,
+                            generator=generator,
+                        )
+                converted[f"{prefix}.patch_feature_router.bias"] = patch_feature_bias
+                converted[f"{prefix}.patch_length_router.bias"] = patch_feature_bias
             # SparseMoEFeedForward keeps this compatibility alias in its state dict.
             converted[f"{prefix}.patch_length_router.weight"] = patch_feature_router
 

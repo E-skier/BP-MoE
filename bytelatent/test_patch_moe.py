@@ -165,6 +165,74 @@ def test_sparse_moe_entropy_routing_requires_patch_entropies():
         raise AssertionError("Expected missing patch_entropies to raise ValueError")
 
 
+def test_sparse_moe_entropy_only_routing_ignores_hidden_state():
+    moe = SparseMoEFeedForward(
+        dim=4,
+        hidden_dim=8,
+        multiple_of=1,
+        ffn_dim_multiplier=1.0,
+        num_experts=2,
+        top_k=1,
+        router_use_hidden_state=False,
+        router_patch_feature_bias=True,
+        router_normalize_patch_entropy=False,
+        router_use_patch_entropy=True,
+    )
+    with torch.no_grad():
+        moe.router.weight.fill_(100.0)
+        assert moe.patch_feature_router is not None
+        moe.patch_feature_router.weight.copy_(torch.tensor([[-1.0], [1.0]]))
+        moe.patch_feature_router.bias.copy_(torch.tensor([2.0, -2.0]))
+
+    patch_lengths = torch.ones(1, 2, dtype=torch.long)
+    patch_entropies = torch.tensor([[1.0, 3.0]])
+    first_x = torch.randn(1, 2, 4)
+    second_x = torch.randn(1, 2, 4) * 1000
+
+    moe(
+        first_x,
+        patch_lengths=patch_lengths,
+        patch_entropies=patch_entropies,
+    )
+    first_assignments = {
+        key: value
+        for key, value in moe.last_metrics.items()
+        if key.endswith("_unit_assignment_fraction")
+    }
+    moe(
+        second_x,
+        patch_lengths=patch_lengths,
+        patch_entropies=patch_entropies,
+    )
+    second_assignments = {
+        key: value
+        for key, value in moe.last_metrics.items()
+        if key.endswith("_unit_assignment_fraction")
+    }
+
+    assert first_assignments == second_assignments
+    assert moe.last_metrics["hidden_state_routing"] == 0.0
+    assert moe.last_metrics["expert_0_unit_assignment_fraction"] == 0.5
+    assert moe.last_metrics["expert_1_unit_assignment_fraction"] == 0.5
+
+
+def test_sparse_moe_rejects_router_without_any_input_features():
+    try:
+        SparseMoEFeedForward(
+            dim=4,
+            hidden_dim=8,
+            multiple_of=1,
+            ffn_dim_multiplier=1.0,
+            num_experts=2,
+            top_k=1,
+            router_use_hidden_state=False,
+        )
+    except ValueError as exc:
+        assert "patch routing feature is required" in str(exc)
+    else:
+        raise AssertionError("Expected a router without input features to fail")
+
+
 def test_sparse_moe_patch_byte_feature_routing():
     moe = SparseMoEFeedForward(
         dim=32,
@@ -273,6 +341,38 @@ def test_sparse_moe_specialization_metrics_bucket_usage():
     assert_close("expert_0_entropy_bucket_low_assignment_fraction", 0.5)
     assert_close("expert_0_entropy_bucket_medium_assignment_fraction", 0.5)
     assert_close("expert_1_entropy_bucket_high_assignment_fraction", 1.0)
+
+
+def test_sparse_moe_entropy_correlation_metrics():
+    moe = SparseMoEFeedForward(
+        dim=4,
+        hidden_dim=8,
+        multiple_of=1,
+        ffn_dim_multiplier=1.0,
+        num_experts=4,
+        top_k=2,
+        router_use_hidden_state=False,
+        router_use_patch_entropy=True,
+        router_patch_feature_bias=True,
+        router_normalize_patch_entropy=False,
+    )
+    with torch.no_grad():
+        moe.router.weight.zero_()
+        moe.patch_feature_router.weight.zero_()
+        moe.patch_feature_router.bias.zero_()
+        moe.patch_feature_router.weight[:, 0] = torch.tensor([0.0, 0.0, 1.0, 1.0])
+        moe.patch_feature_router.bias[:] = torch.tensor([0.0, 0.0, -1.0, -1.0])
+
+    x = torch.randn(1, 4, 4)
+    patch_lengths = torch.ones(1, 4)
+    patch_entropies = torch.tensor([[0.1, 0.5, 2.0, 3.0]])
+
+    moe(x, patch_lengths=patch_lengths, patch_entropies=patch_entropies)
+    metrics = moe.last_metrics
+
+    assert metrics["entropy_expected_pair_corr"] > 0.9
+    assert metrics["entropy_selected_pair_corr"] > 0.9
+    assert metrics["top2_same_pair_fraction"] == 1.0
 
 
 def test_sparse_moe_cost_aware_congestion_price_reroutes_overloaded_expert():

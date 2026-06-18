@@ -111,6 +111,9 @@ class BaseTransformerArgs(BaseModel):
     moe_router_jitter: float = 0.0
     moe_router_congestion_weight: float = 0.0
     moe_router_z_loss_weight: float = 0.0
+    moe_router_use_hidden_state: bool = True
+    moe_router_patch_feature_bias: bool = False
+    moe_router_normalize_patch_entropy: bool = True
     moe_router_use_patch_length: bool = False
     moe_router_use_patch_entropy: bool = False
     moe_router_use_patch_byte_features: bool = False
@@ -595,6 +598,9 @@ class SparseMoEFeedForward(nn.Module):
         router_jitter: float = 0.0,
         router_congestion_weight: float = 0.0,
         router_z_loss_weight: float = 0.0,
+        router_use_hidden_state: bool = True,
+        router_patch_feature_bias: bool = False,
+        router_normalize_patch_entropy: bool = True,
         router_use_patch_length: bool = False,
         router_use_patch_entropy: bool = False,
         router_use_patch_byte_features: bool = False,
@@ -630,6 +636,8 @@ class SparseMoEFeedForward(nn.Module):
         self.router_jitter = router_jitter
         self.router_congestion_weight = router_congestion_weight
         self.router_z_loss_weight = router_z_loss_weight
+        self.router_use_hidden_state = router_use_hidden_state
+        self.router_normalize_patch_entropy = router_normalize_patch_entropy
         self.router_use_patch_length = router_use_patch_length
         self.router_use_patch_entropy = router_use_patch_entropy
         self.router_use_patch_byte_features = router_use_patch_byte_features
@@ -647,11 +655,20 @@ class SparseMoEFeedForward(nn.Module):
                 f"byte_{name}" for name in PATCH_BYTE_TYPE_NAMES
             )
         self.patch_feature_router = (
-            nn.Linear(len(self.patch_feature_names), num_experts, bias=False)
+            nn.Linear(
+                len(self.patch_feature_names),
+                num_experts,
+                bias=router_patch_feature_bias,
+            )
             if len(self.patch_feature_names) > 0
             else None
         )
         self.patch_length_router = self.patch_feature_router
+        if not router_use_hidden_state and self.patch_feature_router is None:
+            raise ValueError(
+                "At least one patch routing feature is required when hidden-state "
+                "routing is disabled"
+            )
         self.experts = nn.ModuleList(
             [
                 FeedForward(
@@ -714,7 +731,12 @@ class SparseMoEFeedForward(nn.Module):
             flat_x, flat_patch_lengths, flat_patch_entropies
         )
 
-        router_logits = self.router(flat_x)
+        hidden_router_logits = self.router(flat_x)
+        router_logits = (
+            hidden_router_logits
+            if self.router_use_hidden_state
+            else hidden_router_logits * 0.0
+        )
         learned_router_logits = router_logits
         if self.patch_feature_router is not None:
             patch_features = self._patch_features(
@@ -785,6 +807,19 @@ class SparseMoEFeedForward(nn.Module):
             pre_congestion_router_probs,
         )
         return flat_output.reshape_as(x)
+
+    @staticmethod
+    def _safe_corr(x: torch.Tensor, y: torch.Tensor) -> float:
+        if x.numel() == 0 or y.numel() == 0:
+            return 0.0
+        x = x.float()
+        y = y.float()
+        x = x - x.mean()
+        y = y - y.mean()
+        denom = x.square().sum().sqrt() * y.square().sum().sqrt()
+        if denom <= 0:
+            return 0.0
+        return (x * y).sum().div(denom).item()
 
     def _forward_local(
         self,
@@ -1007,7 +1042,7 @@ class SparseMoEFeedForward(nn.Module):
                 active_entropies = entropy_feature[entropy_feature > 0]
             else:
                 active_entropies = entropy_feature[flat_patch_lengths > 0]
-            if active_entropies.numel() > 0:
+            if self.router_normalize_patch_entropy and active_entropies.numel() > 0:
                 entropy_feature = entropy_feature / active_entropies.mean().clamp_min(
                     1.0
                 )
@@ -1101,6 +1136,7 @@ class SparseMoEFeedForward(nn.Module):
         unit_assignment_fraction = unit_assignments / total_unit_assignments
 
         self.last_metrics = {
+            "hidden_state_routing": float(self.router_use_hidden_state),
             "router_entropy": router_entropy.mean().item(),
             "load_imbalance": (load_fraction.max() / mean_load).item(),
             "max_load_fraction": load_fraction.max().item(),
@@ -1217,6 +1253,58 @@ class SparseMoEFeedForward(nn.Module):
                     ),
                 }
             )
+            if active_entropies.numel() > 0:
+                active_router_probs = router_probs[active_unit_mask].float()
+                expert_ids = torch.arange(
+                    self.num_experts,
+                    device=router_probs.device,
+                    dtype=torch.float32,
+                )
+                expected_expert_id = active_router_probs @ expert_ids
+                selected_expert_id = top_indices[active_unit_mask].float().mean(dim=-1)
+                self.last_metrics.update(
+                    {
+                        "entropy_expected_expert_corr": self._safe_corr(
+                            active_entropies, expected_expert_id
+                        ),
+                        "entropy_selected_expert_corr": self._safe_corr(
+                            active_entropies, selected_expert_id
+                        ),
+                    }
+                )
+                if self.num_experts % 2 == 0:
+                    pair_ids = torch.arange(
+                        self.num_experts,
+                        device=router_probs.device,
+                        dtype=torch.float32,
+                    ).div(2, rounding_mode="floor")
+                    expected_pair_id = active_router_probs @ pair_ids
+                    selected_pair_id = (
+                        top_indices[active_unit_mask]
+                        .float()
+                        .div(2, rounding_mode="floor")
+                        .mean(dim=-1)
+                    )
+                    self.last_metrics.update(
+                        {
+                            "entropy_expected_pair_corr": self._safe_corr(
+                                active_entropies, expected_pair_id
+                            ),
+                            "entropy_selected_pair_corr": self._safe_corr(
+                                active_entropies, selected_pair_id
+                            ),
+                        }
+                    )
+                    if self.top_k == 2:
+                        selected_pairs = top_indices[active_unit_mask].div(
+                            2, rounding_mode="floor"
+                        )
+                        self.last_metrics["top2_same_pair_fraction"] = (
+                            (selected_pairs[:, 0] == selected_pairs[:, 1])
+                            .float()
+                            .mean()
+                            .item()
+                        )
             self._record_per_expert_feature_metrics(
                 "patch_entropy",
                 flat_patch_entropies.float(),
@@ -1377,6 +1465,8 @@ class SparseMoEFeedForward(nn.Module):
                 a=-3 * router_init_std,
                 b=3 * router_init_std,
             )
+            if self.patch_feature_router.bias is not None:
+                nn.init.zeros_(self.patch_feature_router.bias)
         for expert in self.experts:
             if expert is not None:
                 expert.reset_parameters(init_std, factor)
@@ -1466,6 +1556,9 @@ class TransformerBlock(nn.Module):
                 router_jitter=args.moe_router_jitter,
                 router_congestion_weight=args.moe_router_congestion_weight,
                 router_z_loss_weight=args.moe_router_z_loss_weight,
+                router_use_hidden_state=args.moe_router_use_hidden_state,
+                router_patch_feature_bias=args.moe_router_patch_feature_bias,
+                router_normalize_patch_entropy=args.moe_router_normalize_patch_entropy,
                 router_use_patch_length=args.moe_router_use_patch_length,
                 router_use_patch_entropy=args.moe_router_use_patch_entropy,
                 router_use_patch_byte_features=args.moe_router_use_patch_byte_features,
