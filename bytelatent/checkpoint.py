@@ -38,6 +38,8 @@ CONSOLIDATE_NAME = "consolidated.pth"
 
 CONFIG_NAME = "params.json"
 TRAIN_STATE_NAME = "train_state_{:05d}.json"
+LATEST_NAME = "LATEST.json"
+COMPLETE_NAME = "complete.json"
 RE_DIGITS = re.compile(r"\d+")
 
 
@@ -148,6 +150,69 @@ class CheckpointManager:
         folders.sort(key=lambda p: _get_key_step(os.path.basename(p)))
         return folders
 
+    def _is_complete_checkpoint(self, path: str) -> bool:
+        return self.fs.isfile(os.path.join(path, COMPLETE_NAME))
+
+    def _read_latest_path(self, dp_rank: int = 0) -> str | None:
+        latest_file = os.path.join(self.path, LATEST_NAME)
+        if not self.fs.isfile(latest_file):
+            return None
+        try:
+            data = json.loads(self.fs.read_text(latest_file))
+        except Exception:
+            logger.warning("Ignoring unreadable latest checkpoint pointer: %s", latest_file)
+            return None
+        path = data.get("path")
+        if not path:
+            return None
+        train_state_name = TRAIN_STATE_NAME.format(dp_rank)
+        if (
+            self.fs.isdir(path)
+            and self._is_complete_checkpoint(path)
+            and self.fs.isfile(os.path.join(path, train_state_name))
+        ):
+            return path
+        logger.warning("Ignoring invalid latest checkpoint pointer: %s", path)
+        return None
+
+    def _write_complete_marker(self, path: str, step: int) -> None:
+        if not get_is_master():
+            return
+        marker = {
+            "step": int(step),
+            "verified": True,
+            "path": path,
+            "created_at": time.time(),
+        }
+        self.fs.write_text(os.path.join(path, COMPLETE_NAME), json.dumps(marker))
+
+    def _write_latest_pointer(self, path: str, step: int) -> None:
+        if not get_is_master():
+            return
+        latest_path = os.path.join(self.path, LATEST_NAME)
+        tmp_path = os.path.join(self.path, f".{LATEST_NAME}.tmp")
+        payload = {
+            "step": int(step),
+            "verified": True,
+            "path": path,
+            "complete_marker": os.path.join(path, COMPLETE_NAME),
+        }
+        self.fs.write_text(tmp_path, json.dumps(payload, indent=2, sort_keys=True))
+        if hasattr(self.fs, "mv"):
+            self.fs.mv(tmp_path, latest_path)
+        else:
+            os.replace(tmp_path, latest_path)
+
+    def _remove_checkpoint_folder(self, folder: str) -> None:
+        for file in self.fs.ls(folder):
+            if self.fs.isfile(file):
+                self.fs.rm_file(file)
+            elif self.fs.isdir(file):
+                for f in self.fs.ls(file):
+                    self.fs.rm(f)
+                self.fs.rmdir(file)
+        self.fs.rmdir(folder)
+
     def clean_up(self):
         logger.info("Cleaning up checkpoints...")
         dump_folders = []
@@ -174,21 +239,18 @@ class CheckpointManager:
             eval_folders = eval_folders[-self.eval_every.keep :]
 
         folder_to_keep = set(other_folders + dump_folders + eval_folders)
+        complete_folders = [
+            p for p in self.existing_saves if self._is_complete_checkpoint(p)
+        ]
+        # Formal runs must always keep a latest checkpoint plus one fallback.
+        folder_to_keep.update(complete_folders[-2:])
         folder_to_remove = set(self.existing_saves) - folder_to_keep
 
         logger.info(f"Removing folders: {folder_to_remove}")
 
-        if dist.get_rank() == 0:
+        if get_is_master():
             for folder in folder_to_remove:
-                for file in self.fs.ls(folder):
-                    if self.fs.isfile(file):
-                        self.fs.rm_file(file)
-                    elif self.fs.isdir(file):
-                        assert os.path.name(file) in [CONSOLIDATE_FOLDER]
-                        for f in self.fs.ls(file):
-                            self.fs.rm(f)
-                        self.fs.rmdir(file)
-                self.fs.rmdir(folder)
+                self._remove_checkpoint_folder(folder)
 
         _dist_barrier()
 
@@ -196,10 +258,14 @@ class CheckpointManager:
         self.existing_saves.sort(key=lambda p: _get_key_step(os.path.basename(p)))
 
     def get_last_step_path(self, dp_rank: int = 0) -> str | None:
+        latest_path = self._read_latest_path(dp_rank=dp_rank)
+        if latest_path is not None:
+            return latest_path
         path = None
         for p in reversed(self.existing_saves):
-
-            if self.fs.isfile(os.path.join(p, TRAIN_STATE_NAME.format(dp_rank))):
+            if self._is_complete_checkpoint(p) and self.fs.isfile(
+                os.path.join(p, TRAIN_STATE_NAME.format(dp_rank))
+            ):
                 path = p
                 break
         return path
@@ -275,6 +341,12 @@ class CheckpointManager:
             with self.fs.open(train_state_full_path, "w") as f:
                 json.dump(train_state.state_dict(), f)
             logger.info("Train state saved !")
+
+        if dist.is_initialized():
+            _dist_barrier()
+
+        self._write_complete_marker(curr_save_dir, train_state.step)
+        self._write_latest_pointer(curr_save_dir, train_state.step)
 
         self.existing_saves.append(curr_save_dir)
 

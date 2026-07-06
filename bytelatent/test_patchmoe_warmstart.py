@@ -94,6 +94,52 @@ def test_dense_to_patchmoe_initial_ffn_is_functionally_equivalent():
     torch.testing.assert_close(actual, expected)
 
 
+def test_dense_copy_warmstart_alias_replicates_full_width_experts():
+    dense = dense_global_state_dict(dim=8, hidden_dim=16, n_layers=1)
+    spec = PatchMoEWarmStartSpec(
+        num_experts=8,
+        top_k=1,
+        layer_frequency=1,
+        patch_features=("entropy",),
+        expert_ffn_dim_multiplier=1.0,
+        expert_init_mode="dense_copy",
+    )
+
+    converted, _ = convert_dense_state_dict_to_patchmoe(dense, spec)
+
+    prefix = "global_transformer.layers.0.feed_forward"
+    for expert_idx in range(8):
+        for weight_name in ("w1", "w2", "w3"):
+            dense_weight = dense[f"{prefix}.{weight_name}.weight"]
+            expert_weight = converted[
+                f"{prefix}.experts.{expert_idx}.{weight_name}.weight"
+            ]
+            assert expert_weight.shape == dense_weight.shape
+            torch.testing.assert_close(expert_weight, dense_weight)
+
+
+def test_dense_copy_warmstart_exports_entropy_mlp_router_weights():
+    dense = dense_global_state_dict(dim=8, hidden_dim=16, n_layers=1)
+    spec = PatchMoEWarmStartSpec(
+        num_experts=8,
+        top_k=1,
+        layer_frequency=1,
+        patch_features=(),
+        expert_ffn_dim_multiplier=1.0,
+        expert_init_mode="dense_copy",
+        entropy_mlp_hidden_dim=32,
+    )
+
+    converted, _ = convert_dense_state_dict_to_patchmoe(dense, spec)
+
+    prefix = "global_transformer.layers.0.feed_forward"
+    assert converted[f"{prefix}.entropy_router.0.weight"].shape == (32, 1)
+    assert converted[f"{prefix}.entropy_router.0.bias"].shape == (32,)
+    assert converted[f"{prefix}.entropy_router.2.weight"].shape == (8, 32)
+    assert converted[f"{prefix}.entropy_router.2.bias"].shape == (8,)
+    assert f"{prefix}.patch_feature_router.weight" not in converted
+
+
 def test_paired_partition_is_functionally_equivalent_per_sample():
     torch.manual_seed(0)
     dense = FeedForward(
@@ -113,6 +159,7 @@ def test_paired_partition_is_functionally_equivalent_per_sample():
         expert_ffn_dim_multiplier=0.5,
         expert_init_mode="paired_partition",
         patch_feature_bias=True,
+        pair_patch_feature_router=True,
     )
     converted, _ = convert_dense_state_dict_to_patchmoe(dense_state, spec)
 

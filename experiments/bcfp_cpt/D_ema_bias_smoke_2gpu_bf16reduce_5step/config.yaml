@@ -1,0 +1,264 @@
+async_eval_gpus: null
+checkpoint:
+  continue_training_from_init: false
+  dump:
+    every: 1000
+    keep: 0
+  eval:
+    every: 1000
+    keep: 0
+  init_ckpt_path: /data1/pengfeigao/BP-MoE/blt1b_warmstart/initial_weights/bcfp_pair_D_ema_bias_dcp
+  path: experiments/bcfp_cpt/D_ema_bias_smoke_2gpu_bf16reduce_5step/checkpoints
+  s3_profile: null
+data:
+  add_bos: true
+  add_eos: true
+  add_patches: true
+  arrow_batch_size: 20
+  async_persist_type: approximate
+  batch_size: 1
+  buffer_size: 512
+  dataset_files: null
+  enable_byte_ngrams: false
+  entropy_model_name: transformer_100m
+  file_format: arrow
+  load_async: false
+  max_encoder_seq_length: 1536
+  pad_to_max_length: true
+  patcher_args:
+    device: cuda
+    entropy_model_checkpoint_dir: null
+    log_time: false
+    max_patch_length: null
+    monotonicity: false
+    patch_size: 4.5
+    patching_batch_size: 1
+    patching_device: cuda
+    patching_mode: entropy
+    realtime_patching: false
+    threshold: 1.335442066192627
+    threshold_add: null
+  prefetch_size: 200
+  preprocess_dir: /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1
+  root_dir: /data1/pengfeigao/BP-MoE/data
+  s3_profile: null
+  seed: 42
+  seq_len: 256
+  sources:
+    fineweb_edu_10bt: 1.0
+  tokenizer_args:
+    init_kwargs:
+      bpe_tokenizer_path: /tmp/unused.tokenizer.model
+    name: blt
+debug_dynamo: false
+distributed:
+  allow_bf16_reduced_precision_reduction: true
+  compile: false
+  compile_cache_size_limit: 8
+  detect_anomaly: false
+  dp_replicate: 1
+  dp_shard: 2
+  float8_filter: layers\.[0-9]+\.
+  float8_recipe: null
+  fsdp_type: full_shard
+  matmul_allow_tf32: false
+  model_dtype: bf16
+  selective_activation_checkpointing: true
+  spawn_method: forkserver
+  tp_size: 1
+dump_dir: experiments/bcfp_cpt/D_ema_bias_smoke_2gpu_bf16reduce_5step
+entropy_model: null
+env:
+  ENABLE_INTRA_NODE_COMM: '1'
+  MKL_NUM_THREADS: '1'
+  MKL_SERVICE_FORCE_INTEL: GNU
+  NCCL_DEBUG: WARN
+  NCCL_IB_TIMEOUT: '22'
+  OMP_NUM_THREADS: '1'
+  TORCH_NCCL_ASYNC_ERROR_HANDLING: '1'
+  TORCH_NCCL_AVOID_RECORD_STREAMS: '1'
+eval: null
+eval_on_gpus: null
+gc_collect_freq: 1000
+grad_acc_steps: 1
+logging:
+  acc_freq: null
+  freq: 1
+  wandb: null
+max_steps: 5
+model:
+  alpha_depth: disabled
+  architecture: vanilla
+  attn_bias_type: block_causal
+  attn_impl: xformers
+  attn_to_keep: all
+  conv_kernel_size: null
+  cross_attn_all_layers_decoder: true
+  cross_attn_all_layers_encoder: false
+  cross_attn_decoder: true
+  cross_attn_encoder: true
+  cross_attn_init_by_pooling: true
+  cross_attn_k: 2
+  cross_attn_nheads: 16
+  cross_attn_use_flex_attention: true
+  cross_attn_window_decoder: null
+  cross_attn_window_encoder: null
+  custom_bwd: false
+  dim: 512
+  dim_global: 2048
+  dim_local_decoder: 1024
+  dim_local_encoder: 1024
+  dim_patch_emb: null
+  dim_token: null
+  dim_token_emb: null
+  downsampling_by_pooling: max
+  dropout: 0.0
+  encoder_enable_byte_group_hash: false
+  encoder_enable_byte_ngrams: false
+  encoder_hash_byte_group_nb_functions: 1
+  encoder_hash_byte_group_size:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  encoder_hash_byte_group_vocab: 500002
+  encoder_lm_loss: false
+  encoder_ngram_table_dir: null
+  encoder_ngram_to_size_str: null
+  encoder_preds_low_entropy_toks: null
+  encoder_preds_random_toks: null
+  entropy_model_checkpoint_dir: null
+  entropy_model_is_ngram_model: false
+  eos_id: 2
+  ffn_dim_multiplier: 1.0
+  ffn_dim_multiplier_global: null
+  full_logging_n_layers: 4
+  fuse_sequence_parallel: false
+  global_local_decoder_residual_layer: null
+  head_dim: null
+  init_base_std: null
+  init_std_factor: current_depth
+  init_use_depth: current
+  init_use_gaussian: true
+  layer_ckpt: none
+  local_attention_window_len: 512
+  log_patch_lengths: true
+  loss_parallel: false
+  max_encoder_seq_length: 1536
+  max_length: 256
+  max_patch_length: null
+  max_seqlen: 256
+  moe_balance_cost: byte
+  moe_balance_decay_start_step: 0
+  moe_balance_end_step: 0
+  moe_balance_final_weight: 0.0
+  moe_balance_loss_weight: 0.0
+  moe_balance_peak_step: 0
+  moe_balance_schedule: constant
+  moe_balance_start_step: 0
+  moe_entropy_prior_calibration_path: blt1b_warmstart/initial_weights/bcfp_pair_calibrated/router_calibration.json
+  moe_entropy_prior_hidden_scale: 0.0
+  moe_entropy_prior_mode: gaussian_pairs
+  moe_entropy_prior_scale: 0.5
+  moe_entropy_prior_trainable: false
+  moe_ep_size: 2
+  moe_ffn_dim_multiplier: 0.5
+  moe_hidden_residual_final_scale: 0.25
+  moe_hidden_residual_ramp_end_step: 3000
+  moe_hidden_residual_ramp_start_step: 1000
+  moe_layer_frequency: 1
+  moe_num_experts: 8
+  moe_pair_bias_clip: 1.5
+  moe_pair_bias_ema: 0.95
+  moe_pair_bias_lr: 0.05
+  moe_pair_bias_mode: ema_byte_floor
+  moe_pair_bias_update_interval: 20
+  moe_pair_max_byte_fraction: 0.55
+  moe_pair_min_byte_fraction: 0.05
+  moe_pair_size: 2
+  moe_router_congestion_weight: 0.0
+  moe_router_jitter: 0.0
+  moe_router_normalize_patch_entropy: true
+  moe_router_patch_feature_bias: false
+  moe_router_use_hidden_state: true
+  moe_router_use_patch_byte_features: false
+  moe_router_use_patch_entropy: false
+  moe_router_use_patch_length: false
+  moe_router_z_loss_weight: 0.0
+  moe_routing_granularity: pair
+  moe_top_k: 2
+  monotonicity: false
+  multiple_of: 256
+  n_heads: 8
+  n_heads_global: 16
+  n_heads_local_decoder: 16
+  n_heads_local_encoder: 16
+  n_kv_heads: null
+  n_kv_heads_global: null
+  n_layers: 8
+  n_layers_global: 25
+  n_layers_local_decoder: 9
+  n_layers_local_encoder: 1
+  ngram_vocab_sizes: null
+  non_linearity: swiglu
+  norm_affine: true
+  norm_eps: 1.0e-05
+  norm_type: rmsnorm
+  output_size: -1
+  pad_to_max_length: true
+  patch_in_forward: false
+  patch_size: 4.5
+  patching_batch_size: 1
+  patching_device: cuda
+  patching_mode: entropy
+  patching_threshold: 1.335442066192627
+  patching_threshold_add: null
+  patching_thresholds_str: null
+  pm_size: 0
+  pre_norm: true
+  recompute_attn: false
+  recompute_fc1_out: false
+  recompute_fc3_out: false
+  rope_theta: 500000.0
+  rope_use_fp32_in_outer_product: true
+  seed: 42
+  sequence_parallel: false
+  share_encoder_decoder_emb: true
+  tie_local_encoder_decoder: false
+  tie_local_encoder_decoder_logits: false
+  tokenize_with_bpe_delimiter: false
+  use_fsdp: true
+  use_local_encoder_transformer: true
+  use_rope: true
+  vocab_size: 260
+  weight_tying: false
+name: D_ema_bias_smoke_2gpu_bf16reduce_5step
+optim:
+  annealing_step: 1000
+  beta1: 0.9
+  beta2: 0.95
+  clip: 0.0
+  cosine_theta: 1.0
+  cycle_length: 1.0
+  decay_fraction: 0.1
+  epsilon: 1.0e-08
+  exp_factor: 0.5
+  fused: false
+  lr: 5.0e-05
+  lr_min_ratio: 0.1
+  scheduler: cosine
+  warmup: 100
+  weight_decay: 0.1
+probe_freq: null
+profiling:
+  mem_steps: 4
+  mem_warmup: 0
+  profile_steps: 4
+  profile_warmup: 100
+  run: false
+  trace_folder: profiling
+seed: 42
+steps: 5
+train_entropy_model: false

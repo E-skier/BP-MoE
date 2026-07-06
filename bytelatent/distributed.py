@@ -71,6 +71,14 @@ if int(os.environ.get("BLT_ALLOW_MISSING_FLEX_ATTENTION", False)) == 0:
         )
 
 
+def should_activation_checkpoint_layer(module: torch.nn.Module) -> bool:
+    from bytelatent.base_transformer import SparseMoEFeedForward
+
+    return not any(
+        isinstance(child, SparseMoEFeedForward) for child in module.modules()
+    )
+
+
 class DistributedArgs(BaseModel):
     model_config = ConfigDict(extra="forbid")
     dp_shard: int = (
@@ -444,16 +452,17 @@ def check_model_value_range(
         if torch.isnan(param).any() or torch.isinf(param).any():
             logger.warning(f"Model parameter {name} contains NaN or Inf")
 
-        param_range = param.max() - param.min()
-        param_std = param.std()
-        if param_range > range:
-            logger.warning(
-                f"Model parameter {name} has a suspiciously large range ({param_range}): please check initialization and init_weights is defined and called"
-            )
-        if param_std > std:
-            logger.warning(
-                f"Model parameter {name} has a suspiciously large standard deviation ({param_std}): please check initialization and init_weights is defined and called"
-            )
+        if torch.is_floating_point(param) or torch.is_complex(param):
+            param_range = param.max() - param.min()
+            param_std = param.std()
+            if param_range > range:
+                logger.warning(
+                    f"Model parameter {name} has a suspiciously large range ({param_range}): please check initialization and init_weights is defined and called"
+                )
+            if param_std > std:
+                logger.warning(
+                    f"Model parameter {name} has a suspiciously large standard deviation ({param_std}): please check initialization and init_weights is defined and called"
+                )
         if (param == 0).all():
             logger.warning(
                 f"Model parameter {name} is all zeros: it might be because of a missing initialization"
@@ -465,10 +474,14 @@ def init_signal_handler(callable):
     Handle signals sent by SLURM for time limit / pre-emption.
     """
     signal.signal(signal.SIGUSR2, callable)
+    signal.signal(signal.SIGTERM, callable)
     logger.warning("Signal handler installed.")
 
 
 def requeue_slurm_job():
+    if "SLURM_PROCID" not in os.environ or "SLURM_JOB_ID" not in os.environ:
+        logger.warning("Not running under SLURM, exiting without requeue.")
+        sys.exit(0)
     prod_id = int(os.environ["SLURM_PROCID"])
     logger.warning("Host: %s - Global rank: %i" % (socket.gethostname(), prod_id))
     if prod_id == 0 and os.environ.get("LAUNCH_WITH", "") != "DORA":
@@ -652,6 +665,15 @@ def parallelize_model(
             model.local_decoder,
         ]:
             for i in range(len(module.layers)):
+                if not should_activation_checkpoint_layer(module.layers[i]):
+                    logger.info(
+                        "Skipping activation checkpoint wrapper for %s layer %s "
+                        "because it contains SparseMoEFeedForward with dynamic "
+                        "dispatch shapes.",
+                        module.__class__.__name__,
+                        i,
+                    )
+                    continue
                 module.layers[i] = checkpoint_wrapper(
                     module.layers[i],
                 )

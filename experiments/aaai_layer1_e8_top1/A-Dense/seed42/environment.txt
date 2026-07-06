@@ -1,0 +1,69 @@
+2026-07-05T23:59:45+08:00
+b8b00985879d3b9a2e17cea8e703d4944d95a7d3
+Sun Jul  5 23:59:45 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 590.48.01              Driver Version: 590.48.01      CUDA Version: 13.1     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-80GB          Off |   00000000:27:00.0 Off |                    0 |
+| N/A   38C    P0             59W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA A100-SXM4-80GB          Off |   00000000:2A:00.0 Off |                    0 |
+| N/A   35C    P0             58W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA A100-SXM4-80GB          Off |   00000000:51:00.0 Off |                    0 |
+| N/A   35C    P0             57W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA A100-SXM4-80GB          Off |   00000000:57:00.0 Off |                    0 |
+| N/A   38C    P0             57W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   4  NVIDIA A100-SXM4-80GB          Off |   00000000:9E:00.0 Off |                    0 |
+| N/A   39C    P0             63W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   5  NVIDIA A100-SXM4-80GB          Off |   00000000:A4:00.0 Off |                    0 |
+| N/A   36C    P0             60W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   6  NVIDIA A100-SXM4-80GB          Off |   00000000:C7:00.0 Off |                    0 |
+| N/A   35C    P0             60W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   7  NVIDIA A100-SXM4-80GB          Off |   00000000:CA:00.0 Off |                    0 |
+| N/A   39C    P0             61W /  400W |       8MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+	[4mGPU0	GPU1	GPU2	GPU3	GPU4	GPU5	GPU6	GPU7	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	NV12	NV12	NV12	NV12	NV12	NV12	NV12	0-27,56-83	0		N/A
+GPU1	NV12	 X 	NV12	NV12	NV12	NV12	NV12	NV12	0-27,56-83	0		N/A
+GPU2	NV12	NV12	 X 	NV12	NV12	NV12	NV12	NV12	0-27,56-83	0		N/A
+GPU3	NV12	NV12	NV12	 X 	NV12	NV12	NV12	NV12	0-27,56-83	0		N/A
+GPU4	NV12	NV12	NV12	NV12	 X 	NV12	NV12	NV12	28-55,84-111	1		N/A
+GPU5	NV12	NV12	NV12	NV12	NV12	 X 	NV12	NV12	28-55,84-111	1		N/A
+GPU6	NV12	NV12	NV12	NV12	NV12	NV12	 X 	NV12	28-55,84-111	1		N/A
+GPU7	NV12	NV12	NV12	NV12	NV12	NV12	NV12	 X 	28-55,84-111	1		N/A
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks

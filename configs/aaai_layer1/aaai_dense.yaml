@@ -1,0 +1,14 @@
+config: /data1/pengfeigao/BP-MoE/configs/aaai_layer1/base_6xa100.yaml
+
+name: A-Dense
+
+model:
+  moe_num_experts: 0
+  moe_top_k: 1
+  moe_ep_size: 1
+  moe_balance_loss_weight: 0.0
+  moe_router_jitter: 0.0
+  moe_router_use_hidden_state: false
+  moe_router_use_patch_entropy: false
+  moe_router_entropy_mlp_hidden_dim: 0
+  moe_balance_cost: patch

@@ -1,0 +1,295 @@
+{
+  "runs": [
+    {
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.1291436457633972,
+      "entropy_selected_pair_corr": -0.02331345796585083,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 25.562991619110107,
+      "gpu_max_reserved_gib": 37.1875,
+      "iter_time_tail_mean": 0.93204,
+      "label": "A1_100",
+      "last_bpb": 0.80078125,
+      "last_step": 100,
+      "metrics_records": 10,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.34370852120220663,
+        0.1138061167486012,
+        0.21236174386925996,
+        0.3301236168667674
+      ],
+      "pair_dead_count": 2.48,
+      "pair_load_cv": 1.5987524938583375,
+      "pair_max_byte_fraction": 0.9369941425323486,
+      "pair_min_byte_fraction": 0.0,
+      "pass_fail": {
+        "passed": false,
+        "reasons": [
+          "pair_dead_count is 2.48",
+          "pair_min_byte_fraction 0.0000 is below 0.0100",
+          "pair_max_byte_fraction 0.9370 is above 0.7000"
+        ]
+      },
+      "run_dir": "experiments/bcfp_cpt/A1_clean_smoke_100step_8gpu_nofused_clip0",
+      "tail_bpb_mean": 0.8046875,
+      "tail_loss_mean": 0.5708389138802886,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 1620.7161464766552
+    },
+    {
+      "bpb_relative_delta_vs_baseline": 0.052427,
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.12822816610336304,
+      "entropy_selected_pair_corr": -0.019079953134059906,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 29.523513317108154,
+      "gpu_max_reserved_gib": 41.45703125,
+      "iter_time_tail_mean": 1.3311,
+      "label": "A1_6gpu_5k",
+      "last_bpb": 0.8515625,
+      "last_step": 5000,
+      "metrics_records": 100,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.35078725032508373,
+        0.10219908917322755,
+        0.22162654502317308,
+        0.32538711875677107
+      ],
+      "pair_dead_count": 2.48,
+      "pair_load_cv": 1.584069275856018,
+      "pair_max_byte_fraction": 0.9190110635757446,
+      "pair_min_byte_fraction": 0.0,
+      "pass_fail": {
+        "passed": false,
+        "reasons": [
+          "pair_dead_count is 2.48",
+          "pair_min_byte_fraction 0.0000 is below 0.0100",
+          "pair_max_byte_fraction 0.9190 is above 0.7000",
+          "tail_bpb_mean regressed by 5.24% vs baseline, limit is 1.50%"
+        ]
+      },
+      "run_dir": "experiments/bcfp_cpt/A1_clean_screenlike_5k_6gpu_nofused_clip0_ckpt100k",
+      "tail_bpb_mean": 0.846875,
+      "tail_loss_mean": 0.5998606499532858,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 1141.2167585830268
+    },
+    {
+      "bpb_relative_delta_vs_baseline": 0.0,
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.9092906713485718,
+      "entropy_selected_pair_corr": 0.827517569065094,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 25.562991619110107,
+      "gpu_max_reserved_gib": 35.568359375,
+      "iter_time_tail_mean": 0.9399599999999999,
+      "label": "B_100",
+      "last_bpb": 0.80078125,
+      "last_step": 100,
+      "metrics_records": 10,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.35133376717567444,
+        0.4274560809135437,
+        0.09694209694862366,
+        0.1242680549621582
+      ],
+      "pair_dead_count": 0.0,
+      "pair_load_cv": 0.569190502166748,
+      "pair_max_byte_fraction": 0.4274560809135437,
+      "pair_min_byte_fraction": 0.09694209694862366,
+      "pass_fail": {
+        "passed": true,
+        "reasons": []
+      },
+      "run_dir": "experiments/bcfp_cpt/B_calibrated_smoke_100step_8gpu_nofused_clip0_metafix",
+      "tail_bpb_mean": 0.8046875,
+      "tail_loss_mean": 0.57066112998873,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 1620.7388816792848
+    },
+    {
+      "bpb_relative_delta_vs_baseline": 0.093204,
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.8792552947998047,
+      "entropy_selected_pair_corr": 0.7834165096282959,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 25.56356382369995,
+      "gpu_max_reserved_gib": 35.677734375,
+      "iter_time_tail_mean": 1.06868,
+      "label": "B_1050_partial",
+      "last_bpb": 0.890625,
+      "last_step": 1050,
+      "metrics_records": 21,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.16135329008102417,
+        0.23162004351615906,
+        0.14118412137031555,
+        0.4658425450325012
+      ],
+      "pair_dead_count": 0.0,
+      "pair_load_cv": 0.5162362456321716,
+      "pair_max_byte_fraction": 0.4658425450325012,
+      "pair_min_byte_fraction": 0.14118412137031555,
+      "pass_fail": {
+        "passed": false,
+        "reasons": [
+          "tail_bpb_mean regressed by 9.32% vs baseline, limit is 1.50%"
+        ]
+      },
+      "run_dir": "experiments/bcfp_cpt/B_calibrated_screen_5k_8gpu_nofused_clip0_ckpt5000",
+      "tail_bpb_mean": 0.8796875,
+      "tail_loss_mean": 0.6260251532196999,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 1404.0866618938062
+    },
+    {
+      "bpb_relative_delta_vs_baseline": -0.067961,
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.9524809122085571,
+      "entropy_selected_pair_corr": 0.8847482204437256,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 61.10799026489258,
+      "gpu_max_reserved_gib": 75.060546875,
+      "iter_time_tail_mean": 4.02866,
+      "label": "D_5_2gpu_smoke",
+      "last_bpb": 0.640625,
+      "last_step": 5,
+      "metrics_records": 5,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.4619388282299042,
+        0.3370201587677002,
+        0.0982433333992958,
+        0.10279765725135803
+      ],
+      "pair_dead_count": 0.0,
+      "pair_load_cv": 0.6235036849975586,
+      "pair_max_byte_fraction": 0.4619388282299042,
+      "pair_min_byte_fraction": 0.0982433333992958,
+      "pass_fail": {
+        "passed": true,
+        "reasons": []
+      },
+      "run_dir": "experiments/bcfp_cpt/D_ema_bias_smoke_2gpu_gather_5step",
+      "tail_bpb_mean": 0.75,
+      "tail_loss_mean": 0.5258771747350692,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 619.6819369216869
+    },
+    {
+      "bpb_relative_delta_vs_baseline": 0.028155,
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.8921972513198853,
+      "entropy_selected_pair_corr": 0.8050342202186584,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 61.10811901092529,
+      "gpu_max_reserved_gib": 75.099609375,
+      "iter_time_tail_mean": 2.58808,
+      "label": "D_100_2gpu_warmup10",
+      "last_bpb": 0.80859375,
+      "last_step": 100,
+      "metrics_records": 10,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.2569941580295563,
+        0.5048796534538269,
+        0.10670136660337448,
+        0.13142485916614532
+      ],
+      "pair_dead_count": 0.0,
+      "pair_load_cv": 0.6312119364738464,
+      "pair_max_byte_fraction": 0.5048796534538269,
+      "pair_min_byte_fraction": 0.10670136660337448,
+      "pass_fail": {
+        "passed": false,
+        "reasons": [
+          "tail_bpb_mean regressed by 2.82% vs baseline, limit is 1.50%"
+        ]
+      },
+      "run_dir": "experiments/bcfp_cpt/D_ema_bias_smoke_2gpu_gather_100step_warmup10",
+      "tail_bpb_mean": 0.82734375,
+      "tail_loss_mean": 0.5882322579622269,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 615.4806860581195
+    },
+    {
+      "bpb_relative_delta_vs_baseline": 0.090291,
+      "checkpoint_present": false,
+      "entropy_expected_pair_corr": 0.9413268232345581,
+      "entropy_selected_pair_corr": 0.8714301896095276,
+      "ep_alltoall_bytes_tail_mean": 4198400.0,
+      "gpu_max_active_gib": 61.10869121551514,
+      "gpu_max_reserved_gib": 75.099609375,
+      "iter_time_tail_mean": 2.42776,
+      "label": "D_3500_2gpu_long",
+      "last_bpb": 0.85546875,
+      "last_step": 3500,
+      "metrics_records": 70,
+      "oom": false,
+      "pair_byte_fraction": [
+        0.4769811367988586,
+        0.191281715631485,
+        0.11419648617506027,
+        0.2175406640768051
+      ],
+      "pair_dead_count": 0.0,
+      "pair_load_cv": 0.5460495448112488,
+      "pair_max_byte_fraction": 0.4769811367988586,
+      "pair_min_byte_fraction": 0.11419648617506027,
+      "pass_fail": {
+        "passed": false,
+        "reasons": [
+          "tail_bpb_mean regressed by 9.03% vs baseline, limit is 1.50%"
+        ]
+      },
+      "run_dir": "experiments/bcfp_cpt/D_ema_bias_long_2gpu_3500step_warmup100_ckpt100k",
+      "tail_bpb_mean": 0.87734375,
+      "tail_loss_mean": 0.6219074847102165,
+      "tail_records": 5,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 610.7669620729237
+    },
+    {
+      "label": "C_002_partial_step200",
+      "run_dir": "experiments/bcfp_cpt/C_byte_aux_002_screenlike_5k_6gpu_nofused_clip0_ckpt100k",
+      "checkpoint_present": false,
+      "oom": false,
+      "last_step": 200,
+      "last_bpb": 0.8515625,
+      "tail_bpb_mean": 0.8251953125,
+      "tail_loss_mean": 0.5833144609505931,
+      "metrics_records": 4,
+      "tail_records": 4,
+      "pair_byte_fraction": [
+        0.21405334770679474,
+        0.4918672740459442,
+        0.13337670266628265,
+        0.1607026606798172
+      ],
+      "pair_dead_count": 0.0,
+      "pair_load_cv": 0.5704978108406067,
+      "pair_max_byte_fraction": 0.4918672740459442,
+      "pair_min_byte_fraction": 0.13337670266628265,
+      "entropy_selected_pair_corr": 0.751613438129425,
+      "top2_same_pair_fraction": 1.0,
+      "wps_tail_mean": 1059.4255993347365,
+      "pass_fail": {
+        "passed": false,
+        "reasons": [
+          "checkpoint save failed at step 200",
+          "filesystem /data1 was full before cleanup"
+        ]
+      }
+    }
+  ]
+}

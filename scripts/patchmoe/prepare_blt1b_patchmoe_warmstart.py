@@ -50,14 +50,34 @@ def parse_args():
     parser.add_argument(
         "--expert-init-mode",
         default="replicated_prefix",
-        choices=("replicated_prefix", "paired_partition"),
+        choices=("replicated_prefix", "dense_copy", "paired_partition"),
     )
+    parser.add_argument("--entropy-mlp-hidden-dim", type=int, default=0)
     parser.add_argument(
         "--patch-feature-init",
         default="random",
         choices=("random", "entropy_bands"),
         help="Initialize patch-feature router randomly or with entropy-ordered expert-pair bands.",
     )
+    parser.add_argument(
+        "--routing-granularity",
+        default="expert",
+        choices=("expert", "pair"),
+        help="Export expert-sized legacy routers or pair-sized BCFP routers.",
+    )
+    parser.add_argument(
+        "--entropy-prior-mode",
+        default="none",
+        choices=("none", "gaussian_pairs"),
+    )
+    parser.add_argument("--entropy-prior-calibration-path", default=None)
+    parser.add_argument(
+        "--pair-bias-mode",
+        default="none",
+        choices=("none", "ema_byte_floor"),
+    )
+    parser.add_argument("--hidden-residual-ramp-start-step", type=int, default=0)
+    parser.add_argument("--hidden-residual-ramp-end-step", type=int, default=0)
     parser.add_argument(
         "--entropy-band-logit-scale",
         type=float,
@@ -93,7 +113,14 @@ def main():
         expert_init_mode=args.expert_init_mode,
         patch_feature_bias=args.patch_feature_bias,
         patch_feature_init=args.patch_feature_init,
+        routing_granularity=args.routing_granularity,
         entropy_band_logit_scale=args.entropy_band_logit_scale,
+        entropy_prior_mode=args.entropy_prior_mode,
+        entropy_prior_calibration_path=args.entropy_prior_calibration_path,
+        pair_bias_mode=args.pair_bias_mode,
+        hidden_residual_ramp_start_step=args.hidden_residual_ramp_start_step,
+        hidden_residual_ramp_end_step=args.hidden_residual_ramp_end_step,
+        entropy_mlp_hidden_dim=args.entropy_mlp_hidden_dim,
     )
     source = Path(args.source)
     if not source.is_file():

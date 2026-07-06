@@ -1,0 +1,88 @@
+config: /data1/pengfeigao/BP-MoE/hf-weights/blt_1b/params.json
+
+name: aaai_layer1_base
+dump_dir: ???
+steps: 50000
+max_steps: 50000
+grad_acc_steps: 1
+seed: 42
+
+optim:
+  lr: 5e-05
+  warmup: 100
+  lr_min_ratio: 0.1
+  clip: 0.0
+  fused: false
+
+distributed:
+  fsdp_type: full_shard
+  dp_shard: 6
+  dp_replicate: 1
+  tp_size: 1
+  model_dtype: bf16
+  selective_activation_checkpointing: false
+  compile: false
+
+model:
+  patch_in_forward: false
+  log_patch_lengths: true
+  attn_impl: sdpa
+  max_seqlen: 256
+  max_length: 256
+  max_encoder_seq_length: 1536
+  moe_layer_frequency: 2
+  moe_ep_size: 2
+  moe_ffn_dim_multiplier: 1.0
+  moe_routing_granularity: expert
+  moe_balance_cost: patch
+  moe_balance_loss_weight: 0.001
+  moe_router_jitter: 0.01
+  moe_router_congestion_weight: 0.0
+  moe_router_z_loss_weight: 0.0
+  moe_router_patch_feature_bias: true
+  moe_router_normalize_patch_entropy: true
+  moe_router_entropy_mlp_hidden_dim: 32
+  moe_router_entropy_mean: 0.0
+  moe_router_entropy_std: 1.0
+  moe_router_entropy_clip: 4.0
+  moe_router_use_patch_length: false
+  moe_router_use_patch_byte_features: false
+
+data:
+  root_dir: /data1/pengfeigao/BP-MoE/data
+  sources:
+    fineweb_edu_10bt: 1.0
+  dataset_files:
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00000.jsonl.shard_00.arrow
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00001.jsonl.shard_00.arrow
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00002.jsonl.shard_00.arrow
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00003.jsonl.shard_00.arrow
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00004.jsonl.shard_00.arrow
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00005.jsonl.shard_00.arrow
+    - /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00006.jsonl_shard_00.arrow
+  batch_size: 1
+  seq_len: 256
+  max_encoder_seq_length: 1536
+  load_async: false
+  preprocess_dir: /data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1
+  entropy_model_name: transformer_100m
+  tokenizer_args:
+    init_kwargs:
+      bpe_tokenizer_path: /tmp/unused.tokenizer.model
+
+checkpoint:
+  path: ???
+  init_ckpt_path: ???
+  dump:
+    every: 1000
+    keep: 2
+  eval:
+    every: 1000
+    keep: 1
+
+logging:
+  freq: 10
+  wandb: null
+
+eval: null
+eval_on_gpus: 6

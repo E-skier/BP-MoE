@@ -162,15 +162,10 @@ class DataloaderArgs(BaseModel):
         source_to_sequence_iterator: dict[str, SequenceIterator] = {}
         for dataset_path in self.sources:
             shuffle_rng_state = get_rng_state(self.seed + 1, rank, world_size)
-            arrow_iterator = distribute_data_to_rank(
-                file_format=self.file_format,
+            arrow_iterator = self._build_arrow_iterator_for_source(
                 dataset_path=os.path.join(self.root_dir, dataset_path),
-                preprocess_dir=self.preprocess_dir,
-                entropy_model_name=self.entropy_model_name,
-                arrow_batch_size=self.arrow_batch_size,
                 rank=rank,
                 world_size=world_size,
-                s3_profile=self.s3_profile,
             )
             looping_iterator = LoopingIterator(arrow_iterator)
             preprocess_iterator = PreprocessIterator(
@@ -187,6 +182,32 @@ class DataloaderArgs(BaseModel):
 
             source_to_sequence_iterator[dataset_path] = sequence_iterator
         return source_to_sequence_iterator
+
+    def _build_arrow_iterator_for_source(
+        self, *, dataset_path: str, rank: int, world_size: int
+    ) -> ArrowFileIterator:
+        if self.dataset_files is not None:
+            return ArrowFileIterator(
+                file_path=None,
+                file_format=self.file_format,
+                worker_id=rank,
+                num_workers=world_size,
+                preprocess_dir=None,
+                entropy_model_name=self.entropy_model_name,
+                arrow_batch_size=self.arrow_batch_size,
+                dataset_files=self.dataset_files,
+                s3_profile=self.s3_profile,
+            )
+        return distribute_data_to_rank(
+            file_format=self.file_format,
+            dataset_path=dataset_path,
+            preprocess_dir=self.preprocess_dir,
+            entropy_model_name=self.entropy_model_name,
+            arrow_batch_size=self.arrow_batch_size,
+            rank=rank,
+            world_size=world_size,
+            s3_profile=self.s3_profile,
+        )
 
     def build_from_rank(
         self, rank: int, world_size: int
@@ -315,6 +336,8 @@ class TrainArgs(BaseModel):
     # If not None, halt training after this many steps,
     # useful for debugging
     max_steps: int | None = None
+    compute_budget_json: str | None = None
+    save_budget_boundaries: bool = False
 
     data: DataloaderArgs = DataloaderArgs()
     optim: OptimArgs = OptimArgs()

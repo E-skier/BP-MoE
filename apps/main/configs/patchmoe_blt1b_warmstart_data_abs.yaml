@@ -4,7 +4,7 @@
 # patch-level global Transformer FFNs with 8-expert Top-2 PatchMoE FFNs.
 # Paths and short-run sequence lengths are supplied by the launcher.
 
-config: /data/zydata/BP-MoE/hf-weights/blt_1b/params.json
+config: /data1/pengfeigao/BP-MoE/hf-weights/blt_1b/params.json
 
 name: "patchmoe_blt1b_warmstart_entropy_all_layers"
 dump_dir: ???

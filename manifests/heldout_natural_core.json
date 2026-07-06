@@ -1,0 +1,13 @@
+{
+  "name": "heldout_natural_core",
+  "dataset": "FineWeb-Edu-10BT",
+  "split": "dev",
+  "chunks": ["00007"],
+  "raw_files": [
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00007.jsonl"
+  ],
+  "arrow_files": [
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00007.jsonl_shard_00.arrow"
+  ],
+  "entropy_model_name": "transformer_100m"
+}

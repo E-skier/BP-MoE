@@ -1,0 +1,47 @@
+{
+  "calibrated_byte_share": [
+    0.23093852400779724,
+    0.24361108243465424,
+    0.2569286525249481,
+    0.268521785736084
+  ],
+  "calibration_input": {
+    "num_arrow_files_seen": 1,
+    "num_rows_seen": 1000,
+    "num_rows_used": 1000,
+    "num_valid_patches": 1058001,
+    "total_bytes": 4912435
+  },
+  "calibration_num_valid_patches": 1058001,
+  "calibration_total_bytes": 4912435,
+  "data_fingerprint": "ae545d840d2d12a7",
+  "entropy_centers": [
+    0.3345681428909302,
+    0.4934206008911133,
+    0.6869140863418579,
+    1.159423828125
+  ],
+  "entropy_prior_scale": 0.5,
+  "entropy_widths": [
+    0.1588524580001831,
+    0.17617297172546387,
+    0.33300161361694336,
+    0.4725097417831421
+  ],
+  "num_experts": 8,
+  "num_pairs": 4,
+  "pair_size": 2,
+  "static_pair_bias": [
+    0.3743593990802765,
+    0.14580971002578735,
+    -0.20099130272865295,
+    -0.3191778063774109
+  ],
+  "target_byte_share": [
+    0.25,
+    0.25,
+    0.25,
+    0.25
+  ],
+  "version": 1
+}

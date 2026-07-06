@@ -1,0 +1,30 @@
+config: apps/main/configs/patchmoe_blt1b_warmstart.yaml
+
+name: "bcfp_A1_clean"
+
+model:
+  moe_num_experts: 8
+  moe_top_k: 2
+  moe_pair_size: 2
+  moe_routing_granularity: "pair"
+  moe_ffn_dim_multiplier: 0.5
+
+  moe_entropy_prior_mode: "none"
+  moe_entropy_prior_hidden_scale: 0.0
+
+  moe_router_use_hidden_state: false
+  moe_router_use_patch_length: false
+  moe_router_use_patch_entropy: true
+  moe_router_use_patch_byte_features: false
+  moe_router_patch_feature_bias: true
+  moe_router_jitter: 0.0
+  moe_router_congestion_weight: 0.0
+  moe_router_z_loss_weight: 0.0
+
+  moe_balance_cost: "byte"
+  moe_balance_loss_weight: 0.0
+  moe_balance_schedule: "constant"
+  moe_pair_bias_mode: "none"
+
+checkpoint:
+  init_ckpt_path: blt1b_warmstart/initial_weights/bcfp_pair_A1_clean_dcp

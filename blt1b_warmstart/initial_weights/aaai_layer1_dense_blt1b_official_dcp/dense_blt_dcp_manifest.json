@@ -1,0 +1,4 @@
+{
+  "format": "dense-blt-dcp-v1",
+  "source_checkpoint": "/data1/pengfeigao/BP-MoE/hf-weights/blt_1b/consolidated.pth"
+}

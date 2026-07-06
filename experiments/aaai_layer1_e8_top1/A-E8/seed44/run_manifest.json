@@ -1,0 +1,17 @@
+{
+  "method": "A-E8",
+  "seed": 44,
+  "git_head": "b8b00985879d3b9a2e17cea8e703d4944d95a7d3",
+  "config": "/data1/pengfeigao/BP-MoE/configs/aaai_layer1/aaai_e8_entropy.yaml",
+  "config_sha256": "4e06827820f0372e1c5e5f97172a5ecd18ba130b62be26898e748db53ce03be4",
+  "init_checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/initial_weights/aaai_layer1_e8_top1_entropy_mlp_dcp",
+  "train_manifest": "/data1/pengfeigao/BP-MoE/manifests/aaai_series_a_train.json",
+  "train_manifest_sha256": "54e4c59230433e9cf6d9008589417ca3325c038cf11517c9b34c852e720eae99",
+  "heldout_manifest": "/data1/pengfeigao/BP-MoE/manifests/heldout_natural_core.json",
+  "heldout_manifest_sha256": "4f4a06b20cb8c5e1c3784e049ad7bcd11f9ceb27104c0e3ae9cc15f44938f330",
+  "final_test_manifest": "/data1/pengfeigao/BP-MoE/manifests/heldout_natural_extended.json",
+  "final_test_manifest_sha256": "63acac4d0199b7000a90b4b07a0138ef036e3f23b1f65b87bbbdd9546701a356",
+  "cuda_visible_devices": "0,1,2,3,4,5",
+  "nproc_per_node": 6,
+  "moe_ep_size": 2
+}

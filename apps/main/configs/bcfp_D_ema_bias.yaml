@@ -1,0 +1,25 @@
+config: apps/main/configs/bcfp_B_calibrated.yaml
+
+name: "bcfp_D_ema_bias"
+
+model:
+  moe_balance_cost: "byte"
+  moe_balance_loss_weight: 0.0
+  moe_balance_schedule: "constant"
+
+  moe_pair_bias_mode: "ema_byte_floor"
+  moe_pair_bias_ema: 0.95
+  moe_pair_bias_update_interval: 20
+  moe_pair_bias_lr: 0.05
+  moe_pair_bias_clip: 1.5
+  moe_pair_min_byte_fraction: 0.05
+  moe_pair_max_byte_fraction: 0.55
+
+  moe_router_use_hidden_state: true
+  moe_entropy_prior_hidden_scale: 0.0
+  moe_hidden_residual_ramp_start_step: 1000
+  moe_hidden_residual_ramp_end_step: 3000
+  moe_hidden_residual_final_scale: 0.25
+
+checkpoint:
+  init_ckpt_path: blt1b_warmstart/initial_weights/bcfp_pair_D_ema_bias_dcp

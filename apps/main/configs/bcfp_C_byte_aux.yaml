@@ -1,0 +1,13 @@
+config: apps/main/configs/bcfp_B_calibrated.yaml
+
+name: "bcfp_C_byte_aux"
+
+model:
+  moe_balance_cost: "byte"
+  moe_balance_loss_weight: 0.01
+  moe_balance_schedule: "linear_decay"
+  moe_balance_start_step: 0
+  moe_balance_peak_step: 250
+  moe_balance_decay_start_step: 1000
+  moe_balance_end_step: 5000
+  moe_balance_final_weight: 0.002

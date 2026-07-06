@@ -1,0 +1,94 @@
+{
+  "collection": {
+    "max_rows_per_file": 2000,
+    "num_arrow_files_seen": 9,
+    "num_rows_seen": 18000,
+    "num_rows_skipped": 0,
+    "num_rows_used": 18000
+  },
+  "input": {
+    "arrow_files": [
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00000.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00001.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00002.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00003.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00004.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00005.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00006.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00007.jsonl.shard_00.arrow",
+      "data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00008.jsonl.shard_00.arrow"
+    ],
+    "monotonicity": false,
+    "patch_size": 4.5,
+    "threshold": 1.335442066192627,
+    "threshold_add": null
+  },
+  "selection": {
+    "available_by_bucket": {
+      "high/short": 18000,
+      "low/long": 18000,
+      "low/medium": 18000,
+      "low/short": 18000,
+      "medium/long": 602,
+      "medium/medium": 17119,
+      "medium/short": 18000
+    },
+    "records_per_bucket": 1000,
+    "selected_by_bucket": {
+      "high/short": 1000,
+      "low/long": 1000,
+      "low/medium": 1000,
+      "low/short": 1000,
+      "medium/long": 602,
+      "medium/medium": 1000,
+      "medium/short": 1000
+    },
+    "selection_mode": "top-cell-fraction"
+  },
+  "source": {
+    "chunks": [
+      {
+        "arrow_path": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00000.jsonl.shard_00.arrow",
+        "chunk_idx": 0,
+        "jsonl_path": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00000.jsonl",
+        "num_rows": 1101
+      },
+      {
+        "arrow_path": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00001.jsonl.shard_00.arrow",
+        "chunk_idx": 1,
+        "jsonl_path": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00001.jsonl",
+        "num_rows": 1101
+      },
+      {
+        "arrow_path": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00002.jsonl.shard_00.arrow",
+        "chunk_idx": 2,
+        "jsonl_path": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00002.jsonl",
+        "num_rows": 1100
+      },
+      {
+        "arrow_path": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00003.jsonl.shard_00.arrow",
+        "chunk_idx": 3,
+        "jsonl_path": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00003.jsonl",
+        "num_rows": 1100
+      },
+      {
+        "arrow_path": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00004.jsonl.shard_00.arrow",
+        "chunk_idx": 4,
+        "jsonl_path": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00004.jsonl",
+        "num_rows": 1100
+      },
+      {
+        "arrow_path": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00005.jsonl.shard_00.arrow",
+        "chunk_idx": 5,
+        "jsonl_path": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb.chunk.00005.jsonl",
+        "num_rows": 1100
+      }
+    ],
+    "entropy_model_name": "transformer_100m",
+    "num_chunks": 6,
+    "num_records": 6602,
+    "preprocessed_dir": "data/entropy_preprocessed_stage1/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb/transformer_100m",
+    "source_dir": "data/fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb",
+    "source_name": "fineweb_edu_10bt_entropy_length_topcell_2kpf_1kpb"
+  }
+}

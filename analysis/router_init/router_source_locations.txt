@@ -1,0 +1,87 @@
+bytelatent/test_patchmoe_warmstart.py:48:        assert converted[f"{prefix}.patch_feature_router.weight"].shape == (4, 1)
+bytelatent/test_patchmoe_warmstart.py:51:            is converted[f"{prefix}.patch_feature_router.weight"]
+bytelatent/test_patchmoe_warmstart.py:131:    moe.patch_feature_router.weight.data.copy_(
+bytelatent/test_patchmoe_warmstart.py:132:        converted[f"{prefix}.patch_feature_router.weight"]
+bytelatent/test_patchmoe_warmstart.py:134:    moe.patch_feature_router.bias.data.copy_(
+bytelatent/test_patchmoe_warmstart.py:135:        converted[f"{prefix}.patch_feature_router.bias"]
+bytelatent/test_patchmoe_warmstart.py:146:    feature_weight = moe.patch_feature_router.weight.detach()
+bytelatent/test_patchmoe_warmstart.py:147:    feature_bias = moe.patch_feature_router.bias.detach()
+bytelatent/test_patchmoe_warmstart.py:166:    logits = moe.router(flat_x) + moe.patch_feature_router(normalized_entropy)
+bytelatent/test_patchmoe_warmstart.py:179:def test_entropy_band_patch_feature_init_orders_expert_pairs():
+bytelatent/test_patchmoe_warmstart.py:188:        patch_feature_init="entropy_bands",
+bytelatent/test_patchmoe_warmstart.py:189:        entropy_band_logit_scale=2.0,
+bytelatent/test_patchmoe_warmstart.py:195:    weight = converted[f"{prefix}.patch_feature_router.weight"]
+bytelatent/test_patchmoe_warmstart.py:196:    bias = converted[f"{prefix}.patch_feature_router.bias"]
+bytelatent/test_patchmoe_warmstart.py:209:def test_entropy_band_patch_feature_init_rejects_incompatible_specs():
+bytelatent/test_patchmoe_warmstart.py:215:            patch_feature_init="entropy_bands",
+bytelatent/test_patchmoe_warmstart.py:221:            patch_feature_init="entropy_bands",
+bytelatent/distributed.py:451:                f"Model parameter {name} has a suspiciously large range ({param_range}): please check initialization and init_weights is defined and called"
+bytelatent/distributed.py:455:                f"Model parameter {name} has a suspiciously large standard deviation ({param_std}): please check initialization and init_weights is defined and called"
+bytelatent/patchmoe_warmstart.py:23:PATCH_FEATURE_INIT_MODES = ("random", "entropy_bands")
+bytelatent/patchmoe_warmstart.py:38:    patch_feature_init: str = "random"
+bytelatent/patchmoe_warmstart.py:39:    entropy_band_logit_scale: float = 1.0
+bytelatent/patchmoe_warmstart.py:69:        if self.patch_feature_init not in PATCH_FEATURE_INIT_MODES:
+bytelatent/patchmoe_warmstart.py:71:                "patch_feature_init must be one of: "
+bytelatent/patchmoe_warmstart.py:74:        if self.entropy_band_logit_scale <= 0:
+bytelatent/patchmoe_warmstart.py:75:            raise ValueError("entropy_band_logit_scale must be positive")
+bytelatent/patchmoe_warmstart.py:76:        if self.patch_feature_init == "entropy_bands":
+bytelatent/patchmoe_warmstart.py:78:                raise ValueError("entropy_bands patch_feature_init requires entropy")
+bytelatent/patchmoe_warmstart.py:80:                raise ValueError("entropy_bands patch_feature_init requires top_k=2")
+bytelatent/patchmoe_warmstart.py:83:                    "entropy_bands patch_feature_init requires an even num_experts"
+bytelatent/patchmoe_warmstart.py:87:                    "entropy_bands patch_feature_init requires patch_feature_bias"
+bytelatent/patchmoe_warmstart.py:240:def _entropy_band_patch_feature_router(
+bytelatent/patchmoe_warmstart.py:252:    slopes = 2.0 * spec.entropy_band_logit_scale * centers
+bytelatent/patchmoe_warmstart.py:253:    biases = -spec.entropy_band_logit_scale * centers.square()
+bytelatent/patchmoe_warmstart.py:332:            if spec.patch_feature_init == "entropy_bands":
+bytelatent/patchmoe_warmstart.py:333:                patch_feature_router, patch_feature_bias = (
+bytelatent/patchmoe_warmstart.py:334:                    _entropy_band_patch_feature_router(spec, dtype=dtype)
+bytelatent/patchmoe_warmstart.py:337:                patch_feature_router = _paired_router_weight(
+bytelatent/patchmoe_warmstart.py:345:                patch_feature_router = _truncated_normal(
+bytelatent/patchmoe_warmstart.py:351:            converted[f"{prefix}.patch_feature_router.weight"] = patch_feature_router
+bytelatent/patchmoe_warmstart.py:369:                converted[f"{prefix}.patch_feature_router.bias"] = patch_feature_bias
+bytelatent/patchmoe_warmstart.py:372:            converted[f"{prefix}.patch_length_router.weight"] = patch_feature_router
+bytelatent/patchmoe_warmstart.py:474:    append_first_matching(r"\.feed_forward\.patch_feature_router\.weight$")
+bytelatent/test_patch_moe.py:80:    assert moe.patch_feature_router is not None
+bytelatent/test_patch_moe.py:81:    assert moe.patch_feature_router.weight.grad is not None
+bytelatent/test_patch_moe.py:137:    assert moe.patch_feature_router is not None
+bytelatent/test_patch_moe.py:138:    assert moe.patch_feature_router.weight.shape[1] == 2
+bytelatent/test_patch_moe.py:139:    assert moe.patch_feature_router.weight.grad is not None
+bytelatent/test_patch_moe.py:183:        assert moe.patch_feature_router is not None
+bytelatent/test_patch_moe.py:184:        moe.patch_feature_router.weight.copy_(torch.tensor([[-1.0], [1.0]]))
+bytelatent/test_patch_moe.py:185:        moe.patch_feature_router.bias.copy_(torch.tensor([2.0, -2.0]))
+bytelatent/test_patch_moe.py:261:    assert moe.patch_feature_router is not None
+bytelatent/test_patch_moe.py:262:    assert moe.patch_feature_router.weight.shape[1] == len(PATCH_BYTE_TYPE_NAMES)
+bytelatent/test_patch_moe.py:263:    assert moe.patch_feature_router.weight.grad is not None
+bytelatent/test_patch_moe.py:361:        moe.patch_feature_router.weight.zero_()
+bytelatent/test_patch_moe.py:362:        moe.patch_feature_router.bias.zero_()
+bytelatent/test_patch_moe.py:363:        moe.patch_feature_router.weight[:, 0] = torch.tensor([0.0, 0.0, 1.0, 1.0])
+bytelatent/test_patch_moe.py:364:        moe.patch_feature_router.bias[:] = torch.tensor([0.0, 0.0, -1.0, -1.0])
+bytelatent/base_transformer.py:657:        self.patch_feature_router = (
+bytelatent/base_transformer.py:666:        self.patch_length_router = self.patch_feature_router
+bytelatent/base_transformer.py:667:        if not router_use_hidden_state and self.patch_feature_router is None:
+bytelatent/base_transformer.py:741:        if self.patch_feature_router is not None:
+bytelatent/base_transformer.py:748:                dtype=self.patch_feature_router.weight.dtype
+bytelatent/base_transformer.py:750:            router_logits = router_logits + self.patch_feature_router(
+bytelatent/base_transformer.py:1460:        if self.patch_feature_router is not None:
+bytelatent/base_transformer.py:1462:                self.patch_feature_router.weight,
+bytelatent/base_transformer.py:1468:            if self.patch_feature_router.bias is not None:
+bytelatent/base_transformer.py:1469:                nn.init.zeros_(self.patch_feature_router.bias)
+scripts/diagnostics/inspect_patch_feature_router_dcp.py:64:        "patch_feature_router",
+scripts/diagnostics/inspect_patch_feature_router_dcp.py:158:                for p in ["patch_feature_router", "patch_feature", "router"]
+scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py:58:        choices=("random", "entropy_bands"),
+scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py:65:        help="Logit scale for --patch-feature-init entropy_bands.",
+scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py:95:        patch_feature_init=args.patch_feature_init,
+scripts/patchmoe/prepare_blt1b_patchmoe_warmstart.py:96:        entropy_band_logit_scale=args.entropy_band_logit_scale,
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:7:#   1. held-out eval for the existing entropy_bands_phaseB_100k 50k checkpoint
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:41:PHASEA_INIT_CKPT="${PHASEA_INIT_CKPT:-$ROOT_DIR/blt1b_warmstart/entropy_bands_phaseA_1k/entropy_bands_phaseA_1000step/checkpoints/0000001000}"
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:43:PHASEB_TARGET_CKPT="${PHASEB_TARGET_CKPT:-$ROOT_DIR/blt1b_warmstart/entropy_bands_phaseB_100k/checkpoints/0000050000}"
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:44:PHASEB_TARGET_RUN_DIR="${PHASEB_TARGET_RUN_DIR:-$ROOT_DIR/blt1b_warmstart/entropy_bands_phaseB_100k}"
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:78:EVAL_LABEL="${EVAL_LABEL:-entropy_bands_phaseB_100k}"
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:112:  eval-phaseb50k  Print or launch held-out eval for entropy_bands_phaseB_100k/checkpoints/0000050000.
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:215:    phaseb_repro_w000) printf 'entropy_bands_phaseB_repro_w000_50k' ;;
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:216:    phaseb_balance_w001) printf 'entropy_bands_phaseB_balance001_50k' ;;
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:217:    phaseb_balance_w005) printf 'entropy_bands_phaseB_balance005_50k' ;;
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:533:new_phaseb_eval = eval_root / "entropy_bands_phaseB_100k/0000050000/validation.json"
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:534:old_phaseb_eval = root / "runs/stage1_heldout_eval/entropy_bands_phaseB_100k/0000050000/validation.json"
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:537:        "entropy_bands_phaseB_100k_existing",
+scripts/patchmoe/run_entropy_phaseb_paper_experiments.sh:538:        root / "blt1b_warmstart/entropy_bands_phaseB_100k",

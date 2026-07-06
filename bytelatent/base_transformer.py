@@ -1,7 +1,9 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 import abc
+import json
 import logging
 import os
+from pathlib import Path
 from enum import Enum
 from typing import Callable, Optional, Tuple, Union
 
@@ -108,15 +110,42 @@ class BaseTransformerArgs(BaseModel):
     moe_ep_size: int = 1
     moe_ffn_dim_multiplier: float | None = None
     moe_balance_loss_weight: float = 0.0
+    moe_balance_schedule: str = "constant"
+    moe_balance_start_step: int = 0
+    moe_balance_peak_step: int = 0
+    moe_balance_decay_start_step: int = 0
+    moe_balance_end_step: int = 0
+    moe_balance_final_weight: float = 0.0
     moe_router_jitter: float = 0.0
     moe_router_congestion_weight: float = 0.0
     moe_router_z_loss_weight: float = 0.0
     moe_router_use_hidden_state: bool = True
     moe_router_patch_feature_bias: bool = False
     moe_router_normalize_patch_entropy: bool = True
+    moe_router_entropy_mlp_hidden_dim: int = 0
+    moe_router_entropy_mean: float = 0.0
+    moe_router_entropy_std: float = 1.0
+    moe_router_entropy_clip: float = 4.0
     moe_router_use_patch_length: bool = False
     moe_router_use_patch_entropy: bool = False
     moe_router_use_patch_byte_features: bool = False
+    moe_routing_granularity: str = "expert"
+    moe_pair_size: int = 2
+    moe_entropy_prior_mode: str = "none"
+    moe_entropy_prior_scale: float = 1.0
+    moe_entropy_prior_hidden_scale: float = 1.0
+    moe_entropy_prior_calibration_path: str | None = None
+    moe_entropy_prior_trainable: bool = False
+    moe_pair_bias_mode: str = "none"
+    moe_pair_bias_ema: float = 0.95
+    moe_pair_bias_update_interval: int = 20
+    moe_pair_bias_lr: float = 0.05
+    moe_pair_bias_clip: float = 1.5
+    moe_pair_min_byte_fraction: float = 0.05
+    moe_pair_max_byte_fraction: float = 0.55
+    moe_hidden_residual_ramp_start_step: int = 0
+    moe_hidden_residual_ramp_end_step: int = 0
+    moe_hidden_residual_final_scale: float = 1.0
     moe_balance_cost: str = "patch"
 
     multiple_of: int = 256
@@ -601,9 +630,30 @@ class SparseMoEFeedForward(nn.Module):
         router_use_hidden_state: bool = True,
         router_patch_feature_bias: bool = False,
         router_normalize_patch_entropy: bool = True,
+        router_entropy_mlp_hidden_dim: int = 0,
+        router_entropy_mean: float = 0.0,
+        router_entropy_std: float = 1.0,
+        router_entropy_clip: float = 4.0,
         router_use_patch_length: bool = False,
         router_use_patch_entropy: bool = False,
         router_use_patch_byte_features: bool = False,
+        routing_granularity: str = "expert",
+        pair_size: int = 2,
+        entropy_prior_mode: str = "none",
+        entropy_prior_scale: float = 1.0,
+        entropy_prior_hidden_scale: float = 1.0,
+        entropy_prior_calibration_path: Optional[str] = None,
+        entropy_prior_trainable: bool = False,
+        pair_bias_mode: str = "none",
+        pair_bias_ema: float = 0.95,
+        pair_bias_update_interval: int = 20,
+        pair_bias_lr: float = 0.05,
+        pair_bias_clip: float = 1.5,
+        pair_min_byte_fraction: float = 0.05,
+        pair_max_byte_fraction: float = 0.55,
+        hidden_residual_ramp_start_step: int = 0,
+        hidden_residual_ramp_end_step: int = 0,
+        hidden_residual_final_scale: float = 1.0,
         balance_cost: str = "patch",
     ):
         super().__init__()
@@ -622,12 +672,63 @@ class SparseMoEFeedForward(nn.Module):
             raise ValueError("router_congestion_weight must be non-negative")
         if router_z_loss_weight < 0:
             raise ValueError("router_z_loss_weight must be non-negative")
+        if router_entropy_mlp_hidden_dim < 0:
+            raise ValueError("router_entropy_mlp_hidden_dim must be non-negative")
+        if router_entropy_std <= 0:
+            raise ValueError("router_entropy_std must be positive")
+        if router_entropy_clip <= 0:
+            raise ValueError("router_entropy_clip must be positive")
         if balance_cost not in {"patch", "byte", "entropy_byte"}:
             raise ValueError("balance_cost must be one of: patch, byte, entropy_byte")
+        if routing_granularity not in {"expert", "pair"}:
+            raise ValueError("routing_granularity must be one of: expert, pair")
+        if entropy_prior_mode not in {"none", "linear_legacy", "gaussian_pairs"}:
+            raise ValueError(
+                "entropy_prior_mode must be one of: none, linear_legacy, gaussian_pairs"
+            )
+        if pair_bias_mode not in {"none", "ema_byte_floor"}:
+            raise ValueError("pair_bias_mode must be one of: none, ema_byte_floor")
+        if pair_bias_update_interval <= 0:
+            raise ValueError("pair_bias_update_interval must be positive")
+        if pair_bias_ema < 0 or pair_bias_ema >= 1:
+            raise ValueError("pair_bias_ema must be in [0, 1)")
+        if pair_bias_lr < 0:
+            raise ValueError("pair_bias_lr must be non-negative")
+        if pair_bias_clip <= 0:
+            raise ValueError("pair_bias_clip must be positive")
+        if pair_min_byte_fraction < 0 or pair_max_byte_fraction > 1:
+            raise ValueError("pair byte fraction bounds must be within [0, 1]")
+        if pair_min_byte_fraction > pair_max_byte_fraction:
+            raise ValueError("pair_min_byte_fraction must be <= pair_max_byte_fraction")
+        if hidden_residual_ramp_start_step < 0 or hidden_residual_ramp_end_step < 0:
+            raise ValueError("hidden residual ramp steps must be non-negative")
+        if hidden_residual_final_scale < 0:
+            raise ValueError("hidden_residual_final_scale must be non-negative")
+        if pair_size <= 0:
+            raise ValueError("pair_size must be positive")
+        if routing_granularity == "pair":
+            if num_experts % pair_size != 0:
+                raise ValueError("num_experts must be divisible by pair_size")
+            if top_k != pair_size:
+                raise ValueError("pair routing requires top_k == pair_size")
+        if entropy_prior_mode == "gaussian_pairs":
+            if routing_granularity != "pair":
+                raise ValueError("gaussian_pairs entropy prior requires pair routing")
+            if entropy_prior_calibration_path is None:
+                raise ValueError(
+                    "entropy_prior_calibration_path is required for gaussian_pairs"
+                )
+        if pair_bias_mode == "ema_byte_floor" and routing_granularity != "pair":
+            raise ValueError("ema_byte_floor pair bias requires pair routing")
 
         self.dim = dim
         self.num_experts = num_experts
         self.top_k = min(top_k, num_experts)
+        self.routing_granularity = routing_granularity
+        self.pair_size = pair_size
+        self.num_routing_groups = (
+            num_experts // pair_size if routing_granularity == "pair" else num_experts
+        )
         self.requested_expert_parallel_size = expert_parallel_size
         self.expert_parallel_size = 1
         self.expert_parallel_rank = 0
@@ -638,36 +739,111 @@ class SparseMoEFeedForward(nn.Module):
         self.router_z_loss_weight = router_z_loss_weight
         self.router_use_hidden_state = router_use_hidden_state
         self.router_normalize_patch_entropy = router_normalize_patch_entropy
+        self.router_entropy_mlp_hidden_dim = router_entropy_mlp_hidden_dim
+        self.router_entropy_mean = float(router_entropy_mean)
+        self.router_entropy_std = float(router_entropy_std)
+        self.router_entropy_clip = float(router_entropy_clip)
         self.router_use_patch_length = router_use_patch_length
         self.router_use_patch_entropy = router_use_patch_entropy
         self.router_use_patch_byte_features = router_use_patch_byte_features
+        self.use_entropy_mlp_router = (
+            router_use_patch_entropy and router_entropy_mlp_hidden_dim > 0
+        )
+        self.entropy_prior_mode = entropy_prior_mode
+        self.entropy_prior_scale = entropy_prior_scale
+        self.entropy_prior_hidden_scale = entropy_prior_hidden_scale
+        self.entropy_prior_trainable = entropy_prior_trainable
+        self.pair_bias_mode = pair_bias_mode
+        self.pair_bias_ema = pair_bias_ema
+        self.pair_bias_update_interval = pair_bias_update_interval
+        self.pair_bias_lr = pair_bias_lr
+        self.pair_bias_clip = pair_bias_clip
+        self.pair_min_byte_fraction = pair_min_byte_fraction
+        self.pair_max_byte_fraction = pair_max_byte_fraction
+        self.hidden_residual_ramp_start_step = hidden_residual_ramp_start_step
+        self.hidden_residual_ramp_end_step = hidden_residual_ramp_end_step
+        self.hidden_residual_final_scale = hidden_residual_final_scale
         self.balance_cost = balance_cost
         self.is_sparse_moe = True
+        self.router_schedule_enabled = (
+            hidden_residual_ramp_end_step > hidden_residual_ramp_start_step
+        )
+        if self.router_schedule_enabled:
+            self.register_buffer("router_step", torch.zeros((), dtype=torch.long))
+        else:
+            self.register_buffer(
+                "router_step", torch.zeros((), dtype=torch.long), persistent=False
+            )
 
-        self.router = nn.Linear(dim, num_experts, bias=False)
+        self.router = nn.Linear(dim, self.num_routing_groups, bias=False)
         self.patch_feature_names = []
+        self.linear_patch_feature_names = []
         if router_use_patch_length:
             self.patch_feature_names.append("length")
+            self.linear_patch_feature_names.append("length")
         if router_use_patch_entropy:
             self.patch_feature_names.append("entropy")
+            if not self.use_entropy_mlp_router:
+                self.linear_patch_feature_names.append("entropy")
         if router_use_patch_byte_features:
             self.patch_feature_names.extend(
                 f"byte_{name}" for name in PATCH_BYTE_TYPE_NAMES
             )
+            self.linear_patch_feature_names.extend(
+                f"byte_{name}" for name in PATCH_BYTE_TYPE_NAMES
+            )
         self.patch_feature_router = (
             nn.Linear(
-                len(self.patch_feature_names),
-                num_experts,
+                len(self.linear_patch_feature_names),
+                self.num_routing_groups,
                 bias=router_patch_feature_bias,
             )
-            if len(self.patch_feature_names) > 0
+            if len(self.linear_patch_feature_names) > 0
+            else None
+        )
+        self.entropy_router = (
+            nn.Sequential(
+                nn.Linear(1, router_entropy_mlp_hidden_dim, bias=True),
+                nn.SiLU(),
+                nn.Linear(router_entropy_mlp_hidden_dim, self.num_routing_groups, bias=True),
+            )
+            if self.use_entropy_mlp_router
             else None
         )
         self.patch_length_router = self.patch_feature_router
-        if not router_use_hidden_state and self.patch_feature_router is None:
+        if (
+            not router_use_hidden_state
+            and self.patch_feature_router is None
+            and self.entropy_router is None
+            and self.entropy_prior_mode == "none"
+        ):
             raise ValueError(
                 "At least one patch routing feature is required when hidden-state "
                 "routing is disabled"
+            )
+        if self.entropy_prior_mode == "gaussian_pairs":
+            centers, widths, static_bias = self._load_entropy_prior_calibration(
+                entropy_prior_calibration_path
+            )
+            if entropy_prior_trainable:
+                self.entropy_prior_centers = nn.Parameter(centers)
+                self.entropy_prior_widths = nn.Parameter(widths)
+                self.entropy_prior_static_bias = nn.Parameter(static_bias)
+            else:
+                self.register_buffer("entropy_prior_centers", centers)
+                self.register_buffer("entropy_prior_widths", widths)
+                self.register_buffer("entropy_prior_static_bias", static_bias)
+        if self.pair_bias_mode == "ema_byte_floor":
+            self.register_buffer(
+                "dynamic_pair_bias",
+                torch.zeros(self.num_routing_groups, dtype=torch.float32),
+            )
+            self.register_buffer(
+                "pair_load_ema",
+                torch.zeros(self.num_routing_groups, dtype=torch.float32),
+            )
+            self.register_buffer(
+                "pair_bias_step", torch.zeros((), dtype=torch.long)
             )
         self.experts = nn.ModuleList(
             [
@@ -684,6 +860,66 @@ class SparseMoEFeedForward(nn.Module):
         self.last_router_z_loss: Optional[torch.Tensor] = None
         self.last_metrics: dict[str, float] = {}
         self.last_expert_parallel_metrics: dict[str, float] = {}
+
+    def set_router_step(self, step: int) -> None:
+        self.router_step.fill_(int(step))
+
+    def _hidden_residual_scale(self) -> float:
+        if self.hidden_residual_ramp_end_step <= self.hidden_residual_ramp_start_step:
+            return float(self.entropy_prior_hidden_scale)
+        step = int(self.router_step.item())
+        if step <= self.hidden_residual_ramp_start_step:
+            return float(self.entropy_prior_hidden_scale)
+        if step >= self.hidden_residual_ramp_end_step:
+            return float(self.hidden_residual_final_scale)
+        progress = (step - self.hidden_residual_ramp_start_step) / (
+            self.hidden_residual_ramp_end_step - self.hidden_residual_ramp_start_step
+        )
+        start = float(self.entropy_prior_hidden_scale)
+        end = float(self.hidden_residual_final_scale)
+        return start + progress * (end - start)
+
+    def _load_entropy_prior_calibration(
+        self, calibration_path: Optional[str]
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        if calibration_path is None:
+            raise ValueError("Missing entropy prior calibration path")
+        with Path(calibration_path).open() as f:
+            calibration = json.load(f)
+        expected_pairs = self.num_routing_groups
+        expected_experts = self.num_experts
+        expected_pair_size = self.pair_size
+        if int(calibration.get("num_pairs", -1)) != expected_pairs:
+            raise ValueError(
+                f"calibration num_pairs must be {expected_pairs}, got "
+                f"{calibration.get('num_pairs')}"
+            )
+        if int(calibration.get("num_experts", expected_experts)) != expected_experts:
+            raise ValueError(
+                f"calibration num_experts must be {expected_experts}, got "
+                f"{calibration.get('num_experts')}"
+            )
+        if int(calibration.get("pair_size", expected_pair_size)) != expected_pair_size:
+            raise ValueError(
+                f"calibration pair_size must be {expected_pair_size}, got "
+                f"{calibration.get('pair_size')}"
+            )
+
+        center_values = calibration["entropy_centers"]
+        width_values = calibration["entropy_widths"]
+        static_bias_values = calibration["static_pair_bias"]
+        if len(center_values) != expected_pairs:
+            raise ValueError("entropy_centers length does not match num_pairs")
+        if len(width_values) != expected_pairs:
+            raise ValueError("entropy_widths length does not match num_pairs")
+        if len(static_bias_values) != expected_pairs:
+            raise ValueError("static_pair_bias length does not match num_pairs")
+        if any(float(width) <= 0 for width in width_values):
+            raise ValueError("entropy_widths must be positive")
+        centers = torch.tensor(center_values, dtype=torch.float32)
+        widths = torch.tensor(width_values, dtype=torch.float32)
+        static_bias = torch.tensor(static_bias_values, dtype=torch.float32)
+        return centers, widths, static_bias
 
     def configure_expert_parallel(self, process_group=None) -> None:
         ep_size = self.requested_expert_parallel_size
@@ -727,22 +963,82 @@ class SparseMoEFeedForward(nn.Module):
         flat_patch_byte_features = self._prepare_patch_byte_features(
             x, patch_byte_features
         )
+
+        if flat_patch_lengths is None:
+            valid_mask = torch.ones(
+                flat_x.shape[0], device=flat_x.device, dtype=torch.bool
+            )
+        else:
+            valid_mask = flat_patch_lengths > 0
+        flat_output = torch.zeros_like(flat_x)
+        if not valid_mask.any():
+            zero = flat_x.sum() * 0.0
+            self.last_balance_loss = zero.float()
+            self.last_router_z_loss = zero.float()
+            self.last_expert_parallel_metrics = {}
+            self.last_metrics = {
+                "hidden_state_routing": float(self.router_use_hidden_state),
+                "hidden_residual_scale": (
+                    self._hidden_residual_scale()
+                    if self.router_use_hidden_state
+                    else 0.0
+                ),
+                "routing_granularity_pair": float(
+                    self.routing_granularity == "pair"
+                ),
+                "router_entropy": 0.0,
+                "load_imbalance": 0.0,
+                "max_load_fraction": 0.0,
+                "min_load_fraction": 0.0,
+                "active_experts": 0.0,
+                "unit_active_experts": 0.0,
+                "balance_loss": 0.0,
+                "routed_units": 0.0,
+                "total_units": float(flat_x.shape[0]),
+                "valid_patch_fraction": 0.0,
+                "invalid_positions_skipped": float(flat_x.shape[0]),
+                "load_weight_mean": 0.0,
+                "load_weight_max": 0.0,
+                "side_feature_count": float(len(self.patch_feature_names)),
+                "congestion_weight": self.router_congestion_weight,
+                "router_z_loss": 0.0,
+                "router_z_loss_weight": self.router_z_loss_weight,
+            }
+            return flat_output.reshape_as(x)
+
+        valid_x = flat_x[valid_mask]
+        valid_patch_lengths = (
+            flat_patch_lengths[valid_mask] if flat_patch_lengths is not None else None
+        )
+        valid_patch_entropies = (
+            flat_patch_entropies[valid_mask]
+            if flat_patch_entropies is not None
+            else None
+        )
+        valid_patch_byte_features = (
+            flat_patch_byte_features[valid_mask]
+            if flat_patch_byte_features is not None
+            else None
+        )
         load_weights = self._load_weights(
-            flat_x, flat_patch_lengths, flat_patch_entropies
+            valid_x, valid_patch_lengths, valid_patch_entropies
         )
 
-        hidden_router_logits = self.router(flat_x)
-        router_logits = (
-            hidden_router_logits
-            if self.router_use_hidden_state
-            else hidden_router_logits * 0.0
-        )
+        if self.router_use_hidden_state:
+            hidden_router_logits = self.router(valid_x)
+            hidden_residual_scale = self._hidden_residual_scale()
+            router_logits = hidden_router_logits * hidden_residual_scale
+        else:
+            hidden_residual_scale = 0.0
+            router_logits = valid_x.new_zeros(
+                (valid_x.shape[0], self.num_routing_groups)
+            )
         learned_router_logits = router_logits
         if self.patch_feature_router is not None:
             patch_features = self._patch_features(
-                flat_patch_lengths,
-                flat_patch_entropies,
-                flat_patch_byte_features,
+                valid_patch_lengths,
+                valid_patch_entropies,
+                valid_patch_byte_features,
             )
             patch_features = patch_features.to(
                 dtype=self.patch_feature_router.weight.dtype
@@ -750,6 +1046,31 @@ class SparseMoEFeedForward(nn.Module):
             router_logits = router_logits + self.patch_feature_router(
                 patch_features
             ).to(router_logits.dtype)
+            learned_router_logits = router_logits
+        if self.entropy_router is not None:
+            assert valid_patch_entropies is not None
+            entropy_features = self._entropy_router_features(valid_patch_entropies)
+            entropy_features = entropy_features.to(
+                dtype=self.entropy_router[0].weight.dtype
+            )
+            router_logits = router_logits + self.entropy_router(
+                entropy_features
+            ).to(router_logits.dtype)
+            learned_router_logits = router_logits
+        if self.entropy_prior_mode == "gaussian_pairs":
+            if valid_patch_entropies is None:
+                raise ValueError(
+                    "patch_entropies must be provided for gaussian_pairs entropy prior"
+                )
+            entropy_prior_logits = self._gaussian_entropy_prior_logits(
+                valid_patch_entropies
+            ).to(router_logits.dtype)
+            router_logits = router_logits + entropy_prior_logits
+            learned_router_logits = router_logits
+        if self.pair_bias_mode == "ema_byte_floor":
+            router_logits = router_logits + self.dynamic_pair_bias.to(
+                device=router_logits.device, dtype=router_logits.dtype
+            )
             learned_router_logits = router_logits
 
         self.last_router_z_loss = (
@@ -761,50 +1082,88 @@ class SparseMoEFeedForward(nn.Module):
                 -self.router_jitter, self.router_jitter
             )
 
-        pre_congestion_router_probs = F.softmax(router_logits.float(), dim=-1)
+        pre_congestion_group_probs = F.softmax(router_logits.float(), dim=-1)
         congestion_price = self._congestion_price(
-            pre_congestion_router_probs, load_weights
+            pre_congestion_group_probs, load_weights
         )
         if self.router_congestion_weight > 0:
             router_logits = router_logits - self.router_congestion_weight * (
                 congestion_price.to(router_logits.dtype)
             )
-            router_probs = F.softmax(router_logits.float(), dim=-1)
+            group_probs = F.softmax(router_logits.float(), dim=-1)
         else:
-            router_probs = pre_congestion_router_probs
-        top_weights, top_indices = torch.topk(
-            router_probs, k=self.top_k, dim=-1, sorted=False
-        )
-        top_weights = top_weights / top_weights.sum(dim=-1, keepdim=True).clamp_min(
-            1e-9
-        )
+            group_probs = pre_congestion_group_probs
+
+        if self.routing_granularity == "pair":
+            router_probs = group_probs.repeat_interleave(self.pair_size, dim=-1)
+            router_probs = router_probs / float(self.pair_size)
+            pre_congestion_router_probs = pre_congestion_group_probs.repeat_interleave(
+                self.pair_size, dim=-1
+            )
+            pre_congestion_router_probs = pre_congestion_router_probs / float(
+                self.pair_size
+            )
+            top_pair_indices = group_probs.argmax(dim=-1)
+            pair_offsets = torch.arange(
+                self.pair_size, device=valid_x.device, dtype=top_pair_indices.dtype
+            )
+            top_indices = (
+                top_pair_indices.unsqueeze(-1) * self.pair_size + pair_offsets
+            )
+            top_weights = torch.full(
+                top_indices.shape,
+                1.0 / self.pair_size,
+                device=valid_x.device,
+                dtype=group_probs.dtype,
+            )
+        else:
+            router_probs = group_probs
+            pre_congestion_router_probs = pre_congestion_group_probs
+            top_weights, top_indices = torch.topk(
+                router_probs, k=self.top_k, dim=-1, sorted=False
+            )
+            top_weights = top_weights / top_weights.sum(
+                dim=-1, keepdim=True
+            ).clamp_min(1e-9)
+
+        self._maybe_update_dynamic_pair_bias(top_indices, load_weights)
 
         if self.requested_expert_parallel_size > 1:
             if self.expert_parallel_size == 1:
                 raise RuntimeError(
                     "Expert parallelism was requested but has not been configured"
                 )
-            flat_output = self._forward_expert_parallel(
-                flat_x, top_indices, top_weights
+            valid_output = self._forward_expert_parallel(
+                valid_x, top_indices, top_weights
             )
         else:
-            flat_output = self._forward_local(flat_x, top_indices, top_weights)
+            valid_output = self._forward_local(valid_x, top_indices, top_weights)
+        flat_output[valid_mask] = valid_output
 
-        prob_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
+        balance_probs = group_probs
+        balance_group_count = self.num_routing_groups
+        prob_density = (balance_probs * load_weights.unsqueeze(-1)).sum(dim=0)
         prob_density = prob_density / load_weights.sum().clamp_min(1.0)
-        uniform = torch.full_like(prob_density, 1.0 / self.num_experts)
-        self.last_balance_loss = self.num_experts * torch.sum(
+        uniform = torch.full_like(prob_density, 1.0 / balance_group_count)
+        self.last_balance_loss = balance_group_count * torch.sum(
             (prob_density - uniform) ** 2
         )
         self._record_metrics(
             router_probs,
             top_indices,
+            top_weights,
             load_weights,
-            flat_patch_lengths,
-            flat_patch_entropies,
-            flat_patch_byte_features,
+            valid_patch_lengths,
+            valid_patch_entropies,
+            valid_patch_byte_features,
             congestion_price,
             pre_congestion_router_probs,
+            pair_router_probs=(
+                group_probs if self.routing_granularity == "pair" else None
+            ),
+            hidden_residual_scale=hidden_residual_scale,
+            total_units=flat_x.shape[0],
+            invalid_positions_skipped=(~valid_mask).sum().item(),
         )
         return flat_output.reshape_as(x)
 
@@ -984,7 +1343,11 @@ class SparseMoEFeedForward(nn.Module):
         self, x: torch.Tensor, patch_entropies: Optional[torch.Tensor]
     ) -> Optional[torch.Tensor]:
         if patch_entropies is None:
-            if self.router_use_patch_entropy or self.balance_cost == "entropy_byte":
+            if (
+                self.router_use_patch_entropy
+                or self.balance_cost == "entropy_byte"
+                or self.entropy_prior_mode == "gaussian_pairs"
+            ):
                 raise ValueError(
                     "patch_entropies must be provided when entropy-aware "
                     "PatchMoE routing or entropy-byte balancing is enabled"
@@ -997,6 +1360,69 @@ class SparseMoEFeedForward(nn.Module):
                 f"match MoE input prefix shape {tuple(x.shape[:-1])}"
             )
         return patch_entropies.reshape(-1).to(device=x.device)
+
+    def _gaussian_entropy_prior_logits(
+        self, flat_patch_entropies: torch.Tensor
+    ) -> torch.Tensor:
+        centers = self.entropy_prior_centers.to(device=flat_patch_entropies.device)
+        widths = self.entropy_prior_widths.to(device=flat_patch_entropies.device)
+        static_bias = self.entropy_prior_static_bias.to(
+            device=flat_patch_entropies.device
+        )
+        entropies = flat_patch_entropies.float().clamp_min(0.0).unsqueeze(-1)
+        widths = widths.float().clamp_min(1e-6)
+        logits = -((entropies - centers.float()) ** 2) / (2.0 * widths.square())
+        logits = logits * float(self.entropy_prior_scale)
+        return logits + static_bias.float()
+
+    @torch.no_grad()
+    def _maybe_update_dynamic_pair_bias(
+        self, top_indices: torch.Tensor, load_weights: torch.Tensor
+    ) -> None:
+        if self.pair_bias_mode != "ema_byte_floor":
+            return
+        pair_ids = top_indices[:, 0].div(self.pair_size, rounding_mode="floor")
+        pair_bytes = torch.zeros(
+            self.num_routing_groups, device=load_weights.device, dtype=torch.float32
+        )
+        pair_bytes.scatter_add_(0, pair_ids, load_weights.float())
+        total_bytes = load_weights.float().sum()
+        if dist.is_initialized():
+            local_stats = torch.cat([pair_bytes, total_bytes.reshape(1)]).to(
+                dtype=torch.bfloat16
+            )
+            world_size = dist.get_world_size()
+            gathered_stats = torch.empty(
+                world_size * local_stats.numel(),
+                device=local_stats.device,
+                dtype=local_stats.dtype,
+            )
+            dist.all_gather_into_tensor(gathered_stats, local_stats.contiguous())
+            global_stats = gathered_stats.view(world_size, -1).float().sum(dim=0)
+            pair_bytes = global_stats[:-1]
+            total_bytes = global_stats[-1]
+        pair_share = pair_bytes / total_bytes.clamp_min(1.0)
+        self.pair_bias_step.add_(1)
+        if int(self.pair_bias_step.item()) % self.pair_bias_update_interval != 0:
+            return
+
+        local_share = pair_share.to(device=self.pair_load_ema.device)
+        self.pair_load_ema.mul_(self.pair_bias_ema).add_(
+            local_share, alpha=1.0 - self.pair_bias_ema
+        )
+        low_delta = torch.clamp(
+            self.pair_min_byte_fraction - self.pair_load_ema, min=0.0
+        )
+        high_delta = torch.clamp(
+            self.pair_load_ema - self.pair_max_byte_fraction, min=0.0
+        )
+        self.dynamic_pair_bias.add_(
+            (low_delta - high_delta) * float(self.pair_bias_lr)
+        )
+        self.dynamic_pair_bias.clamp_(
+            min=-float(self.pair_bias_clip), max=float(self.pair_bias_clip)
+        )
+        self.dynamic_pair_bias.sub_(self.dynamic_pair_bias.mean())
 
     def _prepare_patch_byte_features(
         self, x: torch.Tensor, patch_byte_features: Optional[torch.Tensor]
@@ -1019,6 +1445,16 @@ class SparseMoEFeedForward(nn.Module):
             device=x.device
         )
 
+    def _entropy_router_features(self, flat_patch_entropies: torch.Tensor) -> torch.Tensor:
+        normalized = (
+            flat_patch_entropies.float() - self.router_entropy_mean
+        ) / self.router_entropy_std
+        normalized = normalized.clamp(
+            min=-self.router_entropy_clip,
+            max=self.router_entropy_clip,
+        )
+        return normalized.unsqueeze(-1)
+
     def _patch_features(
         self,
         flat_patch_lengths: Optional[torch.Tensor],
@@ -1035,7 +1471,7 @@ class SparseMoEFeedForward(nn.Module):
                     positive_lengths.mean()
                 ).clamp_min(1.0)
             features.append(length_feature)
-        if self.router_use_patch_entropy:
+        if self.router_use_patch_entropy and not self.use_entropy_mlp_router:
             assert flat_patch_entropies is not None
             entropy_feature = flat_patch_entropies.float().clamp_min(0.0)
             if flat_patch_lengths is None:
@@ -1085,23 +1521,29 @@ class SparseMoEFeedForward(nn.Module):
         router_probs: torch.Tensor,
         load_weights: torch.Tensor,
     ) -> torch.Tensor:
+        group_count = router_probs.shape[-1]
         total_load = load_weights.sum()
         load_density = (router_probs * load_weights.unsqueeze(-1)).sum(dim=0)
         load_density = load_density / total_load.clamp_min(1.0)
         has_load = (total_load > 0).to(load_density.dtype)
-        return (self.num_experts * load_density - 1.0).mul(has_load).detach()
+        return (group_count * load_density - 1.0).mul(has_load).detach()
 
     @torch.no_grad()
     def _record_metrics(
         self,
         router_probs: torch.Tensor,
         top_indices: torch.Tensor,
+        top_weights: Optional[torch.Tensor],
         load_weights: torch.Tensor,
         flat_patch_lengths: Optional[torch.Tensor],
         flat_patch_entropies: Optional[torch.Tensor],
         flat_patch_byte_features: Optional[torch.Tensor] = None,
         congestion_price: Optional[torch.Tensor] = None,
         pre_congestion_router_probs: Optional[torch.Tensor] = None,
+        pair_router_probs: Optional[torch.Tensor] = None,
+        hidden_residual_scale: Optional[float] = None,
+        total_units: Optional[int] = None,
+        invalid_positions_skipped: int = 0,
     ) -> None:
         flat_top_indices = top_indices.reshape(-1)
         assignment_weights = (
@@ -1137,6 +1579,12 @@ class SparseMoEFeedForward(nn.Module):
 
         self.last_metrics = {
             "hidden_state_routing": float(self.router_use_hidden_state),
+            "hidden_residual_scale": (
+                self._hidden_residual_scale()
+                if hidden_residual_scale is None
+                else float(hidden_residual_scale)
+            ),
+            "routing_granularity_pair": float(self.routing_granularity == "pair"),
             "router_entropy": router_entropy.mean().item(),
             "load_imbalance": (load_fraction.max() / mean_load).item(),
             "max_load_fraction": load_fraction.max().item(),
@@ -1149,7 +1597,17 @@ class SparseMoEFeedForward(nn.Module):
                 else 0.0
             ),
             "routed_units": float(routed_units),
-            "total_units": float(load_weights.numel()),
+            "total_units": float(
+                load_weights.numel() if total_units is None else total_units
+            ),
+            "valid_patch_fraction": (
+                float(routed_units)
+                / max(
+                    float(load_weights.numel() if total_units is None else total_units),
+                    1.0,
+                )
+            ),
+            "invalid_positions_skipped": float(invalid_positions_skipped),
             "load_weight_mean": load_weight_mean,
             "load_weight_max": load_weight_max,
             "side_feature_count": float(len(self.patch_feature_names)),
@@ -1197,6 +1655,69 @@ class SparseMoEFeedForward(nn.Module):
                 fraction.item()
             )
 
+        if self.num_experts % self.pair_size == 0:
+            pair_count = self.num_experts // self.pair_size
+            flat_pair_indices = flat_top_indices.div(
+                self.pair_size, rounding_mode="floor"
+            )
+            pair_assignments = torch.zeros(
+                pair_count, device=router_probs.device, dtype=torch.float32
+            )
+            pair_assignments.scatter_add_(0, flat_pair_indices, assignment_weights)
+            total_pair_assignments = pair_assignments.sum().clamp_min(1.0)
+            pair_load_fraction = pair_assignments / total_pair_assignments
+
+            unit_pair_assignments = torch.zeros_like(pair_assignments)
+            unit_pair_assignments.scatter_add_(
+                0, flat_pair_indices, unit_assignment_weights
+            )
+            total_unit_pair_assignments = unit_pair_assignments.sum().clamp_min(1.0)
+            pair_unit_fraction = unit_pair_assignments / total_unit_pair_assignments
+            pair_mean = pair_load_fraction.mean().clamp_min(1e-9)
+
+            self.last_metrics.update(
+                {
+                    "pair_load_cv": (
+                        pair_load_fraction.std(unbiased=False) / pair_mean
+                    ).item(),
+                    "pair_max_byte_fraction": pair_load_fraction.max().item(),
+                    "pair_min_byte_fraction": pair_load_fraction.min().item(),
+                    "pair_dead_count": (
+                        pair_load_fraction < 0.005
+                    ).float().sum().item(),
+                }
+            )
+            if pair_router_probs is None:
+                pair_probs = router_probs.reshape(
+                    router_probs.shape[0], pair_count, self.pair_size
+                ).sum(dim=-1)
+            else:
+                pair_probs = pair_router_probs
+            pair_router_entropy = -(
+                pair_probs * pair_probs.clamp_min(1e-9).log()
+            ).sum(dim=-1)
+            self.last_metrics["pair_router_entropy"] = (
+                pair_router_entropy.mean().item()
+                if pair_router_entropy.numel() > 0
+                else 0.0
+            )
+            if top_weights is not None and top_weights.numel() > 0:
+                self.last_metrics["pair_top_weight_min"] = top_weights.min().item()
+                self.last_metrics["pair_top_weight_max"] = top_weights.max().item()
+
+            for pair_id, fraction in enumerate(pair_load_fraction):
+                self.last_metrics[f"pair_{pair_id}_byte_fraction"] = fraction.item()
+            for pair_id, fraction in enumerate(pair_unit_fraction):
+                self.last_metrics[f"pair_{pair_id}_unit_fraction"] = fraction.item()
+            if self.pair_bias_mode == "ema_byte_floor":
+                for pair_id, value in enumerate(self.dynamic_pair_bias):
+                    self.last_metrics[f"dynamic_pair_bias_{pair_id}"] = value.item()
+                for pair_id, value in enumerate(self.pair_load_ema):
+                    self.last_metrics[f"pair_load_ema_{pair_id}"] = value.item()
+                self.last_metrics["pair_bias_step"] = float(
+                    self.pair_bias_step.item()
+                )
+
         if flat_patch_lengths is not None:
             active_lengths = flat_patch_lengths.float()[active_unit_mask]
             self.last_metrics.update(
@@ -1236,6 +1757,15 @@ class SparseMoEFeedForward(nn.Module):
                 unit_assignments,
                 total_unit_assignments,
             )
+            if self.num_experts % self.pair_size == 0:
+                self._record_per_pair_feature_metrics(
+                    "length",
+                    flat_patch_lengths.float(),
+                    top_indices,
+                    flat_top_indices,
+                    unit_assignment_weights,
+                    unit_pair_assignments,
+                )
 
         if flat_patch_entropies is not None:
             active_entropies = flat_patch_entropies.float()[active_unit_mask]
@@ -1331,6 +1861,15 @@ class SparseMoEFeedForward(nn.Module):
                 unit_assignments,
                 total_unit_assignments,
             )
+            if self.num_experts % self.pair_size == 0:
+                self._record_per_pair_feature_metrics(
+                    "entropy",
+                    flat_patch_entropies.float(),
+                    top_indices,
+                    flat_top_indices,
+                    unit_assignment_weights,
+                    unit_pair_assignments,
+                )
 
         if flat_patch_byte_features is not None:
             active_byte_features = flat_patch_byte_features.float()[active_unit_mask]
@@ -1394,6 +1933,33 @@ class SparseMoEFeedForward(nn.Module):
         feature_means = feature_sums / unit_assignments.clamp_min(1.0)
         for expert_id, mean_value in enumerate(feature_means):
             self.last_metrics[f"expert_{expert_id}_{feature_name}_mean"] = (
+                mean_value.item()
+            )
+
+    @torch.no_grad()
+    def _record_per_pair_feature_metrics(
+        self,
+        feature_name: str,
+        values: torch.Tensor,
+        top_indices: torch.Tensor,
+        flat_top_indices: torch.Tensor,
+        unit_assignment_weights: torch.Tensor,
+        unit_pair_assignments: torch.Tensor,
+    ) -> None:
+        pair_count = self.num_experts // self.pair_size
+        flat_pair_indices = flat_top_indices.div(self.pair_size, rounding_mode="floor")
+        expanded_values = values.unsqueeze(-1).expand_as(top_indices).reshape(-1)
+        feature_sums = torch.zeros(
+            pair_count, device=values.device, dtype=torch.float32
+        )
+        feature_sums.scatter_add_(
+            0,
+            flat_pair_indices,
+            expanded_values * unit_assignment_weights,
+        )
+        feature_means = feature_sums / unit_pair_assignments.clamp_min(1.0)
+        for pair_id, mean_value in enumerate(feature_means):
+            self.last_metrics[f"pair_{pair_id}_{feature_name}_mean"] = (
                 mean_value.item()
             )
 
@@ -1467,6 +2033,18 @@ class SparseMoEFeedForward(nn.Module):
             )
             if self.patch_feature_router.bias is not None:
                 nn.init.zeros_(self.patch_feature_router.bias)
+        if self.entropy_router is not None:
+            for layer in self.entropy_router:
+                if isinstance(layer, nn.Linear):
+                    trunc_normal_(
+                        layer.weight,
+                        mean=0.0,
+                        std=router_init_std,
+                        a=-3 * router_init_std,
+                        b=3 * router_init_std,
+                    )
+                    if layer.bias is not None:
+                        nn.init.zeros_(layer.bias)
         for expert in self.experts:
             if expert is not None:
                 expert.reset_parameters(init_std, factor)
@@ -1500,6 +2078,31 @@ def get_moe_router_z_loss(module: nn.Module) -> Optional[torch.Tensor]:
     return torch.stack(losses).mean()
 
 
+def get_moe_balance_loss_weight_for_step(args: BaseTransformerArgs, step: int) -> float:
+    base_weight = float(args.moe_balance_loss_weight)
+    if args.moe_balance_schedule == "constant":
+        return base_weight
+    if args.moe_balance_schedule != "linear_decay":
+        raise ValueError(f"Unsupported MoE balance schedule: {args.moe_balance_schedule}")
+
+    start = int(args.moe_balance_start_step)
+    peak = int(args.moe_balance_peak_step)
+    decay_start = int(args.moe_balance_decay_start_step)
+    end = int(args.moe_balance_end_step)
+    final_weight = float(args.moe_balance_final_weight)
+
+    if step < start:
+        return 0.0
+    if peak > start and step < peak:
+        return base_weight * (step - start) / (peak - start)
+    if step < decay_start or end <= decay_start:
+        return base_weight
+    if step < end:
+        progress = (step - decay_start) / (end - decay_start)
+        return base_weight + progress * (final_weight - base_weight)
+    return final_weight
+
+
 def get_moe_metrics(module: nn.Module) -> dict[str, float]:
     metrics = [
         child.last_metrics
@@ -1515,6 +2118,12 @@ def get_moe_metrics(module: nn.Module) -> dict[str, float]:
         values = [item[key] for item in metrics if key in item]
         out[f"{key}_mean"] = sum(values) / len(values)
     return out
+
+
+def set_moe_router_step(module: nn.Module, step: int) -> None:
+    for _, child in _iter_sparse_moe_modules(module):
+        if hasattr(child, "set_router_step"):
+            child.set_router_step(step)
 
 
 class TransformerBlock(nn.Module):
@@ -1559,9 +2168,30 @@ class TransformerBlock(nn.Module):
                 router_use_hidden_state=args.moe_router_use_hidden_state,
                 router_patch_feature_bias=args.moe_router_patch_feature_bias,
                 router_normalize_patch_entropy=args.moe_router_normalize_patch_entropy,
+                router_entropy_mlp_hidden_dim=args.moe_router_entropy_mlp_hidden_dim,
+                router_entropy_mean=args.moe_router_entropy_mean,
+                router_entropy_std=args.moe_router_entropy_std,
+                router_entropy_clip=args.moe_router_entropy_clip,
                 router_use_patch_length=args.moe_router_use_patch_length,
                 router_use_patch_entropy=args.moe_router_use_patch_entropy,
                 router_use_patch_byte_features=args.moe_router_use_patch_byte_features,
+                routing_granularity=args.moe_routing_granularity,
+                pair_size=args.moe_pair_size,
+                entropy_prior_mode=args.moe_entropy_prior_mode,
+                entropy_prior_scale=args.moe_entropy_prior_scale,
+                entropy_prior_hidden_scale=args.moe_entropy_prior_hidden_scale,
+                entropy_prior_calibration_path=args.moe_entropy_prior_calibration_path,
+                entropy_prior_trainable=args.moe_entropy_prior_trainable,
+                pair_bias_mode=args.moe_pair_bias_mode,
+                pair_bias_ema=args.moe_pair_bias_ema,
+                pair_bias_update_interval=args.moe_pair_bias_update_interval,
+                pair_bias_lr=args.moe_pair_bias_lr,
+                pair_bias_clip=args.moe_pair_bias_clip,
+                pair_min_byte_fraction=args.moe_pair_min_byte_fraction,
+                pair_max_byte_fraction=args.moe_pair_max_byte_fraction,
+                hidden_residual_ramp_start_step=args.moe_hidden_residual_ramp_start_step,
+                hidden_residual_ramp_end_step=args.moe_hidden_residual_ramp_end_step,
+                hidden_residual_final_scale=args.moe_hidden_residual_final_scale,
                 balance_cost=args.moe_balance_cost,
             )
             if use_moe

@@ -19,7 +19,7 @@ DENSE_GLOBAL_FFN_RE = re.compile(
     r"feed_forward\.(?P<weight>w[123])\.weight$"
 )
 PATCH_FEATURE_CHOICES = ("length", "entropy", "byte_type")
-EXPERT_INIT_MODES = ("replicated_prefix", "paired_partition")
+EXPERT_INIT_MODES = ("replicated_prefix", "dense_copy", "paired_partition")
 PATCH_FEATURE_INIT_MODES = ("random", "entropy_bands")
 MANIFEST_NAME = "patchmoe_warmstart_manifest.json"
 
@@ -36,7 +36,17 @@ class PatchMoEWarmStartSpec:
     expert_init_mode: str = "replicated_prefix"
     patch_feature_bias: bool = False
     patch_feature_init: str = "random"
+    # Keep patch-feature router rows independent even when FFN experts use
+    # paired_partition initialization.
+    pair_patch_feature_router: bool = False
+    routing_granularity: str = "expert"
     entropy_band_logit_scale: float = 1.0
+    entropy_prior_mode: str = "none"
+    entropy_prior_calibration_path: str | None = None
+    pair_bias_mode: str = "none"
+    hidden_residual_ramp_start_step: int = 0
+    hidden_residual_ramp_end_step: int = 0
+    entropy_mlp_hidden_dim: int = 0
 
     def __post_init__(self):
         if self.num_experts <= 0:
@@ -71,6 +81,12 @@ class PatchMoEWarmStartSpec:
                 "patch_feature_init must be one of: "
                 f"{', '.join(PATCH_FEATURE_INIT_MODES)}"
             )
+        if self.routing_granularity not in {"expert", "pair"}:
+            raise ValueError("routing_granularity must be one of: expert, pair")
+        if self.entropy_prior_mode not in {"none", "gaussian_pairs"}:
+            raise ValueError("entropy_prior_mode must be one of: none, gaussian_pairs")
+        if self.pair_bias_mode not in {"none", "ema_byte_floor"}:
+            raise ValueError("pair_bias_mode must be one of: none, ema_byte_floor")
         if self.entropy_band_logit_scale <= 0:
             raise ValueError("entropy_band_logit_scale must be positive")
         if self.patch_feature_init == "entropy_bands":
@@ -95,6 +111,26 @@ class PatchMoEWarmStartSpec:
                 raise ValueError(
                     "paired_partition requires expert_ffn_dim_multiplier=0.5"
                 )
+        if self.routing_granularity == "pair":
+            if self.num_experts % 2 != 0:
+                raise ValueError("pair routing requires an even num_experts")
+            if self.top_k != 2:
+                raise ValueError("pair routing requires top_k=2")
+            if self.expert_init_mode != "paired_partition":
+                raise ValueError("pair routing warmstart requires paired_partition")
+        if self.entropy_prior_mode == "gaussian_pairs":
+            if self.routing_granularity != "pair":
+                raise ValueError("gaussian_pairs prior warmstart requires pair routing")
+            if self.entropy_prior_calibration_path is None:
+                raise ValueError(
+                    "entropy_prior_calibration_path is required for gaussian_pairs"
+                )
+        if self.pair_bias_mode == "ema_byte_floor" and self.routing_granularity != "pair":
+            raise ValueError("ema_byte_floor warmstart requires pair routing")
+        if self.hidden_residual_ramp_start_step < 0 or self.hidden_residual_ramp_end_step < 0:
+            raise ValueError("hidden residual ramp steps must be non-negative")
+        if self.entropy_mlp_hidden_dim < 0:
+            raise ValueError("entropy_mlp_hidden_dim must be non-negative")
 
     @property
     def patch_feature_count(self) -> int:
@@ -237,6 +273,22 @@ def _paired_router_weight(
     return pair_weight.repeat_interleave(2, dim=0)
 
 
+def _pair_router_weight(
+    *,
+    num_experts: int,
+    input_dim: int,
+    dtype: torch.dtype,
+    std: float,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    return _truncated_normal(
+        (num_experts // 2, input_dim),
+        dtype=dtype,
+        std=std,
+        generator=generator,
+    )
+
+
 def _entropy_band_patch_feature_router(
     spec: PatchMoEWarmStartSpec,
     *,
@@ -251,15 +303,50 @@ def _entropy_band_patch_feature_router(
     centers = torch.linspace(0.5, 3.5, pair_count, dtype=torch.float32)
     slopes = 2.0 * spec.entropy_band_logit_scale * centers
     biases = -spec.entropy_band_logit_scale * centers.square()
-    weight = torch.zeros(
-        spec.num_experts, spec.patch_feature_count, dtype=torch.float32
+    output_rows = (
+        pair_count if spec.routing_granularity == "pair" else spec.num_experts
     )
-    bias = torch.zeros(spec.num_experts, dtype=torch.float32)
+    weight = torch.zeros(output_rows, spec.patch_feature_count, dtype=torch.float32)
+    bias = torch.zeros(output_rows, dtype=torch.float32)
     for pair_idx in range(pair_count):
-        start = 2 * pair_idx
-        weight[start : start + 2, entropy_feature_idx] = slopes[pair_idx]
-        bias[start : start + 2] = biases[pair_idx]
+        if spec.routing_granularity == "pair":
+            weight[pair_idx, entropy_feature_idx] = slopes[pair_idx]
+            bias[pair_idx] = biases[pair_idx]
+        else:
+            start = 2 * pair_idx
+            weight[start : start + 2, entropy_feature_idx] = slopes[pair_idx]
+            bias[start : start + 2] = biases[pair_idx]
     return weight.to(dtype=dtype), bias.to(dtype=dtype)
+
+
+def _load_entropy_prior_calibration(
+    spec: PatchMoEWarmStartSpec,
+    *,
+    dtype: torch.dtype,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    if spec.entropy_prior_calibration_path is None:
+        raise ValueError("Missing entropy prior calibration path")
+    with Path(spec.entropy_prior_calibration_path).open() as f:
+        calibration = json.load(f)
+    num_pairs = spec.num_experts // 2
+    if int(calibration.get("num_pairs", -1)) != num_pairs:
+        raise ValueError(
+            f"calibration num_pairs must be {num_pairs}, got "
+            f"{calibration.get('num_pairs')}"
+        )
+    if int(calibration.get("num_experts", spec.num_experts)) != spec.num_experts:
+        raise ValueError(
+            f"calibration num_experts must be {spec.num_experts}, got "
+            f"{calibration.get('num_experts')}"
+        )
+    centers = torch.tensor(calibration["entropy_centers"], dtype=dtype)
+    widths = torch.tensor(calibration["entropy_widths"], dtype=dtype)
+    static_bias = torch.tensor(calibration["static_pair_bias"], dtype=dtype)
+    if centers.numel() != num_pairs or widths.numel() != num_pairs:
+        raise ValueError("calibration entropy prior length must match num_pairs")
+    if static_bias.numel() != num_pairs:
+        raise ValueError("calibration static_pair_bias length must match num_pairs")
+    return centers, widths, static_bias
 
 
 def convert_dense_state_dict_to_patchmoe(
@@ -311,7 +398,15 @@ def convert_dense_state_dict_to_patchmoe(
             global_layer_count=len(global_layers),
             init_std_factor=spec.init_std_factor,
         )
-        if spec.expert_init_mode == "paired_partition":
+        if spec.routing_granularity == "pair":
+            router_weight = _pair_router_weight(
+                num_experts=spec.num_experts,
+                input_dim=dim,
+                dtype=dtype,
+                std=router_std,
+                generator=generator,
+            )
+        elif spec.expert_init_mode == "paired_partition":
             router_weight = _paired_router_weight(
                 num_experts=spec.num_experts,
                 input_dim=dim,
@@ -333,7 +428,18 @@ def convert_dense_state_dict_to_patchmoe(
                 patch_feature_router, patch_feature_bias = (
                     _entropy_band_patch_feature_router(spec, dtype=dtype)
                 )
-            elif spec.expert_init_mode == "paired_partition":
+            elif spec.routing_granularity == "pair":
+                patch_feature_router = _pair_router_weight(
+                    num_experts=spec.num_experts,
+                    input_dim=spec.patch_feature_count,
+                    dtype=dtype,
+                    std=router_std,
+                    generator=generator,
+                )
+            elif (
+                spec.expert_init_mode == "paired_partition"
+                and spec.pair_patch_feature_router
+            ):
                 patch_feature_router = _paired_router_weight(
                     num_experts=spec.num_experts,
                     input_dim=spec.patch_feature_count,
@@ -351,7 +457,18 @@ def convert_dense_state_dict_to_patchmoe(
             converted[f"{prefix}.patch_feature_router.weight"] = patch_feature_router
             if spec.patch_feature_bias:
                 if patch_feature_bias is None:
-                    if spec.expert_init_mode == "paired_partition":
+                    if spec.routing_granularity == "pair":
+                        patch_feature_bias = _pair_router_weight(
+                            num_experts=spec.num_experts,
+                            input_dim=1,
+                            dtype=dtype,
+                            std=router_std,
+                            generator=generator,
+                        ).squeeze(-1)
+                    elif (
+                        spec.expert_init_mode == "paired_partition"
+                        and spec.pair_patch_feature_router
+                    ):
                         patch_feature_bias = _paired_router_weight(
                             num_experts=spec.num_experts,
                             input_dim=1,
@@ -370,6 +487,42 @@ def convert_dense_state_dict_to_patchmoe(
                 converted[f"{prefix}.patch_length_router.bias"] = patch_feature_bias
             # SparseMoEFeedForward keeps this compatibility alias in its state dict.
             converted[f"{prefix}.patch_length_router.weight"] = patch_feature_router
+
+        if spec.entropy_prior_mode == "gaussian_pairs":
+            centers, widths, static_bias = _load_entropy_prior_calibration(
+                spec, dtype=dtype
+            )
+            converted[f"{prefix}.entropy_prior_centers"] = centers
+            converted[f"{prefix}.entropy_prior_widths"] = widths
+            converted[f"{prefix}.entropy_prior_static_bias"] = static_bias
+        if spec.pair_bias_mode == "ema_byte_floor":
+            num_pairs = spec.num_experts // 2
+            converted[f"{prefix}.dynamic_pair_bias"] = torch.zeros(
+                num_pairs, dtype=dtype
+            )
+            converted[f"{prefix}.pair_load_ema"] = torch.zeros(num_pairs, dtype=dtype)
+            converted[f"{prefix}.pair_bias_step"] = torch.zeros((), dtype=torch.long)
+        if spec.hidden_residual_ramp_end_step > spec.hidden_residual_ramp_start_step:
+            converted[f"{prefix}.router_step"] = torch.zeros((), dtype=torch.long)
+        if spec.entropy_mlp_hidden_dim > 0:
+            converted[f"{prefix}.entropy_router.0.weight"] = _truncated_normal(
+                (spec.entropy_mlp_hidden_dim, 1),
+                dtype=dtype,
+                std=router_std,
+                generator=generator,
+            )
+            converted[f"{prefix}.entropy_router.0.bias"] = torch.zeros(
+                spec.entropy_mlp_hidden_dim, dtype=dtype
+            )
+            converted[f"{prefix}.entropy_router.2.weight"] = _truncated_normal(
+                (router_weight.shape[0], spec.entropy_mlp_hidden_dim),
+                dtype=dtype,
+                std=router_std,
+                generator=generator,
+            )
+            converted[f"{prefix}.entropy_router.2.bias"] = torch.zeros(
+                router_weight.shape[0], dtype=dtype
+            )
 
     source_parameter_count = sum(value.numel() for value in dense_state_dict.values())
     source_global_ffn_parameter_count = sum(
@@ -434,6 +587,26 @@ def write_patchmoe_warmstart_dcp(
         "spec": asdict(spec),
         "report": asdict(report),
     }
+    if spec.expert_init_mode == "paired_partition":
+        manifest.update(
+            {
+                "num_experts": spec.num_experts,
+                "pair_size": 2,
+                "num_pairs": spec.num_experts // 2,
+                "top_k": spec.top_k,
+                "expert_ffn_dim_multiplier": spec.expert_ffn_dim_multiplier,
+                "expert_init": "paired_partition_replicated_per_pair",
+                "pair_member_output_scale": 2.0,
+                "routing_granularity": spec.routing_granularity,
+                "hidden_router_init": (
+                    "pair"
+                    if spec.routing_granularity == "pair"
+                    else "paired"
+                    if spec.pair_patch_feature_router
+                    else "independent_patch_feature_router"
+                ),
+            }
+        )
     with open(output_dir / MANIFEST_NAME, "w") as f:
         json.dump(manifest, f, indent=2)
         f.write("\n")

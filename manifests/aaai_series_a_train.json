@@ -1,0 +1,26 @@
+{
+  "name": "aaai_series_a_train",
+  "dataset": "FineWeb-Edu-10BT",
+  "split": "train",
+  "chunks": ["00000", "00001", "00002", "00003", "00004", "00005", "00006"],
+  "raw_files": [
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00000.jsonl",
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00001.jsonl",
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00002.jsonl",
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00003.jsonl",
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00004.jsonl",
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00005.jsonl",
+    "/data1/pengfeigao/BP-MoE/data/fineweb_edu_10bt/fineweb_edu_10bt.chunk.00006.jsonl"
+  ],
+  "arrow_files": [
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00000.jsonl.shard_00.arrow",
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00001.jsonl.shard_00.arrow",
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00002.jsonl.shard_00.arrow",
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00003.jsonl.shard_00.arrow",
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00004.jsonl.shard_00.arrow",
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00005.jsonl.shard_00.arrow",
+    "/data1/pengfeigao/BP-MoE/data/entropy_preprocessed_stage1/fineweb_edu_10bt/transformer_100m/fineweb_edu_10bt.chunk.00006.jsonl_shard_00.arrow"
+  ],
+  "data_order_seed": 42,
+  "entropy_model_name": "transformer_100m"
+}

@@ -2,6 +2,7 @@
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
 
 import gc
+import json
 import logging
 import math
 import os
@@ -30,9 +31,11 @@ from torch.optim import lr_scheduler
 
 from bytelatent.args import TrainArgs
 from bytelatent.base_transformer import (
+    get_moe_balance_loss_weight_for_step,
     get_moe_aux_loss,
     get_moe_metrics,
     get_moe_router_z_loss,
+    set_moe_router_step,
 )
 from bytelatent.checkpoint import CheckpointManager, load_from_checkpoint
 from bytelatent.config_parser import parse_args_to_pydantic_model
@@ -112,21 +115,39 @@ class TrainState(Stateful):
     data_loader_state: MultiprocessIteratorState | PackingIteratorState
     scale: float = 1.0
     data_loader_class: str | None = None
+    cumulative_active_flops: float = 0.0
+    cumulative_valid_bytes: int = 0
+    cumulative_valid_patches: int = 0
+    saved_budget_boundaries: list[str] | None = None
 
     def state_dict(self) -> dict[str, Any]:
         return {
             "step": self.step,
             "acc_step": self.acc_step,
-            "data_loader_state": self.data_loader_state.model_dump(),
-            "data_loader_class": get_iterator_state_name(self.data_loader_state),
+            "data_loader_state": (
+                self.data_loader_state.model_dump()
+                if self.data_loader_state is not None
+                else None
+            ),
+            "data_loader_class": (
+                get_iterator_state_name(self.data_loader_state)
+                if self.data_loader_state is not None
+                else None
+            ),
             "scheduler": self.scheduler.state_dict(),
+            "cumulative_active_flops": self.cumulative_active_flops,
+            "cumulative_valid_bytes": self.cumulative_valid_bytes,
+            "cumulative_valid_patches": self.cumulative_valid_patches,
+            "saved_budget_boundaries": self.saved_budget_boundaries or [],
         }
 
     def load_state_dict(self, state_dict):
         self.step = state_dict["step"]
         self.acc_step = state_dict["acc_step"]
         self.data_loader_class = state_dict["data_loader_class"]
-        if self.data_loader_class == "multiprocess":
+        if self.data_loader_class is None:
+            self.data_loader_state = None
+        elif self.data_loader_class == "multiprocess":
             self.data_loader_state = MultiprocessIteratorState(
                 **state_dict["data_loader_state"]
             )
@@ -137,6 +158,84 @@ class TrainState(Stateful):
         else:
             raise ValueError(f"invalid data loader class: {self.data_loader_class}")
         self.scheduler.load_state_dict(state_dict["scheduler"])
+        self.cumulative_active_flops = float(
+            state_dict.get("cumulative_active_flops", 0.0)
+        )
+        self.cumulative_valid_bytes = int(state_dict.get("cumulative_valid_bytes", 0))
+        self.cumulative_valid_patches = int(
+            state_dict.get("cumulative_valid_patches", 0)
+        )
+        self.saved_budget_boundaries = list(
+            state_dict.get("saved_budget_boundaries", [])
+        )
+
+
+def load_compute_budgets(path: str | None) -> dict[str, float]:
+    if path is None:
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    budgets: dict[str, float] = {}
+    for key in ("C_low", "C_mid", "C_high"):
+        if key in raw:
+            budgets[key] = float(raw[key])
+    return budgets
+
+
+def crossed_compute_budgets(
+    *,
+    previous_flops: float,
+    current_flops: float,
+    budgets: dict[str, float],
+    saved_boundaries: set[str],
+) -> list[str]:
+    crossed = []
+    for key in ("C_low", "C_mid", "C_high"):
+        budget = budgets.get(key)
+        if budget is None or key in saved_boundaries:
+            continue
+        if previous_flops < budget <= current_flops:
+            crossed.append(key)
+    return crossed
+
+
+def update_active_compute_counters(
+    train_state: TrainState,
+    *,
+    step_active_flops: float,
+    step_valid_bytes: int,
+    step_valid_patches: int,
+    budgets: dict[str, float],
+) -> list[str]:
+    previous_flops = train_state.cumulative_active_flops
+    train_state.cumulative_active_flops += float(step_active_flops)
+    train_state.cumulative_valid_bytes += int(step_valid_bytes)
+    train_state.cumulative_valid_patches += int(step_valid_patches)
+    saved_boundaries = set(train_state.saved_budget_boundaries or [])
+    crossed = crossed_compute_budgets(
+        previous_flops=previous_flops,
+        current_flops=train_state.cumulative_active_flops,
+        budgets=budgets,
+        saved_boundaries=saved_boundaries,
+    )
+    if crossed:
+        train_state.saved_budget_boundaries = list(
+            (train_state.saved_budget_boundaries or []) + crossed
+        )
+    return crossed
+
+
+def reduce_step_valid_counts(
+    step_valid_bytes: int,
+    step_valid_patches: int,
+) -> tuple[int, int]:
+    global_step_valid_bytes = int(
+        to_py_num(dist_sum(step_valid_bytes, reduce_dtype=torch.bfloat16))
+    )
+    global_step_valid_patches = int(
+        to_py_num(dist_sum(step_valid_patches, reduce_dtype=torch.bfloat16))
+    )
+    return global_step_valid_bytes, global_step_valid_patches
 
 
 def validate_train_args(args: TrainArgs, output_size: int):
@@ -366,6 +465,7 @@ def train(args: TrainArgs):
 
         checkpoint = CheckpointManager.instantiate_and_make_dir(args.checkpoint)
         checkpoint.load(model, optimizer, train_state, world_mesh)
+        compute_budgets = load_compute_budgets(args.compute_budget_json)
         # Either load from latest checkpoint or start from scratch
         if args.probe_freq is not None:
             # TODO: Convert this to fsspec compatible
@@ -411,6 +511,8 @@ def train(args: TrainArgs):
         patch_entropy_max = 0.0
         patches_per_seq_sum = 0.0
         patch_seq_count = 0
+        accum_valid_bytes = 0
+        accum_valid_patches = 0
         while train_state.step < args.steps and (
             args.max_steps is None or train_state.step < args.max_steps
         ):
@@ -432,9 +534,11 @@ def train(args: TrainArgs):
             batch_y = torch.from_numpy(batch.y).cuda()
             if batch.patch_lengths is None:
                 batch_patch_lengths = None
+                batch_valid_patches = 0
             else:
                 batch_patch_lengths = torch.from_numpy(batch.patch_lengths).cuda()
                 active_patch_lengths = batch_patch_lengths[batch_patch_lengths > 0]
+                batch_valid_patches = int(active_patch_lengths.numel())
                 if active_patch_lengths.numel() > 0:
                     patch_length_sum += active_patch_lengths.sum().item()
                     patch_length_count += active_patch_lengths.numel()
@@ -462,19 +566,26 @@ def train(args: TrainArgs):
             mask = None if batch.mask is None else torch.from_numpy(batch.mask).cuda()
 
             if args.data.tokenizer_args.name in ["bytes", "blt"]:
-                n_bytes += batch_y.numel() if mask is None else mask.sum()
+                batch_valid_bytes = (
+                    batch_y.numel() if mask is None else int(mask.sum().item())
+                )
+                n_bytes += batch_valid_bytes
             elif args.data.tokenizer_args.name in ["sp", "tiktoken"]:
+                batch_valid_bytes = 0
                 for example in batch.y:
                     target_tokens = tokenizer.decode(example.tolist(), cut_at_eos=False)
-                    n_bytes += (
+                    batch_valid_bytes += (
                         len(bytes(target_tokens, encoding="utf-8", errors="ignore"))
                         + sum(example == tokenizer.eos_id)
                         + sum(example == tokenizer.bos_id)
                     )
+                n_bytes += batch_valid_bytes
             else:
                 raise ValueError(
                     f"Unexpected tokenizer to count n_bytes for: {args.data.tokenizer_args.name}"
                 )
+            accum_valid_bytes += int(batch_valid_bytes)
+            accum_valid_patches += int(batch_valid_patches)
 
             if (
                 not args.train_entropy_model
@@ -547,6 +658,8 @@ def train(args: TrainArgs):
             moe_aux_loss_log = None
             moe_router_z_loss_log = None
             trace_train_phase(trace_step, train_state.acc_step, "before_forward")
+            if not args.train_entropy_model:
+                set_moe_router_step(model, train_state.step)
             if args.train_entropy_model:
                 pred = model(batch_x)
             else:
@@ -561,9 +674,12 @@ def train(args: TrainArgs):
             loss, tok_loss = compute_loss(pred, batch_y, mask, train_state.scale)
             if not args.train_entropy_model:
                 moe_aux_loss = get_moe_aux_loss(model)
-                if moe_aux_loss is not None and args.model.moe_balance_loss_weight > 0:
+                moe_balance_loss_weight = get_moe_balance_loss_weight_for_step(
+                    args.model, train_state.step
+                )
+                if moe_aux_loss is not None and moe_balance_loss_weight > 0:
                     moe_aux_loss_log = moe_aux_loss.detach()
-                    loss = loss + args.model.moe_balance_loss_weight * moe_aux_loss
+                    loss = loss + moe_balance_loss_weight * moe_aux_loss
                 elif moe_aux_loss is not None:
                     moe_aux_loss_log = moe_aux_loss.detach()
 
@@ -626,6 +742,22 @@ def train(args: TrainArgs):
                 scheduler.step()
                 optimizer.zero_grad()
                 train_state.step += 1
+                global_step_valid_bytes, global_step_valid_patches = (
+                    reduce_step_valid_counts(accum_valid_bytes, accum_valid_patches)
+                )
+                previous_active_flops = train_state.cumulative_active_flops
+                active_flops_per_token = get_num_flop_per_token(
+                    model_param_count - model_args.vocab_size * model_args.dim,
+                    model_args.n_layers,
+                    model_args.dim,
+                    args.data.seq_len,
+                )
+                step_active_flops = active_flops_per_token * global_step_valid_bytes
+                train_state.cumulative_active_flops += float(step_active_flops)
+                train_state.cumulative_valid_bytes += global_step_valid_bytes
+                train_state.cumulative_valid_patches += global_step_valid_patches
+                accum_valid_bytes = 0
+                accum_valid_patches = 0
                 trace_train_phase(
                     trace_step, train_state.acc_step, "after_optimizer_step"
                 )
@@ -728,6 +860,9 @@ def train(args: TrainArgs):
                         "grad_norm": grad_norm,
                         "lr": curr_lr,
                         "total_tokens": total_tokens,
+                        "cumulative_active_flops": train_state.cumulative_active_flops,
+                        "cumulative_valid_bytes": train_state.cumulative_valid_bytes,
+                        "cumulative_valid_patches": train_state.cumulative_valid_patches,
                     },
                     "memory": gpu_mem_stats._asdict(),
                     "loss": {
@@ -809,6 +944,7 @@ def train(args: TrainArgs):
                     moe_metrics = get_moe_metrics(model)
                     if moe_aux_loss_log is not None:
                         moe_metrics["aux_loss"] = to_py_num(moe_aux_loss_log)
+                        moe_metrics["aux_loss_weight"] = moe_balance_loss_weight
                     if moe_router_z_loss_log is not None:
                         moe_metrics["router_z_loss_aux"] = to_py_num(
                             moe_router_z_loss_log
@@ -863,7 +999,22 @@ def train(args: TrainArgs):
                 nwords_since_last_log = 0
                 time_last_log = timer()
 
-            if every_n_steps(
+            crossed_budgets = []
+            if args.save_budget_boundaries and compute_budgets:
+                crossed_budgets = crossed_compute_budgets(
+                    previous_flops=previous_active_flops
+                    if "previous_active_flops" in locals()
+                    else train_state.cumulative_active_flops,
+                    current_flops=train_state.cumulative_active_flops,
+                    budgets=compute_budgets,
+                    saved_boundaries=set(train_state.saved_budget_boundaries or []),
+                )
+                if crossed_budgets:
+                    saved_budget_boundaries = train_state.saved_budget_boundaries or []
+                    saved_budget_boundaries.extend(crossed_budgets)
+                    train_state.saved_budget_boundaries = saved_budget_boundaries
+
+            if crossed_budgets or every_n_steps(
                 train_state, args.checkpoint.dump.every, acc_step=0
             ) or every_n_steps(train_state, args.checkpoint.eval.every, acc_step=0):
                 if (

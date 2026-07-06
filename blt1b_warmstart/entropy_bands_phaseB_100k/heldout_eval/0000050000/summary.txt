@@ -1,0 +1,7 @@
+Model: entropy-aware PatchMoE
+Checkpoint: entropy_bands_phaseB, global_step=50000
+Held-out source: fineweb_edu_10bt_heldout.chunk.00002.first_50000.jsonl.shard_00.arrow
+Held-out bytes: 2381597
+Loss mean: 0.5840422414
+PPL: 1.7932726406
+BPB: 0.8425948453
