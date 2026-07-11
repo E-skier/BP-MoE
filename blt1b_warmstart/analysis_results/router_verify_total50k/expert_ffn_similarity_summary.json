@@ -1,0 +1,9 @@
+{
+  "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/entropy_randominit_A1k_B50k_6gpu_c00000_c00005/phaseB_final1k_from49000_to_total50k/checkpoints/0000001000",
+  "num_param_groups": 75,
+  "num_layers": 25,
+  "mean_pair_cos": 0.42981103256782527,
+  "mean_pair_rel_l2": 0.823923518067847,
+  "mean_paired_cos": 0.002752466831652782,
+  "mean_paired_rel_l2": 1.4122676642297602
+}

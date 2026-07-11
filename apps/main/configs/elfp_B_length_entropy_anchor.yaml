@@ -1,0 +1,37 @@
+config: apps/main/configs/patchmoe_blt1b_warmstart.yaml
+
+name: "elfp_B_length_entropy_anchor"
+
+model:
+  moe_num_experts: 8
+  moe_top_k: 2
+  moe_pair_size: 2
+  moe_routing_granularity: "pair"
+  moe_ffn_dim_multiplier: 0.5
+
+  # ELFP-B core: data-calibrated entropy-length anchor pair routing.
+  moe_router_use_hidden_state: false
+  moe_router_use_patch_length: true
+  moe_router_use_patch_entropy: true
+  moe_router_use_patch_byte_features: false
+  moe_router_patch_feature_bias: true
+  moe_router_normalize_patch_entropy: false
+
+  # No hidden residual / prior during training; anchor is only warmstart geometry.
+  moe_entropy_prior_mode: "none"
+  moe_entropy_prior_hidden_scale: 0.0
+  moe_entropy_prior_trainable: false
+
+  moe_router_jitter: 0.0
+  moe_router_congestion_weight: 0.0
+  moe_router_z_loss_weight: 0.001
+
+  # Same as A1 for fair comparison.
+  moe_balance_cost: "entropy_byte"
+  moe_balance_loss_weight: 0.02
+  moe_balance_schedule: "constant"
+
+  moe_pair_bias_mode: "none"
+
+checkpoint:
+  init_ckpt_path: /data1/pengfeigao/BP-MoE/blt1b_warmstart/initial_weights/elfp_pair_length_entropy_B_anchor_dcp

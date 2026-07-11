@@ -1,0 +1,752 @@
+{
+  "global": {
+    "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_AC1_A5k_B15k_6gpu_c00000_c00005/phaseB_resume_from4000_to_total20k/checkpoints/0000011000",
+    "max_batches": 200,
+    "total_valid_patches_per_layer": 51117,
+    "num_layers": 25,
+    "mean_top1_eff_num": 1.5176416195817104,
+    "mean_top2_eff_num": 2.687225011152745,
+    "mean_top1_dominant_frac": 0.8275814282894135,
+    "num_layers_active_top1_ge2": 14,
+    "num_layers_active_top1_ge3": 1,
+    "num_layers_entropy_range_ge_1": 9,
+    "num_layers_length_range_ge_4": 14
+  },
+  "layers": [
+    {
+      "layer": 0,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0146910435071286,
+      "top2_eff_num": 2.0517215202271286,
+      "top1_dominant_frac": 0.9980828166007996,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 0,
+          "top1_frac": 0.9980828295870259,
+          "entropy_mean": 1.0780142116792613,
+          "length_mean": 5.3526529332209565,
+          "high_entropy_frac": 0.030753248789666596,
+          "low_entropy_frac": 0.5492463591995139,
+          "short_length_frac": 0.5815088496442502,
+          "long_length_frac": 0.06193770948078167
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0018678832752785,
+      "top2_eff_num": 2.0889812679309956,
+      "top1_dominant_frac": 0.9998043775558472,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.9998043703660231,
+          "entropy_mean": 1.0771652010200234,
+          "length_mean": 5.913456082337057,
+          "high_entropy_frac": 0.030700295458547754,
+          "low_entropy_frac": 0.5500029350186862,
+          "short_length_frac": 0.580507562564815,
+          "long_length_frac": 0.06355293795370497
+        }
+      ]
+    },
+    {
+      "layer": 2,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0635141009848414,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 3,
+          "top1_frac": 1.0,
+          "entropy_mean": 1.0770288586253876,
+          "length_mean": 6.013654948451592,
+          "high_entropy_frac": 0.030694289570984214,
+          "low_entropy_frac": 0.5500909677797993,
+          "short_length_frac": 0.5803939980828295,
+          "long_length_frac": 0.06373613474969188
+        }
+      ]
+    },
+    {
+      "layer": 3,
+      "total_patches": 51117,
+      "top1_eff_num": 1.843725479449178,
+      "top2_eff_num": 3.3725591987732964,
+      "top1_dominant_frac": 0.7219125032424927,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.0765166046252883,
+      "length_mean_range_across_active_experts": 5.703918486802883,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.2741553690553045,
+          "entropy_mean": 1.8595976289029432,
+          "length_mean": 1.0,
+          "high_entropy_frac": 0.11138861138861139,
+          "low_entropy_frac": 0.008991008991008992,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        },
+        {
+          "expert": 6,
+          "top1_frac": 0.7219124753017587,
+          "entropy_mean": 0.783081024277655,
+          "length_mean": 6.703918486802883,
+          "high_entropy_frac": 0.00021679041786353044,
+          "low_entropy_frac": 0.753482196086933,
+          "short_length_frac": 0.4242046501544632,
+          "long_length_frac": 0.08284103842610156
+        }
+      ]
+    },
+    {
+      "layer": 4,
+      "total_patches": 51117,
+      "top1_eff_num": 1.855274045493473,
+      "top2_eff_num": 3.0418622586630684,
+      "top1_dominant_frac": 0.7320265173912048,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 0.8335221667082795,
+      "length_mean_range_across_active_experts": 7.546216627675159,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 2,
+          "top1_frac": 0.26016785022595224,
+          "entropy_mean": 0.4665208822112754,
+          "length_mean": 10.389878938266035,
+          "high_entropy_frac": 0.0,
+          "low_entropy_frac": 0.997593804045417,
+          "short_length_frac": 0.0,
+          "long_length_frac": 0.2149033761936988
+        },
+        {
+          "expert": 7,
+          "top1_frac": 0.7320265273783673,
+          "entropy_mean": 1.300043048919555,
+          "length_mean": 2.8436623105908763,
+          "high_entropy_frac": 0.04171677490045164,
+          "low_entropy_frac": 0.38758384777786686,
+          "short_length_frac": 0.7928592426307491,
+          "long_length_frac": 2.6724391351986957e-05
+        }
+      ]
+    },
+    {
+      "layer": 5,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0336191084783088,
+      "top2_eff_num": 2.0670645433390167,
+      "top1_dominant_frac": 0.9946984648704529,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.9946984369192245,
+          "entropy_mean": 1.0800990361121152,
+          "length_mean": 4.9556503953113324,
+          "high_entropy_frac": 0.030857884592691658,
+          "low_entropy_frac": 0.5483223852417103,
+          "short_length_frac": 0.5834873933052748,
+          "long_length_frac": 0.058746017385831725
+        }
+      ]
+    },
+    {
+      "layer": 6,
+      "total_patches": 51117,
+      "top1_eff_num": 2.071428243984597,
+      "top2_eff_num": 2.8616626397611133,
+      "top1_dominant_frac": 0.524619996547699,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 0.9706227091015064,
+      "length_mean_range_across_active_experts": 6.318838003038557,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 0,
+          "top1_frac": 0.46919811413032847,
+          "entropy_mean": 0.5686744806099512,
+          "length_mean": 8.335431954636425,
+          "high_entropy_frac": 0.00020847231487658438,
+          "low_entropy_frac": 0.9964976651100734,
+          "short_length_frac": 0.14442961974649768,
+          "long_length_frac": 0.12545863909272847
+        },
+        {
+          "expert": 7,
+          "top1_frac": 0.5246199894359997,
+          "entropy_mean": 1.5392971897114576,
+          "length_mean": 2.016593951597867,
+          "high_entropy_frac": 0.05832121415520006,
+          "low_entropy_frac": 0.146586120744304,
+          "short_length_frac": 0.9744565014729463,
+          "long_length_frac": 0.00018644889435805645
+        }
+      ]
+    },
+    {
+      "layer": 7,
+      "total_patches": 51117,
+      "top1_eff_num": 1.9334780233125703,
+      "top2_eff_num": 2.879861775197869,
+      "top1_dominant_frac": 0.6641626358032227,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.0971529376533038,
+      "length_mean_range_across_active_experts": 5.712535428842531,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 3,
+          "top1_frac": 0.6641626073517617,
+          "entropy_mean": 0.713151077246938,
+          "length_mean": 6.890309278350515,
+          "high_entropy_frac": 0.00023564064801178202,
+          "low_entropy_frac": 0.8213549337260677,
+          "short_length_frac": 0.3739617083946981,
+          "long_length_frac": 0.09022091310751104
+        },
+        {
+          "expert": 6,
+          "top1_frac": 0.33200305182229006,
+          "entropy_mean": 1.8103040149002418,
+          "length_mean": 1.1777738495079841,
+          "high_entropy_frac": 0.09192151316952449,
+          "low_entropy_frac": 0.0041246832832478935,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 8,
+      "total_patches": 51117,
+      "top1_eff_num": 1.9914119707616953,
+      "top2_eff_num": 3.9583137473466725,
+      "top1_dominant_frac": 0.6143357157707214,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 0.9204890625249627,
+      "length_mean_range_across_active_experts": 6.816951555208735,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 0,
+          "top1_frac": 0.6143357395778313,
+          "entropy_mean": 1.4318526931652973,
+          "length_mean": 2.4888386459892367,
+          "high_entropy_frac": 0.04996337929497182,
+          "low_entropy_frac": 0.26981498582937935,
+          "short_length_frac": 0.9107728560965512,
+          "long_length_frac": 0.000477661369932809
+        },
+        {
+          "expert": 5,
+          "top1_frac": 0.3821233640471859,
+          "entropy_mean": 0.5113636306403346,
+          "length_mean": 9.305790201197972,
+          "high_entropy_frac": 0.0,
+          "low_entropy_frac": 0.9975426201812317,
+          "short_length_frac": 0.05242410280038909,
+          "long_length_frac": 0.15896175702657042
+        }
+      ]
+    },
+    {
+      "layer": 9,
+      "total_patches": 51117,
+      "top1_eff_num": 1.849712418137114,
+      "top2_eff_num": 2.2949497380521344,
+      "top1_dominant_frac": 0.7174716591835022,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.108240615683687,
+      "length_mean_range_across_active_experts": 5.680624597063848,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 0,
+          "top1_frac": 0.2792221765753076,
+          "entropy_mean": 1.8765343501908105,
+          "length_mean": 1.0283051916205423,
+          "high_entropy_frac": 0.10936733692986758,
+          "low_entropy_frac": 0.0,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        },
+        {
+          "expert": 1,
+          "top1_frac": 0.7174716826104819,
+          "entropy_mean": 0.7682937345071236,
+          "length_mean": 6.70892978868439,
+          "high_entropy_frac": 0.00021813224267211998,
+          "low_entropy_frac": 0.7625630538513974,
+          "short_length_frac": 0.4197682344921609,
+          "long_length_frac": 0.08422631220177232
+        }
+      ]
+    },
+    {
+      "layer": 10,
+      "total_patches": 51117,
+      "top1_eff_num": 1.215420218090436,
+      "top2_eff_num": 2.0776377715934573,
+      "top1_dominant_frac": 0.9565897583961487,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 0.7895751086373903,
+      "length_mean_range_across_active_experts": 13.16071494754181,
+      "entropy_length_corr_across_active_experts": -0.9999998807907104,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.9565897842205138,
+          "entropy_mean": 1.1103420263376698,
+          "length_mean": 4.448361896192074,
+          "high_entropy_frac": 0.03208720193054931,
+          "low_entropy_frac": 0.5307374534745798,
+          "short_length_frac": 0.6067323816925028,
+          "long_length_frac": 0.027240377929567672
+        },
+        {
+          "expert": 4,
+          "top1_frac": 0.03793258602813154,
+          "entropy_mean": 0.3207669177002794,
+          "length_mean": 17.609076843733884,
+          "high_entropy_frac": 0.0,
+          "low_entropy_frac": 0.9902011346054668,
+          "short_length_frac": 0.0,
+          "long_length_frac": 0.8488911810211449
+        }
+      ]
+    },
+    {
+      "layer": 11,
+      "total_patches": 51117,
+      "top1_eff_num": 2.092467436794032,
+      "top2_eff_num": 3.0584191777850847,
+      "top1_dominant_frac": 0.5296672582626343,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 0.9458758416007685,
+      "length_mean_range_across_active_experts": 6.234022148902258,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.46070778801572865,
+          "entropy_mean": 0.5776210188796059,
+          "length_mean": 8.186709129511677,
+          "high_entropy_frac": 0.0003397027600849257,
+          "low_entropy_frac": 0.9829299363057324,
+          "short_length_frac": 0.11668789808917197,
+          "long_length_frac": 0.11749469214437368
+        },
+        {
+          "expert": 6,
+          "top1_frac": 0.5296672339926052,
+          "entropy_mean": 1.5234968604803745,
+          "length_mean": 1.9526869806094183,
+          "high_entropy_frac": 0.05765466297322253,
+          "low_entropy_frac": 0.1669067405355494,
+          "short_length_frac": 0.994275161588181,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 12,
+      "total_patches": 51117,
+      "top1_eff_num": 3.3655446106763796,
+      "top2_eff_num": 4.081110149626487,
+      "top1_dominant_frac": 0.42144492268562317,
+      "active_top1_count": 4,
+      "entropy_mean_range_across_active_experts": 1.6231683161801629,
+      "length_mean_range_across_active_experts": 7.273533691414736,
+      "entropy_length_corr_across_active_experts": -0.9203413724899292,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.4214449204765538,
+          "entropy_mean": 1.557912386299834,
+          "length_mean": 1.5710439585944391,
+          "high_entropy_frac": 0.04349440653576568,
+          "low_entropy_frac": 0.12551640904238034,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        },
+        {
+          "expert": 2,
+          "top1_frac": 0.21585773813017195,
+          "entropy_mean": 0.875976382616488,
+          "length_mean": 6.111564255936197,
+          "high_entropy_frac": 0.0007250317201377561,
+          "low_entropy_frac": 0.7929128149356535,
+          "short_length_frac": 0.5212071778140294,
+          "long_length_frac": 0.004622077215878194
+        },
+        {
+          "expert": 4,
+          "top1_frac": 0.31983488858892345,
+          "entropy_mean": 0.47741199650826954,
+          "length_mean": 8.844577650009175,
+          "high_entropy_frac": 0.0,
+          "low_entropy_frac": 0.9999388341794605,
+          "short_length_frac": 0.03272371398862316,
+          "long_length_frac": 0.17462841764022263
+        },
+        {
+          "expert": 5,
+          "top1_frac": 0.035976289688361994,
+          "entropy_mean": 2.1005803126884324,
+          "length_mean": 2.2262098966829797,
+          "high_entropy_frac": 0.33931484502446985,
+          "low_entropy_frac": 0.0,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 13,
+      "total_patches": 51117,
+      "top1_eff_num": 1.7490078410642724,
+      "top2_eff_num": 3.0195374928289036,
+      "top1_dominant_frac": 0.7694504857063293,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.1774018741856742,
+      "length_mean_range_across_active_experts": 5.152380409207756,
+      "entropy_length_corr_across_active_experts": -0.9999999403953552,
+      "experts": [
+        {
+          "expert": 4,
+          "top1_frac": 0.7694504763581588,
+          "entropy_mean": 0.8108387243155711,
+          "length_mean": 6.18920980372216,
+          "high_entropy_frac": 0.00020339672531272246,
+          "low_entropy_frac": 0.7107698566053087,
+          "short_length_frac": 0.4595240516627682,
+          "long_length_frac": 0.07797721956676497
+        },
+        {
+          "expert": 5,
+          "top1_frac": 0.22681299763288143,
+          "entropy_mean": 1.9882405985012452,
+          "length_mean": 1.036829394514404,
+          "high_entropy_frac": 0.13463860617560808,
+          "low_entropy_frac": 0.0,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 14,
+      "total_patches": 51117,
+      "top1_eff_num": 1.949467744982555,
+      "top2_eff_num": 3.2426753982530707,
+      "top1_dominant_frac": 0.6507619619369507,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.1006507488275157,
+      "length_mean_range_across_active_experts": 5.778324947866601,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 2,
+          "top1_frac": 0.6507619774243403,
+          "entropy_mean": 0.6971765003837482,
+          "length_mean": 7.025522320757553,
+          "high_entropy_frac": 0.00024049301067187735,
+          "low_entropy_frac": 0.8401923944085375,
+          "short_length_frac": 0.3609499473921539,
+          "long_length_frac": 0.09222906959266497
+        },
+        {
+          "expert": 7,
+          "top1_frac": 0.3455210595300976,
+          "entropy_mean": 1.797827249211264,
+          "length_mean": 1.2471973728909522,
+          "high_entropy_frac": 0.08838183671158419,
+          "low_entropy_frac": 0.00039633110632997394,
+          "short_length_frac": 0.9999433812705243,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 15,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0159706059496023,
+      "top2_eff_num": 2.098001017598625,
+      "top1_dominant_frac": 0.997769832611084,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 7,
+          "top1_frac": 0.9977698221726627,
+          "entropy_mean": 1.07808568331862,
+          "length_mean": 5.245554183087269,
+          "high_entropy_frac": 0.030762896300217633,
+          "low_entropy_frac": 0.5492225947493284,
+          "short_length_frac": 0.5816912730623689,
+          "long_length_frac": 0.06164343273925063
+        }
+      ]
+    },
+    {
+      "layer": 16,
+      "total_patches": 51117,
+      "top1_eff_num": 1.6566115217764497,
+      "top2_eff_num": 2.9259334323014263,
+      "top1_dominant_frac": 0.8127628564834595,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.232256165440793,
+      "length_mean_range_across_active_experts": 4.846102189219533,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.8127628773206566,
+          "entropy_mean": 0.8539243752157181,
+          "length_mean": 5.851465845087373,
+          "high_entropy_frac": 0.00019255764694555433,
+          "low_entropy_frac": 0.6715929331343571,
+          "short_length_frac": 0.489722235594281,
+          "long_length_frac": 0.07242574495739662
+        },
+        {
+          "expert": 6,
+          "top1_frac": 0.1823659447933173,
+          "entropy_mean": 2.0861805406565113,
+          "length_mean": 1.0053636558678396,
+          "high_entropy_frac": 0.1674533361939498,
+          "low_entropy_frac": 0.0,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 17,
+      "total_patches": 51117,
+      "top1_eff_num": 1.2635576746812704,
+      "top2_eff_num": 2.080768730434369,
+      "top1_dominant_frac": 0.9449693560600281,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.7308159451518268,
+      "length_mean_range_across_active_experts": 4.071194932096721,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 1,
+          "top1_frac": 0.9449693839622826,
+          "entropy_mean": 0.9974056781191254,
+          "length_mean": 5.071194932096721,
+          "high_entropy_frac": 0.00016561775422325274,
+          "low_entropy_frac": 0.5756459092414706,
+          "short_length_frac": 0.5633073865518383,
+          "long_length_frac": 0.06009854256376283
+        },
+        {
+          "expert": 3,
+          "top1_frac": 0.0480857640315355,
+          "entropy_mean": 2.728221623270952,
+          "length_mean": 1.0,
+          "high_entropy_frac": 0.6350691619202604,
+          "low_entropy_frac": 0.0,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 18,
+      "total_patches": 51117,
+      "top1_eff_num": 1.9429160144789015,
+      "top2_eff_num": 3.053946551884055,
+      "top1_dominant_frac": 0.654068112373352,
+      "active_top1_count": 2,
+      "entropy_mean_range_across_active_experts": 1.098215059495989,
+      "length_mean_range_across_active_experts": 5.855856396107928,
+      "entropy_length_corr_across_active_experts": -1.0,
+      "experts": [
+        {
+          "expert": 3,
+          "top1_frac": 0.6540681182385508,
+          "entropy_mean": 0.7013413211413335,
+          "length_mean": 7.078453071723396,
+          "high_entropy_frac": 0.00023927738230543758,
+          "low_entropy_frac": 0.8357659867201053,
+          "short_length_frac": 0.3637315307770533,
+          "long_length_frac": 0.09218161153316982
+        },
+        {
+          "expert": 5,
+          "top1_frac": 0.34248880020345485,
+          "entropy_mean": 1.7995563806373225,
+          "length_mean": 1.222596675615468,
+          "high_entropy_frac": 0.08916433426629349,
+          "low_entropy_frac": 0.0012566402010624322,
+          "short_length_frac": 1.0,
+          "long_length_frac": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 19,
+      "total_patches": 51117,
+      "top1_eff_num": 1.011614185778729,
+      "top2_eff_num": 2.0751373886758238,
+      "top1_dominant_frac": 0.9984545111656189,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 2,
+          "top1_frac": 0.998454525891582,
+          "entropy_mean": 1.0778470162222404,
+          "length_mean": 5.4535444178847134,
+          "high_entropy_frac": 0.030741800227281634,
+          "low_entropy_frac": 0.5493945687526941,
+          "short_length_frac": 0.5812923703906893,
+          "long_length_frac": 0.06228692346878796
+        }
+      ]
+    },
+    {
+      "layer": 20,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.6738700884147932,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 2,
+          "top1_frac": 1.0,
+          "entropy_mean": 1.0770288586253876,
+          "length_mean": 6.013654948451592,
+          "high_entropy_frac": 0.030694289570984214,
+          "low_entropy_frac": 0.5500909677797993,
+          "short_length_frac": 0.5803939980828295,
+          "long_length_frac": 0.06373613474969188
+        }
+      ]
+    },
+    {
+      "layer": 21,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0832544188707853,
+      "top2_eff_num": 2.855442981313752,
+      "top1_dominant_frac": 0.9864819645881653,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 7,
+          "top1_frac": 0.9864819922921925,
+          "entropy_mean": 1.0574770733096202,
+          "length_mean": 5.01352476896839,
+          "high_entropy_frac": 0.02165549518105739,
+          "low_entropy_frac": 0.5540197517153849,
+          "short_length_frac": 0.5788878753024234,
+          "long_length_frac": 0.06036568436917463
+        }
+      ]
+    },
+    {
+      "layer": 22,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.2742415649605685,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 5,
+          "top1_frac": 1.0,
+          "entropy_mean": 1.0770288586253876,
+          "length_mean": 6.013654948451592,
+          "high_entropy_frac": 0.030694289570984214,
+          "low_entropy_frac": 0.5500909677797993,
+          "short_length_frac": 0.5803939980828295,
+          "long_length_frac": 0.06373613474969188
+        }
+      ]
+    },
+    {
+      "layer": 23,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0387083116762175,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 3,
+          "top1_frac": 1.0,
+          "entropy_mean": 1.0770288586253876,
+          "length_mean": 6.013654948451592,
+          "high_entropy_frac": 0.030694289570984214,
+          "low_entropy_frac": 0.5500909677797993,
+          "short_length_frac": 0.5803939980828295,
+          "long_length_frac": 0.06373613474969188
+        }
+      ]
+    },
+    {
+      "layer": 24,
+      "total_patches": 51117,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.944704431195848,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_mean_range_across_active_experts": 0.0,
+      "length_mean_range_across_active_experts": 0.0,
+      "entropy_length_corr_across_active_experts": null,
+      "experts": [
+        {
+          "expert": 6,
+          "top1_frac": 1.0,
+          "entropy_mean": 1.0770288586253876,
+          "length_mean": 6.013654948451592,
+          "high_entropy_frac": 0.030694289570984214,
+          "low_entropy_frac": 0.5500909677797993,
+          "short_length_frac": 0.5803939980828295,
+          "long_length_frac": 0.06373613474969188
+        }
+      ]
+    }
+  ]
+}

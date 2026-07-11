@@ -1,0 +1,2908 @@
+{
+  "label": "phaseB_to_total50k_0000038000",
+  "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+  "step_from_complete": 38000,
+  "num_layers": 25,
+  "num_experts": 8,
+  "top_k": 2,
+  "feature_order": "[log1p(length)/log1p(mean_positive_length), entropy]",
+  "mean_length_used_for_grid": 8.5,
+  "length_denominator": 2.2512917986064953,
+  "entropy_grid": [
+    0.0,
+    4.0,
+    161
+  ],
+  "length_grid": [
+    1,
+    16,
+    16
+  ],
+  "global_top1_eff_num": 6.625472170130841,
+  "global_top2_eff_num": 7.456526074245706,
+  "global_top1_frac": [
+    0.04,
+    0.08001552795031056,
+    0.19118012422360248,
+    0.08,
+    0.049813664596273295,
+    0.2844254658385093,
+    0.17503105590062112,
+    0.09953416149068323
+  ],
+  "global_top2_frac": [
+    0.08,
+    0.08,
+    0.14,
+    0.12260869565217392,
+    0.0662111801242236,
+    0.2,
+    0.19118012422360248,
+    0.12
+  ],
+  "mean_layer_top1_eff_num": 1.1401051517677778,
+  "mean_layer_top2_eff_num": 2.0617922584516175,
+  "mean_layer_active_top1": 1.24,
+  "mean_layer_active_top2": 2.08,
+  "mean_top1_dominant_frac": 0.9475776397515528,
+  "mean_top2_dominant_frac": 0.5,
+  "mean_entropy_length_corr": -0.6666666666666666,
+  "median_entropy_length_corr": -1.0,
+  "num_valid_corr_layers": 6,
+  "num_layers_negative_corr": 5,
+  "num_layers_strong_negative_corr": 5,
+  "num_layers_active_top1_ge2": 6,
+  "num_layers_active_top1_ge3": 0,
+  "rows": [
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 0,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 0,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 0,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "0",
+      "longest_experts": "0",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        2576,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.0004241949354764074,
+          -0.0051468550227582455
+        ],
+        [
+          -0.021740984171628952,
+          -0.2664482593536377
+        ],
+        [
+          -0.12002255767583847,
+          -0.1843443512916565
+        ],
+        [
+          -0.04758814722299576,
+          -0.2579379677772522
+        ],
+        [
+          -0.03948615491390228,
+          -0.2663315236568451
+        ],
+        [
+          -0.019110819324851036,
+          -0.008683420717716217
+        ],
+        [
+          -0.1086510717868805,
+          -0.2218417376279831
+        ],
+        [
+          -0.029067084193229675,
+          -0.26650017499923706
+        ]
+      ],
+      "patch_feature_b": [
+        0.007007391657680273,
+        -0.2960137128829956,
+        -0.17341244220733643,
+        -0.26817071437835693,
+        -0.2741066515445709,
+        -0.02194768376648426,
+        -0.2128625363111496,
+        -0.28626319766044617
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 1,
+      "active_top1": 2,
+      "active_top2": 2,
+      "top1_eff_num": 1.992710627021247,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 6,
+      "top1_dominant_frac": 0.5427018633540373,
+      "top2_dominant_expert": 6,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": -1.0,
+      "shortest_experts": "6",
+      "longest_experts": "7",
+      "shortest_mean_entropy": 2.2021994590759277,
+      "longest_mean_entropy": 1.760038137435913,
+      "shortest_mean_length": 4.978540897369385,
+      "longest_mean_length": 12.679117202758789,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1398,
+        1178
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1398,
+        1178
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.2021994590759277,
+        1.760038137435913
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        4.978540897369385,
+        12.679117202758789
+      ],
+      "patch_feature_w": [
+        [
+          -0.02005022205412388,
+          -0.26597535610198975
+        ],
+        [
+          -0.04085664078593254,
+          -0.26524534821510315
+        ],
+        [
+          -0.0396680124104023,
+          -0.2660643458366394
+        ],
+        [
+          -0.04210776463150978,
+          -0.2660923898220062
+        ],
+        [
+          -0.05612631142139435,
+          -0.2550172507762909
+        ],
+        [
+          -0.041233234107494354,
+          -0.2660975456237793
+        ],
+        [
+          -0.005425398703664541,
+          -0.0070978496223688126
+        ],
+        [
+          0.017467161640524864,
+          -0.008408910594880581
+        ]
+      ],
+      "patch_feature_b": [
+        -0.29544419050216675,
+        -0.26969531178474426,
+        -0.2726083993911743,
+        -0.2692471444606781,
+        -0.2518221139907837,
+        -0.2700173556804657,
+        0.0159671101719141,
+        -0.00490857008844614
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 2,
+      "active_top1": 2,
+      "active_top2": 2,
+      "top1_eff_num": 1.9175897749202515,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 6,
+      "top1_dominant_frac": 0.6440217391304348,
+      "top2_dominant_expert": 5,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": -1.0000000000000002,
+      "shortest_experts": "6",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.3232369422912598,
+      "longest_mean_entropy": 1.415212631225586,
+      "shortest_mean_length": 6.0596747398376465,
+      "longest_mean_length": 12.914939880371094,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        917,
+        1659,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        917,
+        1659,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        1.415212631225586,
+        2.3232369422912598,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        12.914939880371094,
+        6.0596747398376465,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.04353528097271919,
+          -0.26598188281059265
+        ],
+        [
+          -0.047974392771720886,
+          -0.266076922416687
+        ],
+        [
+          -0.04555634781718254,
+          -0.26602938771247864
+        ],
+        [
+          -0.047145284712314606,
+          -0.26610979437828064
+        ],
+        [
+          -0.046330057084560394,
+          -0.2660696506500244
+        ],
+        [
+          0.0024073775857686996,
+          -0.008089018985629082
+        ],
+        [
+          -0.009984714910387993,
+          -0.006931654177606106
+        ],
+        [
+          -0.04499344527721405,
+          -0.26604384183883667
+        ]
+      ],
+      "patch_feature_b": [
+        -0.27674272656440735,
+        -0.26958611607551575,
+        -0.27342531085014343,
+        -0.26953285932540894,
+        -0.2715142071247101,
+        0.0052261315286159515,
+        0.016337284818291664,
+        -0.27359387278556824
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 3,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 4,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 1,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "4",
+      "longest_experts": "4",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        2576,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.018255246803164482,
+          -0.2624354958534241
+        ],
+        [
+          -0.023844145238399506,
+          -0.01063409075140953
+        ],
+        [
+          -0.11739115417003632,
+          -0.12257268279790878
+        ],
+        [
+          -0.12960383296012878,
+          -0.1442832499742508
+        ],
+        [
+          -0.0015815014485269785,
+          -0.006330086849629879
+        ],
+        [
+          -0.031427301466464996,
+          -0.2543441653251648
+        ],
+        [
+          -0.12356782704591751,
+          -0.1731230467557907
+        ],
+        [
+          -0.03560631722211838,
+          -0.251388281583786
+        ]
+      ],
+      "patch_feature_b": [
+        -0.2686072885990143,
+        -0.012402195483446121,
+        -0.12248215824365616,
+        -0.14001889526844025,
+        -0.005718584638088942,
+        -0.25780564546585083,
+        -0.17608116567134857,
+        -0.2543705701828003
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 4,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 6,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 6,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "6",
+      "longest_experts": "6",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          0.0009749457822181284,
+          -0.26683509349823
+        ],
+        [
+          -0.08194823563098907,
+          -0.20955193042755127
+        ],
+        [
+          -0.11693550646305084,
+          -0.12972784042358398
+        ],
+        [
+          -0.02162475697696209,
+          -0.2557699978351593
+        ],
+        [
+          -0.002594130812212825,
+          -0.2660684883594513
+        ],
+        [
+          -0.08891862630844116,
+          -0.09335840493440628
+        ],
+        [
+          0.00599233154207468,
+          -0.010242079384624958
+        ],
+        [
+          -0.015357480384409428,
+          -0.012892222963273525
+        ]
+      ],
+      "patch_feature_b": [
+        -0.28125765919685364,
+        -0.2136020064353943,
+        -0.13487611711025238,
+        -0.25943833589553833,
+        -0.2775079905986786,
+        -0.09229680895805359,
+        -0.012894699349999428,
+        -0.013544573448598385
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 5,
+      "active_top1": 2,
+      "active_top2": 2,
+      "top1_eff_num": 1.0034429471322315,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 6,
+      "top1_dominant_frac": 0.999611801242236,
+      "top2_dominant_expert": 1,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": -1.0,
+      "shortest_experts": "1",
+      "longest_experts": "6",
+      "shortest_mean_entropy": 4.0,
+      "longest_mean_entropy": 1.9992233514785767,
+      "shortest_mean_length": 1.0,
+      "longest_mean_length": 8.502912521362305,
+      "top1_counts": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2575,
+        0
+      ],
+      "top2_counts": [
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0
+      ],
+      "expert_count": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        2575,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        4.0,
+        null,
+        null,
+        null,
+        null,
+        1.9992233514785767,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        1.0,
+        null,
+        null,
+        null,
+        null,
+        8.502912521362305,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.12884047627449036,
+          -0.1719803512096405
+        ],
+        [
+          -0.019998691976070404,
+          -0.012096978724002838
+        ],
+        [
+          -0.06711804121732712,
+          -0.06293854862451553
+        ],
+        [
+          -0.13472971320152283,
+          -0.14966066181659698
+        ],
+        [
+          0.00012998301826883107,
+          -0.2666829526424408
+        ],
+        [
+          -0.013243824243545532,
+          -0.2590997517108917
+        ],
+        [
+          -0.011340510100126266,
+          -0.014082805253565311
+        ],
+        [
+          -0.0010986976558342576,
+          -0.26682278513908386
+        ]
+      ],
+      "patch_feature_b": [
+        -0.16253019869327545,
+        -0.009264362044632435,
+        -0.06415846943855286,
+        -0.1416633427143097,
+        -0.2758522927761078,
+        -0.2636702358722687,
+        -0.003987369127571583,
+        -0.27445223927497864
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 6,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 7,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 4,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "7",
+      "longest_experts": "7",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        2576
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5
+      ],
+      "patch_feature_w": [
+        [
+          -0.1331147998571396,
+          -0.14751863479614258
+        ],
+        [
+          -0.007474883459508419,
+          -0.2659757733345032
+        ],
+        [
+          -0.007359849289059639,
+          -0.2660484313964844
+        ],
+        [
+          -0.035150766372680664,
+          -0.2496480941772461
+        ],
+        [
+          -0.016523752361536026,
+          -0.01152803935110569
+        ],
+        [
+          -0.09110835939645767,
+          -0.10414336621761322
+        ],
+        [
+          -0.14060011506080627,
+          -0.16065910458564758
+        ],
+        [
+          -0.010228661820292473,
+          -0.011068308725953102
+        ]
+      ],
+      "patch_feature_b": [
+        -0.14566367864608765,
+        -0.27670758962631226,
+        -0.2769187390804291,
+        -0.25297677516937256,
+        -0.01317733246833086,
+        -0.10103696584701538,
+        -0.15706631541252136,
+        -0.015071729198098183
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 7,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 5,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "5",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.09215500950813293,
+          -0.19960328936576843
+        ],
+        [
+          -0.01464987825602293,
+          -0.25597965717315674
+        ],
+        [
+          -0.09894125908613205,
+          -0.11629929393529892
+        ],
+        [
+          -0.08675282448530197,
+          -0.0941677987575531
+        ],
+        [
+          -0.03889603912830353,
+          -0.24053263664245605
+        ],
+        [
+          -0.016035251319408417,
+          -0.006999805569648743
+        ],
+        [
+          -0.017091961577534676,
+          -0.01666014827787876
+        ],
+        [
+          -0.10800977796316147,
+          -0.19026075303554535
+        ]
+      ],
+      "patch_feature_b": [
+        -0.19721566140651703,
+        -0.2582281231880188,
+        -0.10024542361497879,
+        -0.08651693165302277,
+        -0.23765310645103455,
+        -0.007812337949872017,
+        -0.00789240188896656,
+        -0.17675867676734924
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 8,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 2,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "5",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.034796781837940216,
+          -0.2637089490890503
+        ],
+        [
+          -0.10374139994382858,
+          -0.21728144586086273
+        ],
+        [
+          -0.02058558724820614,
+          -0.016141053289175034
+        ],
+        [
+          -0.13622470200061798,
+          -0.13085520267486572
+        ],
+        [
+          -0.038782354444265366,
+          -0.26189395785331726
+        ],
+        [
+          0.005105527117848396,
+          -0.007024352438747883
+        ],
+        [
+          -0.05399244278669357,
+          -0.2502531111240387
+        ],
+        [
+          -0.06880538910627365,
+          -0.24399888515472412
+        ]
+      ],
+      "patch_feature_b": [
+        -0.26813623309135437,
+        -0.20673494040966034,
+        -0.024341780692338943,
+        -0.12563210725784302,
+        -0.2645101845264435,
+        0.002154586836695671,
+        -0.25260087847709656,
+        -0.23853462934494019
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 9,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 1,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 1,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "1",
+      "longest_experts": "1",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0
+      ],
+      "expert_count": [
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.009745941497385502,
+          -0.2625379264354706
+        ],
+        [
+          -0.0059734839014709,
+          -0.017971467226743698
+        ],
+        [
+          -0.06243881210684776,
+          -0.03240159898996353
+        ],
+        [
+          0.00039528601337224245,
+          -0.2666131854057312
+        ],
+        [
+          -0.00041531334863975644,
+          -0.26672759652137756
+        ],
+        [
+          -0.09224575757980347,
+          -0.09067126363515854
+        ],
+        [
+          -0.012430048547685146,
+          -0.016687283292412758
+        ],
+        [
+          -0.020229700952768326,
+          -0.2533768117427826
+        ]
+      ],
+      "patch_feature_b": [
+        -0.2637783885002136,
+        -0.012285825796425343,
+        -0.035875335335731506,
+        -0.27433234453201294,
+        -0.27380695939064026,
+        -0.09651510417461395,
+        -0.01971750520169735,
+        -0.25481370091438293
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 10,
+      "active_top1": 2,
+      "active_top2": 2,
+      "top1_eff_num": 1.1484275285319865,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 6,
+      "top1_dominant_frac": 0.968944099378882,
+      "top2_dominant_expert": 6,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": -1.0,
+      "shortest_experts": "7",
+      "longest_experts": "6",
+      "shortest_mean_entropy": 3.635937452316284,
+      "longest_mean_entropy": 1.9475661516189575,
+      "shortest_mean_length": 1.712499976158142,
+      "longest_mean_length": 8.717548370361328,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2496,
+        80
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2496,
+        80
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        1.9475661516189575,
+        3.635937452316284
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.717548370361328,
+        1.712499976158142
+      ],
+      "patch_feature_w": [
+        [
+          -0.014882175251841545,
+          -0.2644222378730774
+        ],
+        [
+          -0.03288945183157921,
+          -0.25367993116378784
+        ],
+        [
+          -0.013885335996747017,
+          -0.2637878358364105
+        ],
+        [
+          -0.024083701893687248,
+          -0.25938552618026733
+        ],
+        [
+          -0.04626644030213356,
+          -0.057647570967674255
+        ],
+        [
+          -0.1390414834022522,
+          -0.15663304924964905
+        ],
+        [
+          -0.017731696367263794,
+          -0.012664292939007282
+        ],
+        [
+          -0.02411557547748089,
+          -0.009893284179270267
+        ]
+      ],
+      "patch_feature_b": [
+        -0.26938396692276,
+        -0.253426730632782,
+        -0.27067601680755615,
+        -0.26067280769348145,
+        -0.04908991605043411,
+        -0.1474962681531906,
+        -0.00480065168812871,
+        -0.011135444045066833
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 11,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 3,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 0,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "3",
+      "longest_experts": "3",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        2576,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.02673969976603985,
+          -0.0087541863322258
+        ],
+        [
+          -0.13018622994422913,
+          -0.1533268243074417
+        ],
+        [
+          -0.01979445293545723,
+          -0.25397536158561707
+        ],
+        [
+          0.0010689999908208847,
+          -0.012440066784620285
+        ],
+        [
+          -0.10591411590576172,
+          -0.12007337808609009
+        ],
+        [
+          -0.003104063682258129,
+          -0.26444584131240845
+        ],
+        [
+          -0.0995536521077156,
+          -0.08939868956804276
+        ],
+        [
+          -0.04265385866165161,
+          -0.23845450580120087
+        ]
+      ],
+      "patch_feature_b": [
+        -0.013677558861672878,
+        -0.15259741246700287,
+        -0.25595271587371826,
+        -0.006390517111867666,
+        -0.11213859915733337,
+        -0.2702147364616394,
+        -0.08803537487983704,
+        -0.23776108026504517
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 12,
+      "active_top1": 2,
+      "active_top2": 2,
+      "top1_eff_num": 1.7457063784004532,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 0.7546583850931677,
+      "top2_dominant_expert": 4,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": -1.0,
+      "shortest_experts": "5",
+      "longest_experts": "4",
+      "shortest_mean_entropy": 2.4768004417419434,
+      "longest_mean_entropy": 0.5333861112594604,
+      "shortest_mean_length": 8.031892776489258,
+      "longest_mean_length": 9.939873695373535,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        632,
+        1944,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        632,
+        1944,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        0.5333861112594604,
+        2.4768004417419434,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        9.939873695373535,
+        8.031892776489258,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.04584468901157379,
+          -0.25050076842308044
+        ],
+        [
+          -0.10364571213722229,
+          -0.2087538093328476
+        ],
+        [
+          -0.06715957820415497,
+          -0.2333676666021347
+        ],
+        [
+          -0.12035713344812393,
+          -0.12359366565942764
+        ],
+        [
+          -0.004690897185355425,
+          -0.01988990791141987
+        ],
+        [
+          -0.025807658210396767,
+          -0.001980393659323454
+        ],
+        [
+          -0.1464775949716568,
+          -0.14542920887470245
+        ],
+        [
+          -0.0755501464009285,
+          -0.2256178855895996
+        ]
+      ],
+      "patch_feature_b": [
+        -0.2489680051803589,
+        -0.20395427942276,
+        -0.2332349717617035,
+        -0.11897880584001541,
+        -0.009545182809233665,
+        -0.007310995366424322,
+        -0.14148367941379547,
+        -0.22777563333511353
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 13,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 2,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 2,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "2",
+      "longest_experts": "2",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.05447793006896973,
+          -0.23900404572486877
+        ],
+        [
+          -0.055912576615810394,
+          -0.23770436644554138
+        ],
+        [
+          0.02225693129003048,
+          0.001537501229904592
+        ],
+        [
+          -0.02170715481042862,
+          -0.26210951805114746
+        ],
+        [
+          -0.08118569105863571,
+          -0.1100720539689064
+        ],
+        [
+          -0.05243173986673355,
+          -0.02026098035275936
+        ],
+        [
+          -0.02001100964844227,
+          -0.263884961605072
+        ],
+        [
+          -0.13874834775924683,
+          -0.15723133087158203
+        ]
+      ],
+      "patch_feature_b": [
+        -0.23925518989562988,
+        -0.23947452008724213,
+        0.013506604358553886,
+        -0.26604047417640686,
+        -0.08739113062620163,
+        -0.03837118670344353,
+        -0.2671280801296234,
+        -0.1601012647151947
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 14,
+      "active_top1": 1,
+      "active_top2": 3,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.7262329472569045,
+      "top1_dominant_expert": 2,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 2,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "2",
+      "longest_experts": "2",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        2576,
+        1776,
+        800,
+        0,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.04774181917309761,
+          -0.25406062602996826
+        ],
+        [
+          -0.039469342678785324,
+          -0.25870996713638306
+        ],
+        [
+          -6.533585110446438e-05,
+          -0.00014220649609342217
+        ],
+        [
+          -0.06922217458486557,
+          -0.02280457876622677
+        ],
+        [
+          -0.03973248973488808,
+          -0.05078935995697975
+        ],
+        [
+          -0.03997880965471268,
+          -0.25629547238349915
+        ],
+        [
+          -0.06259599328041077,
+          -0.24102966487407684
+        ],
+        [
+          -0.04303835704922676,
+          -0.25507113337516785
+        ]
+      ],
+      "patch_feature_b": [
+        -0.25417423248291016,
+        -0.26165711879730225,
+        0.008412485010921955,
+        -0.04029691219329834,
+        -0.03314952179789543,
+        -0.2625918388366699,
+        -0.24188518524169922,
+        -0.2599039673805237
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 15,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 5,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "5",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        2576,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.04008007422089577,
+          -0.23874224722385406
+        ],
+        [
+          -0.018929146230220795,
+          -0.2553980052471161
+        ],
+        [
+          -0.0026280393358319998,
+          -0.26535192131996155
+        ],
+        [
+          -0.05019938945770264,
+          -0.2311345934867859
+        ],
+        [
+          -0.03763294219970703,
+          -0.012081022374331951
+        ],
+        [
+          0.00990954041481018,
+          -0.013871860690414906
+        ],
+        [
+          -0.032555025070905685,
+          -0.007012699730694294
+        ],
+        [
+          -0.12124215811491013,
+          -0.139510378241539
+        ]
+      ],
+      "patch_feature_b": [
+        -0.24153831601142883,
+        -0.2588139772415161,
+        -0.27345767617225647,
+        -0.23219817876815796,
+        -0.02487807534635067,
+        -0.0009716139174997807,
+        -0.017188942059874535,
+        -0.13911747932434082
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 16,
+      "active_top1": 1,
+      "active_top2": 3,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.818573514033531,
+      "top1_dominant_expert": 7,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 7,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "7",
+      "longest_experts": "7",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        1136,
+        0,
+        0,
+        1440,
+        2576
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5
+      ],
+      "patch_feature_w": [
+        [
+          -0.05597343668341637,
+          -0.23585420846939087
+        ],
+        [
+          -0.1371079534292221,
+          -0.1555594950914383
+        ],
+        [
+          -0.07812608033418655,
+          -0.21879538893699646
+        ],
+        [
+          -0.03470007702708244,
+          -0.04627856984734535
+        ],
+        [
+          -0.10418809950351715,
+          -0.19520606100559235
+        ],
+        [
+          -0.021330203860998154,
+          -0.261039137840271
+        ],
+        [
+          -0.07015679031610489,
+          -0.024281993508338928
+        ],
+        [
+          -0.006589370779693127,
+          0.003530451562255621
+        ]
+      ],
+      "patch_feature_b": [
+        -0.23664095997810364,
+        -0.15711583197116852,
+        -0.21866443753242493,
+        -0.03555920347571373,
+        -0.19864773750305176,
+        -0.26439934968948364,
+        -0.041332390159368515,
+        0.008414223790168762
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 17,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 3,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 3,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "3",
+      "longest_experts": "3",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        2576
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.08461805433034897,
+          -0.2630268931388855
+        ],
+        [
+          -0.16431787610054016,
+          -0.2038758397102356
+        ],
+        [
+          -0.16277772188186646,
+          -0.14209355413913727
+        ],
+        [
+          -0.0563112311065197,
+          -0.031103014945983887
+        ],
+        [
+          -0.08362194895744324,
+          -0.26357847452163696
+        ],
+        [
+          -0.08551175892353058,
+          -0.26079481840133667
+        ],
+        [
+          -0.08391118049621582,
+          -0.2641308009624481
+        ],
+        [
+          -0.06550375372171402,
+          -0.04638667777180672
+        ]
+      ],
+      "patch_feature_b": [
+        -0.2677600681781769,
+        -0.20224013924598694,
+        -0.1453780233860016,
+        -0.038939669728279114,
+        -0.26870933175086975,
+        -0.2683602571487427,
+        -0.2679362893104553,
+        -0.05422539636492729
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 18,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 2,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "5",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.14162606000900269,
+          -0.15391482412815094
+        ],
+        [
+          -0.0791865661740303,
+          -0.22835740447044373
+        ],
+        [
+          -0.008065051399171352,
+          -0.017939504235982895
+        ],
+        [
+          -0.1395425647497177,
+          -0.13766466081142426
+        ],
+        [
+          -0.04516751319169998,
+          -0.25179535150527954
+        ],
+        [
+          -0.014043956063687801,
+          0.0034869059454649687
+        ],
+        [
+          -0.026592841371893883,
+          -0.26379841566085815
+        ],
+        [
+          -0.07316761463880539,
+          -0.23153893649578094
+        ]
+      ],
+      "patch_feature_b": [
+        -0.15350112318992615,
+        -0.2267317920923233,
+        -0.014775170013308525,
+        -0.1376134306192398,
+        -0.2539210021495819,
+        0.00028681004187092185,
+        -0.26918378472328186,
+        -0.23264265060424805
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 19,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 2,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 0,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "2",
+      "longest_experts": "2",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        2576,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.05879088118672371,
+          -0.03844919800758362
+        ],
+        [
+          -0.16030527651309967,
+          -0.12401601672172546
+        ],
+        [
+          -0.04941495880484581,
+          -0.032823171466588974
+        ],
+        [
+          -0.16723205149173737,
+          -0.187287375330925
+        ],
+        [
+          -0.10785199701786041,
+          -0.23638327419757843
+        ],
+        [
+          -0.06992291659116745,
+          -0.26296162605285645
+        ],
+        [
+          -0.13372500240802765,
+          -0.2182629257440567
+        ],
+        [
+          -0.12211190909147263,
+          -0.22742095589637756
+        ]
+      ],
+      "patch_feature_b": [
+        -0.049264486879110336,
+        -0.1334528923034668,
+        -0.038797225803136826,
+        -0.19205346703529358,
+        -0.24029411375522614,
+        -0.2698702812194824,
+        -0.21957078576087952,
+        -0.22840029001235962
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 20,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 2,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 0,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "2",
+      "longest_experts": "2",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        2576,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.08751185983419418,
+          -0.05146149918437004
+        ],
+        [
+          -0.18366870284080505,
+          -0.1748398393392563
+        ],
+        [
+          -0.07523461431264877,
+          -0.054439250379800797
+        ],
+        [
+          -0.1269809752702713,
+          -0.2549072802066803
+        ],
+        [
+          -0.1880209594964981,
+          -0.21036869287490845
+        ],
+        [
+          -0.16114050149917603,
+          -0.22945591807365417
+        ],
+        [
+          -0.1679946929216385,
+          -0.22519396245479584
+        ],
+        [
+          -0.13105322420597076,
+          -0.25352123379707336
+        ]
+      ],
+      "patch_feature_b": [
+        -0.07168246805667877,
+        -0.18228133022785187,
+        -0.0618399940431118,
+        -0.26140835881233215,
+        -0.20762977004051208,
+        -0.23482997715473175,
+        -0.22748933732509613,
+        -0.25712186098098755
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 21,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 3,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "5",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.12605251371860504,
+          -0.2555401921272278
+        ],
+        [
+          -0.1666131317615509,
+          -0.22502553462982178
+        ],
+        [
+          -0.18161725997924805,
+          -0.16548115015029907
+        ],
+        [
+          -0.0827145054936409,
+          -0.05537380278110504
+        ],
+        [
+          -0.19013507664203644,
+          -0.2008063644170761
+        ],
+        [
+          -0.08048463612794876,
+          -0.04964412376284599
+        ],
+        [
+          -0.1664438247680664,
+          -0.22609728574752808
+        ],
+        [
+          -0.15780498087406158,
+          -0.23322390019893646
+        ]
+      ],
+      "patch_feature_b": [
+        -0.25741681456565857,
+        -0.2259252667427063,
+        -0.17574575543403625,
+        -0.06694063544273376,
+        -0.20133306086063385,
+        -0.06545665860176086,
+        -0.22537678480148315,
+        -0.23238719999790192
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 22,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 5,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 3,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "5",
+      "longest_experts": "5",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        0,
+        2576,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2576,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        2.0,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        8.5,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.19800736010074615,
+          -0.2064976841211319
+        ],
+        [
+          -0.18863190710544586,
+          -0.22203680872917175
+        ],
+        [
+          -0.12587448954582214,
+          -0.26659056544303894
+        ],
+        [
+          -0.09309014678001404,
+          -0.0616876520216465
+        ],
+        [
+          -0.1959943175315857,
+          -0.20863820612430573
+        ],
+        [
+          -0.07769031077623367,
+          -0.06481266766786575
+        ],
+        [
+          -0.15891069173812866,
+          -0.24542726576328278
+        ],
+        [
+          -0.1468677818775177,
+          -0.25463253259658813
+        ]
+      ],
+      "patch_feature_b": [
+        -0.2085925191640854,
+        -0.22039349377155304,
+        -0.2732318043708801,
+        -0.07962242513895035,
+        -0.20805557072162628,
+        -0.06963836401700974,
+        -0.24584515392780304,
+        -0.25480586290359497
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 23,
+      "active_top1": 1,
+      "active_top2": 2,
+      "top1_eff_num": 1.0,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 1,
+      "top1_dominant_frac": 1.0,
+      "top2_dominant_expert": 1,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": null,
+      "shortest_experts": "1",
+      "longest_experts": "1",
+      "shortest_mean_entropy": 2.0,
+      "longest_mean_entropy": 2.0,
+      "shortest_mean_length": 8.5,
+      "longest_mean_length": 8.5,
+      "top1_counts": [
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top2_counts": [
+        0,
+        2576,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_count": [
+        0,
+        2576,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        2.0,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        8.5,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.12662315368652344,
+          -0.23998893797397614
+        ],
+        [
+          -0.0780314952135086,
+          -0.0082124974578619
+        ],
+        [
+          -0.11072979122400284,
+          -0.2513262927532196
+        ],
+        [
+          -0.09506501257419586,
+          -0.07140301913022995
+        ],
+        [
+          -0.14939561486244202,
+          -0.07963793724775314
+        ],
+        [
+          -0.12010187655687332,
+          -0.24399328231811523
+        ],
+        [
+          -0.10173679143190384,
+          -0.25810402631759644
+        ],
+        [
+          -0.10536973178386688,
+          -0.25433069467544556
+        ]
+      ],
+      "patch_feature_b": [
+        -0.24228937923908234,
+        -0.03312422335147858,
+        -0.25529390573501587,
+        -0.08089369535446167,
+        -0.11188039928674698,
+        -0.24811220169067383,
+        -0.2617623209953308,
+        -0.25995588302612305
+      ]
+    },
+    {
+      "label": "phaseB_to_total50k_0000038000",
+      "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+      "layer": 24,
+      "active_top1": 2,
+      "active_top2": 2,
+      "top1_eff_num": 1.6947515381882736,
+      "top2_eff_num": 2.0,
+      "top1_dominant_expert": 2,
+      "top1_dominant_frac": 0.7795031055900621,
+      "top2_dominant_expert": 2,
+      "top2_dominant_frac": 0.5,
+      "expert_entropy_length_corr": 1.0,
+      "shortest_experts": "6",
+      "longest_experts": "2",
+      "shortest_mean_entropy": 0.4325264096260071,
+      "longest_mean_entropy": 2.4433889389038086,
+      "shortest_mean_length": 8.264084815979004,
+      "longest_mean_length": 8.566733360290527,
+      "top1_counts": [
+        0,
+        0,
+        2008,
+        0,
+        0,
+        0,
+        568,
+        0
+      ],
+      "top2_counts": [
+        0,
+        0,
+        2576,
+        0,
+        0,
+        0,
+        2576,
+        0
+      ],
+      "expert_count": [
+        0,
+        0,
+        2008,
+        0,
+        0,
+        0,
+        568,
+        0
+      ],
+      "expert_mean_entropy": [
+        null,
+        null,
+        2.4433889389038086,
+        null,
+        null,
+        null,
+        0.4325264096260071,
+        null
+      ],
+      "expert_mean_length": [
+        null,
+        null,
+        8.566733360290527,
+        null,
+        null,
+        null,
+        8.264084815979004,
+        null
+      ],
+      "patch_feature_w": [
+        [
+          -0.23914772272109985,
+          -0.2608462870121002
+        ],
+        [
+          -0.23950639367103577,
+          -0.257161408662796
+        ],
+        [
+          -0.15541107952594757,
+          -0.11459561437368393
+        ],
+        [
+          -0.23684585094451904,
+          -0.25554364919662476
+        ],
+        [
+          -0.2409680187702179,
+          -0.2501876950263977
+        ],
+        [
+          -0.24073214828968048,
+          -0.25030046701431274
+        ],
+        [
+          -0.1556083709001541,
+          -0.11576482653617859
+        ],
+        [
+          -0.2352004051208496,
+          -0.2622319459915161
+        ]
+      ],
+      "patch_feature_b": [
+        -0.26169875264167786,
+        -0.2614603638648987,
+        -0.13455839455127716,
+        -0.2565253973007202,
+        -0.24904665350914001,
+        -0.2503562569618225,
+        -0.13335157930850983,
+        -0.2676401138305664
+      ]
+    }
+  ]
+}

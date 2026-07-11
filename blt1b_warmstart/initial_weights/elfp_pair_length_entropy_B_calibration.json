@@ -1,0 +1,72 @@
+{
+  "name": "elfp_B_length_entropy_anchor_calibration",
+  "feature_order": [
+    "normalized_log_length",
+    "raw_entropy"
+  ],
+  "num_pairs": 4,
+  "max_batches": 1000,
+  "num_points": 255570,
+  "feature_mean": [
+    0.7786258459091187,
+    1.1185855865478516
+  ],
+  "feature_std": [
+    0.36502721905708313,
+    0.6519964337348938
+  ],
+  "pairs": [
+    {
+      "pair": 0,
+      "count": 24465,
+      "fraction": 0.09572719802793755,
+      "center_length_feature": 0.3596687634064679,
+      "center_entropy_feature": 2.4892117326998147,
+      "raw_length_mean": 1.0179848670959473,
+      "raw_length_p50": 1.0,
+      "raw_length_p90": 1.0,
+      "raw_entropy_mean": 2.4892044067382812,
+      "raw_entropy_p50": 2.359375,
+      "raw_entropy_p90": 3.109375
+    },
+    {
+      "pair": 1,
+      "count": 70687,
+      "fraction": 0.27658567124466876,
+      "center_length_feature": 0.4181349840831139,
+      "center_entropy_feature": 1.5854937809146357,
+      "raw_length_mean": 1.306166648864746,
+      "raw_length_p50": 1.0,
+      "raw_length_p90": 2.0,
+      "raw_entropy_mean": 1.5854912996292114,
+      "raw_entropy_p50": 1.5625,
+      "raw_entropy_p90": 1.89453125
+    },
+    {
+      "pair": 2,
+      "count": 88377,
+      "fraction": 0.34580349806315297,
+      "center_length_feature": 0.8230564834734968,
+      "center_entropy_feature": 0.8784462705227263,
+      "raw_length_mean": 4.0933837890625,
+      "raw_length_p50": 4.0,
+      "raw_length_p90": 6.0,
+      "raw_entropy_mean": 0.8784530758857727,
+      "raw_entropy_p50": 0.871337890625,
+      "raw_entropy_p90": 1.1763085842132577
+    },
+    {
+      "pair": 3,
+      "count": 72041,
+      "fraction": 0.2818836326642407,
+      "center_length_feature": 1.2178580941389363,
+      "center_entropy_feature": 0.4895686513919699,
+      "raw_length_mean": 14.686150550842285,
+      "raw_length_p50": 9.0,
+      "raw_length_p90": 14.0,
+      "raw_entropy_mean": 0.48957282304763794,
+      "raw_entropy_p50": 0.47560757398605347,
+      "raw_entropy_p90": 0.6773147583007812
+    }
+  ]
+}

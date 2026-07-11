@@ -1,0 +1,602 @@
+[
+  {
+    "layer": 0,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5631302062954221,
+    "mean_within_original_pair_distance": 0.9847900122404099,
+    "mean_cross_pair_distance": 0.4928535719712575,
+    "within_minus_cross": 0.49193644026915234
+  },
+  {
+    "layer": 0,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5715088014091764,
+    "mean_within_original_pair_distance": 1.0000371932983398,
+    "mean_cross_pair_distance": 0.5000874027609825,
+    "within_minus_cross": 0.49994979053735733
+  },
+  {
+    "layer": 0,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5715558720486504,
+    "mean_within_original_pair_distance": 0.9992179423570633,
+    "mean_cross_pair_distance": 0.5002788603305817,
+    "within_minus_cross": 0.49893908202648163
+  },
+  {
+    "layer": 1,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5651378780603409,
+    "mean_within_original_pair_distance": 0.9881289601325989,
+    "mean_cross_pair_distance": 0.4946393643816312,
+    "within_minus_cross": 0.4934895957509677
+  },
+  {
+    "layer": 1,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5716328876359122,
+    "mean_within_original_pair_distance": 1.0002221763134003,
+    "mean_cross_pair_distance": 0.5002013395229975,
+    "within_minus_cross": 0.5000208367904028
+  },
+  {
+    "layer": 1,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5718799105712346,
+    "mean_within_original_pair_distance": 0.9997087866067886,
+    "mean_cross_pair_distance": 0.5005750978986422,
+    "within_minus_cross": 0.49913368870814645
+  },
+  {
+    "layer": 2,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.566962908421244,
+    "mean_within_original_pair_distance": 0.9918078482151031,
+    "mean_cross_pair_distance": 0.49615541845560074,
+    "within_minus_cross": 0.4956524297595024
+  },
+  {
+    "layer": 2,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5715261633907046,
+    "mean_within_original_pair_distance": 1.0001656413078308,
+    "mean_cross_pair_distance": 0.5000862504045168,
+    "within_minus_cross": 0.500079390903314
+  },
+  {
+    "layer": 2,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5715331073318209,
+    "mean_within_original_pair_distance": 0.9996412098407745,
+    "mean_cross_pair_distance": 0.500181756913662,
+    "within_minus_cross": 0.4994594529271126
+  },
+  {
+    "layer": 3,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5672478079795837,
+    "mean_within_original_pair_distance": 0.9916117489337921,
+    "mean_cross_pair_distance": 0.4965204844872157,
+    "within_minus_cross": 0.4950912644465764
+  },
+  {
+    "layer": 3,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5714316836425236,
+    "mean_within_original_pair_distance": 0.9997568875551224,
+    "mean_cross_pair_distance": 0.5000441496570905,
+    "within_minus_cross": 0.49971273789803183
+  },
+  {
+    "layer": 3,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5717941799334118,
+    "mean_within_original_pair_distance": 0.9991910606622696,
+    "mean_cross_pair_distance": 0.500561366478602,
+    "within_minus_cross": 0.49862969418366754
+  },
+  {
+    "layer": 4,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5678524311099734,
+    "mean_within_original_pair_distance": 0.9929685741662979,
+    "mean_cross_pair_distance": 0.49699974060058594,
+    "within_minus_cross": 0.495968833565712
+  },
+  {
+    "layer": 4,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5716105720826558,
+    "mean_within_original_pair_distance": 1.000194936990738,
+    "mean_cross_pair_distance": 0.5001798445979754,
+    "within_minus_cross": 0.5000150923927625
+  },
+  {
+    "layer": 4,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5719229068074908,
+    "mean_within_original_pair_distance": 0.9998757243156433,
+    "mean_cross_pair_distance": 0.5005974372227987,
+    "within_minus_cross": 0.4992782870928446
+  },
+  {
+    "layer": 5,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5681600081069129,
+    "mean_within_original_pair_distance": 0.9933040291070938,
+    "mean_cross_pair_distance": 0.4973026712735494,
+    "within_minus_cross": 0.49600135783354443
+  },
+  {
+    "layer": 5,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5716234402997153,
+    "mean_within_original_pair_distance": 1.0001779794692993,
+    "mean_cross_pair_distance": 0.5001976837714514,
+    "within_minus_cross": 0.49998029569784797
+  },
+  {
+    "layer": 5,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5718608562435422,
+    "mean_within_original_pair_distance": 0.9996322840452194,
+    "mean_cross_pair_distance": 0.5005656182765961,
+    "within_minus_cross": 0.49906666576862335
+  },
+  {
+    "layer": 6,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5683105353798185,
+    "mean_within_original_pair_distance": 0.9940066933631897,
+    "mean_cross_pair_distance": 0.4973611757159233,
+    "within_minus_cross": 0.4966455176472664
+  },
+  {
+    "layer": 6,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5709867221968514,
+    "mean_within_original_pair_distance": 0.9991799890995026,
+    "mean_cross_pair_distance": 0.4996211777130763,
+    "within_minus_cross": 0.49955881138642627
+  },
+  {
+    "layer": 6,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5723020945276532,
+    "mean_within_original_pair_distance": 1.0009092092514038,
+    "mean_cross_pair_distance": 0.5008675754070282,
+    "within_minus_cross": 0.5000416338443756
+  },
+  {
+    "layer": 7,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5687195892844882,
+    "mean_within_original_pair_distance": 0.9941811263561249,
+    "mean_cross_pair_distance": 0.497809333105882,
+    "within_minus_cross": 0.4963717932502429
+  },
+  {
+    "layer": 7,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5716195745127541,
+    "mean_within_original_pair_distance": 1.000146359205246,
+    "mean_cross_pair_distance": 0.5001984437306722,
+    "within_minus_cross": 0.49994791547457373
+  },
+  {
+    "layer": 7,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5724618285894394,
+    "mean_within_original_pair_distance": 1.0006113946437836,
+    "mean_cross_pair_distance": 0.501103567580382,
+    "within_minus_cross": 0.4995078270634016
+  },
+  {
+    "layer": 8,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5686730529580798,
+    "mean_within_original_pair_distance": 0.9941475540399551,
+    "mean_cross_pair_distance": 0.4977606361111005,
+    "within_minus_cross": 0.49638691792885464
+  },
+  {
+    "layer": 8,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5716450874294553,
+    "mean_within_original_pair_distance": 1.0002070665359497,
+    "mean_cross_pair_distance": 0.5002180909117063,
+    "within_minus_cross": 0.4999889756242434
+  },
+  {
+    "layer": 8,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5722081256764275,
+    "mean_within_original_pair_distance": 1.000249445438385,
+    "mean_cross_pair_distance": 0.5008679057161013,
+    "within_minus_cross": 0.4993815397222837
+  },
+  {
+    "layer": 9,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5685502269438335,
+    "mean_within_original_pair_distance": 0.9942101836204529,
+    "mean_cross_pair_distance": 0.49760690083106357,
+    "within_minus_cross": 0.4966032827893893
+  },
+  {
+    "layer": 9,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5712793320417404,
+    "mean_within_original_pair_distance": 0.9996620267629623,
+    "mean_cross_pair_distance": 0.4998822162548701,
+    "within_minus_cross": 0.4997798105080922
+  },
+  {
+    "layer": 9,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.571910519685064,
+    "mean_within_original_pair_distance": 1.000057965517044,
+    "mean_cross_pair_distance": 0.5005526120464007,
+    "within_minus_cross": 0.4995053534706434
+  },
+  {
+    "layer": 10,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.568280754344804,
+    "mean_within_original_pair_distance": 0.9936811327934265,
+    "mean_cross_pair_distance": 0.49738069127003354,
+    "within_minus_cross": 0.496300441523393
+  },
+  {
+    "layer": 10,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5717302560806274,
+    "mean_within_original_pair_distance": 1.0004433691501617,
+    "mean_cross_pair_distance": 0.5002780705690384,
+    "within_minus_cross": 0.5001652985811234
+  },
+  {
+    "layer": 10,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5720404216221401,
+    "mean_within_original_pair_distance": 1.000251978635788,
+    "mean_cross_pair_distance": 0.500671828786532,
+    "within_minus_cross": 0.4995801498492559
+  },
+  {
+    "layer": 11,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5679056899888175,
+    "mean_within_original_pair_distance": 0.9927121251821518,
+    "mean_cross_pair_distance": 0.4971046174565951,
+    "within_minus_cross": 0.4956075077255567
+  },
+  {
+    "layer": 11,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5713184582335609,
+    "mean_within_original_pair_distance": 0.9996242523193359,
+    "mean_cross_pair_distance": 0.499934159219265,
+    "within_minus_cross": 0.49969009310007095
+  },
+  {
+    "layer": 11,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5721595947231565,
+    "mean_within_original_pair_distance": 1.0001313090324402,
+    "mean_cross_pair_distance": 0.5008309756716093,
+    "within_minus_cross": 0.4993003333608309
+  },
+  {
+    "layer": 12,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5685954689979553,
+    "mean_within_original_pair_distance": 0.9939510971307755,
+    "mean_cross_pair_distance": 0.49770286430915195,
+    "within_minus_cross": 0.4962482328216235
+  },
+  {
+    "layer": 12,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5720983743667603,
+    "mean_within_original_pair_distance": 1.001000851392746,
+    "mean_cross_pair_distance": 0.5006146281957626,
+    "within_minus_cross": 0.5003862231969833
+  },
+  {
+    "layer": 12,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5720795669725963,
+    "mean_within_original_pair_distance": 1.0000185370445251,
+    "mean_cross_pair_distance": 0.5007564052939415,
+    "within_minus_cross": 0.49926213175058365
+  },
+  {
+    "layer": 13,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.567344823053905,
+    "mean_within_original_pair_distance": 0.9924612939357758,
+    "mean_cross_pair_distance": 0.49649207790692645,
+    "within_minus_cross": 0.4959692160288493
+  },
+  {
+    "layer": 13,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5712065079382488,
+    "mean_within_original_pair_distance": 0.9996319115161896,
+    "mean_cross_pair_distance": 0.49980227400859195,
+    "within_minus_cross": 0.4998296375075976
+  },
+  {
+    "layer": 13,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5722383878060749,
+    "mean_within_original_pair_distance": 1.001015543937683,
+    "mean_cross_pair_distance": 0.500775528450807,
+    "within_minus_cross": 0.5002400154868761
+  },
+  {
+    "layer": 14,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5666505694389343,
+    "mean_within_original_pair_distance": 0.9913264364004135,
+    "mean_cross_pair_distance": 0.4958712582786878,
+    "within_minus_cross": 0.49545517812172574
+  },
+  {
+    "layer": 14,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5716802222388131,
+    "mean_within_original_pair_distance": 1.0005260109901428,
+    "mean_cross_pair_distance": 0.5002059241135915,
+    "within_minus_cross": 0.5003200868765513
+  },
+  {
+    "layer": 14,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5718597173690796,
+    "mean_within_original_pair_distance": 1.000420242547989,
+    "mean_cross_pair_distance": 0.5004329631725947,
+    "within_minus_cross": 0.4999872793753942
+  },
+  {
+    "layer": 15,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5666053614446095,
+    "mean_within_original_pair_distance": 0.9905582219362259,
+    "mean_cross_pair_distance": 0.49594655136267346,
+    "within_minus_cross": 0.49461167057355243
+  },
+  {
+    "layer": 15,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5710037116493497,
+    "mean_within_original_pair_distance": 0.9991036802530289,
+    "mean_cross_pair_distance": 0.4996537168820699,
+    "within_minus_cross": 0.499449963370959
+  },
+  {
+    "layer": 15,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5720506310462952,
+    "mean_within_original_pair_distance": 1.0000682473182678,
+    "mean_cross_pair_distance": 0.5007143616676331,
+    "within_minus_cross": 0.49935388565063477
+  },
+  {
+    "layer": 16,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5663821122476033,
+    "mean_within_original_pair_distance": 0.9906191825866699,
+    "mean_cross_pair_distance": 0.4956759338577588,
+    "within_minus_cross": 0.4949432487289111
+  },
+  {
+    "layer": 16,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5717844920498985,
+    "mean_within_original_pair_distance": 1.0006005764007568,
+    "mean_cross_pair_distance": 0.5003151446580887,
+    "within_minus_cross": 0.5002854317426682
+  },
+  {
+    "layer": 16,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5714326117719922,
+    "mean_within_original_pair_distance": 0.9994586557149887,
+    "mean_cross_pair_distance": 0.5000949377814928,
+    "within_minus_cross": 0.4993637179334959
+  },
+  {
+    "layer": 17,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5664674384253365,
+    "mean_within_original_pair_distance": 0.9906440675258636,
+    "mean_cross_pair_distance": 0.4957713335752487,
+    "within_minus_cross": 0.49487273395061493
+  },
+  {
+    "layer": 17,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5715734660625458,
+    "mean_within_original_pair_distance": 1.000246375799179,
+    "mean_cross_pair_distance": 0.5001279811064402,
+    "within_minus_cross": 0.5001183946927389
+  },
+  {
+    "layer": 17,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5716660129172462,
+    "mean_within_original_pair_distance": 0.9997892677783966,
+    "mean_cross_pair_distance": 0.5003121371070544,
+    "within_minus_cross": 0.49947713067134225
+  },
+  {
+    "layer": 18,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5668755727154868,
+    "mean_within_original_pair_distance": 0.990896686911583,
+    "mean_cross_pair_distance": 0.4962053870161374,
+    "within_minus_cross": 0.4946912998954455
+  },
+  {
+    "layer": 18,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5714419846023832,
+    "mean_within_original_pair_distance": 0.9998643845319748,
+    "mean_cross_pair_distance": 0.5000382512807846,
+    "within_minus_cross": 0.4998261332511902
+  },
+  {
+    "layer": 18,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5719774322850364,
+    "mean_within_original_pair_distance": 0.9998781681060791,
+    "mean_cross_pair_distance": 0.5006606429815292,
+    "within_minus_cross": 0.49921752512454987
+  },
+  {
+    "layer": 19,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5664874166250229,
+    "mean_within_original_pair_distance": 0.9899776130914688,
+    "mean_cross_pair_distance": 0.49590571721394855,
+    "within_minus_cross": 0.49407189587752026
+  },
+  {
+    "layer": 19,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5713030632053103,
+    "mean_within_original_pair_distance": 0.9995792657136917,
+    "mean_cross_pair_distance": 0.49992369612058,
+    "within_minus_cross": 0.4996555695931117
+  },
+  {
+    "layer": 19,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5725719779729843,
+    "mean_within_original_pair_distance": 1.0006964206695557,
+    "mean_cross_pair_distance": 0.5012179041902224,
+    "within_minus_cross": 0.4994785164793333
+  },
+  {
+    "layer": 20,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5676940785987037,
+    "mean_within_original_pair_distance": 0.9924551248550415,
+    "mean_cross_pair_distance": 0.496900570889314,
+    "within_minus_cross": 0.4955545539657275
+  },
+  {
+    "layer": 20,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5713665059634617,
+    "mean_within_original_pair_distance": 0.9997537285089493,
+    "mean_cross_pair_distance": 0.49996863553921383,
+    "within_minus_cross": 0.49978509296973544
+  },
+  {
+    "layer": 20,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.572535806468555,
+    "mean_within_original_pair_distance": 1.0009359419345856,
+    "mean_cross_pair_distance": 0.5011357838908831,
+    "within_minus_cross": 0.4998001580437025
+  },
+  {
+    "layer": 21,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5680163545267922,
+    "mean_within_original_pair_distance": 0.9931874573230743,
+    "mean_cross_pair_distance": 0.49715450406074524,
+    "within_minus_cross": 0.4960329532623291
+  },
+  {
+    "layer": 21,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5706894312586103,
+    "mean_within_original_pair_distance": 0.998646080493927,
+    "mean_cross_pair_distance": 0.4993633230527242,
+    "within_minus_cross": 0.4992827574412028
+  },
+  {
+    "layer": 21,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.571508954678263,
+    "mean_within_original_pair_distance": 0.9993739724159241,
+    "mean_cross_pair_distance": 0.5001981183886528,
+    "within_minus_cross": 0.49917585402727127
+  },
+  {
+    "layer": 22,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5683638176747731,
+    "mean_within_original_pair_distance": 0.9937033504247665,
+    "mean_cross_pair_distance": 0.49747389554977417,
+    "within_minus_cross": 0.49622945487499237
+  },
+  {
+    "layer": 22,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5715237132140568,
+    "mean_within_original_pair_distance": 1.000071406364441,
+    "mean_cross_pair_distance": 0.5000990976889929,
+    "within_minus_cross": 0.49997230867544806
+  },
+  {
+    "layer": 22,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5721381370510373,
+    "mean_within_original_pair_distance": 1.0003693103790283,
+    "mean_cross_pair_distance": 0.5007662748297056,
+    "within_minus_cross": 0.4996030355493227
+  },
+  {
+    "layer": 23,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5668898863451821,
+    "mean_within_original_pair_distance": 0.9908476918935776,
+    "mean_cross_pair_distance": 0.49623025208711624,
+    "within_minus_cross": 0.49461743980646133
+  },
+  {
+    "layer": 23,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5710081202643258,
+    "mean_within_original_pair_distance": 0.9991011321544647,
+    "mean_cross_pair_distance": 0.4996592849493027,
+    "within_minus_cross": 0.49944184720516205
+  },
+  {
+    "layer": 23,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5715959774596351,
+    "mean_within_original_pair_distance": 0.9991319626569748,
+    "mean_cross_pair_distance": 0.5003399799267451,
+    "within_minus_cross": 0.49879198273022973
+  },
+  {
+    "layer": 24,
+    "matrix": "w1",
+    "mean_pairwise_cosine_distance": 0.5655609518289566,
+    "mean_within_original_pair_distance": 0.9892717599868774,
+    "mean_cross_pair_distance": 0.49494248380263645,
+    "within_minus_cross": 0.494329276184241
+  },
+  {
+    "layer": 24,
+    "matrix": "w2",
+    "mean_pairwise_cosine_distance": 0.5714379634175982,
+    "mean_within_original_pair_distance": 1.0000634491443634,
+    "mean_cross_pair_distance": 0.5000003824631373,
+    "within_minus_cross": 0.5000630666812261
+  },
+  {
+    "layer": 24,
+    "matrix": "w3",
+    "mean_pairwise_cosine_distance": 0.5713426279170173,
+    "mean_within_original_pair_distance": 0.9994683116674423,
+    "mean_cross_pair_distance": 0.4999883472919464,
+    "within_minus_cross": 0.4994799643754959
+  }
+]

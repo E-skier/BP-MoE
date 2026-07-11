@@ -1,0 +1,23 @@
+{
+  "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_AC1_A5k_B15k_6gpu_c00000_c00005/phaseB_resume_from4000_to_total20k/checkpoints/0000011000",
+  "layer": 12,
+  "max_batches": 20,
+  "means": {
+    "baseline": 0.49670324474573135,
+    "ablate_E1_E5_short_channel": 0.4987084075808525,
+    "ablate_E2_E4_lowent_long_channel": 0.5000231966376305,
+    "ablate_E0_E4_ultralong_lowent_channel": 0.4966788351535797
+  },
+  "deltas_vs_baseline": {
+    "baseline": 0.0,
+    "ablate_E1_E5_short_channel": 0.0020051628351211437,
+    "ablate_E2_E4_lowent_long_channel": 0.0033199518918991533,
+    "ablate_E0_E4_ultralong_lowent_channel": -2.440959215166405e-05
+  },
+  "relative_deltas_vs_baseline": {
+    "baseline": 0.0,
+    "ablate_E1_E5_short_channel": 0.004036943298302011,
+    "ablate_E2_E4_lowent_long_channel": 0.006683974640831426,
+    "ablate_E0_E4_ultralong_lowent_channel": -4.914321057870203e-05
+  }
+}

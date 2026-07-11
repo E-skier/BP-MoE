@@ -20,7 +20,7 @@ DENSE_GLOBAL_FFN_RE = re.compile(
 )
 PATCH_FEATURE_CHOICES = ("length", "entropy", "byte_type")
 EXPERT_INIT_MODES = ("replicated_prefix", "dense_copy", "paired_partition")
-PATCH_FEATURE_INIT_MODES = ("random", "entropy_bands")
+PATCH_FEATURE_INIT_MODES = ("random", "entropy_bands", "length_entropy_anchors")
 MANIFEST_NAME = "patchmoe_warmstart_manifest.json"
 
 
@@ -102,6 +102,30 @@ class PatchMoEWarmStartSpec:
                 raise ValueError(
                     "entropy_bands patch_feature_init requires patch_feature_bias"
                 )
+        if self.patch_feature_init == "length_entropy_anchors":
+            if self.routing_granularity != "pair":
+                raise ValueError(
+                    "length_entropy_anchors patch_feature_init requires pair routing"
+                )
+            if "length" not in self.patch_features or "entropy" not in self.patch_features:
+                raise ValueError(
+                    "length_entropy_anchors patch_feature_init requires length and entropy"
+                )
+            if self.top_k != 2:
+                raise ValueError("length_entropy_anchors patch_feature_init requires top_k=2")
+            if self.num_experts % 2 != 0:
+                raise ValueError(
+                    "length_entropy_anchors patch_feature_init requires an even num_experts"
+                )
+            if not self.patch_feature_bias:
+                raise ValueError(
+                    "length_entropy_anchors patch_feature_init requires patch_feature_bias"
+                )
+            if self.entropy_prior_calibration_path is None:
+                raise ValueError(
+                    "length_entropy_anchors requires entropy_prior_calibration_path"
+                )
+
         if self.expert_init_mode == "paired_partition":
             if self.top_k != 2:
                 raise ValueError("paired_partition requires top_k=2")
@@ -319,6 +343,61 @@ def _entropy_band_patch_feature_router(
     return weight.to(dtype=dtype), bias.to(dtype=dtype)
 
 
+
+def _length_entropy_anchor_patch_feature_router(
+    spec: PatchMoEWarmStartSpec,
+    *,
+    dtype: torch.dtype,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    if spec.entropy_prior_calibration_path is None:
+        raise ValueError("Missing length-entropy anchor calibration path")
+
+    with Path(spec.entropy_prior_calibration_path).open() as f:
+        calibration = json.load(f)
+
+    pair_count = spec.num_experts // 2
+    if int(calibration.get("num_pairs", -1)) != pair_count:
+        raise ValueError(
+            f"calibration num_pairs must be {pair_count}, got "
+            f"{calibration.get('num_pairs')}"
+        )
+
+    length_feature_idx = spec.patch_features.index("length")
+    entropy_feature_idx = spec.patch_features.index("entropy")
+
+    weight = torch.zeros(pair_count, spec.patch_feature_count, dtype=torch.float32)
+    bias = torch.zeros(pair_count, dtype=torch.float32)
+
+    # Linear nearest-anchor logits:
+    #   argmax_p scale * <c_p, x> - 0.5 * scale * ||c_p||^2
+    # This is equivalent to nearest-center routing in the [length, entropy]
+    # feature space up to constants shared by all pairs.
+    scale = float(spec.entropy_band_logit_scale)
+
+    seen = set()
+    for item in calibration["pairs"]:
+        pair_idx = int(item["pair"])
+        if pair_idx < 0 or pair_idx >= pair_count:
+            raise ValueError(f"invalid pair index in calibration: {pair_idx}")
+        seen.add(pair_idx)
+
+        length_center = float(item["center_length_feature"])
+        entropy_center = float(item["center_entropy_feature"])
+
+        weight[pair_idx, length_feature_idx] = scale * length_center
+        weight[pair_idx, entropy_feature_idx] = scale * entropy_center
+        bias[pair_idx] = -0.5 * scale * (
+            length_center * length_center + entropy_center * entropy_center
+        )
+
+    if seen != set(range(pair_count)):
+        raise ValueError(
+            f"calibration pairs must cover 0..{pair_count - 1}, got {sorted(seen)}"
+        )
+
+    return weight.to(dtype=dtype), bias.to(dtype=dtype)
+
+
 def _load_entropy_prior_calibration(
     spec: PatchMoEWarmStartSpec,
     *,
@@ -427,6 +506,10 @@ def convert_dense_state_dict_to_patchmoe(
             if spec.patch_feature_init == "entropy_bands":
                 patch_feature_router, patch_feature_bias = (
                     _entropy_band_patch_feature_router(spec, dtype=dtype)
+                )
+            elif spec.patch_feature_init == "length_entropy_anchors":
+                patch_feature_router, patch_feature_bias = (
+                    _length_entropy_anchor_patch_feature_router(spec, dtype=dtype)
                 )
             elif spec.routing_granularity == "pair":
                 patch_feature_router = _pair_router_weight(

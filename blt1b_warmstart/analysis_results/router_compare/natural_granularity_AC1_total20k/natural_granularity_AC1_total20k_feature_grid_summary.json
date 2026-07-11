@@ -1,0 +1,1505 @@
+[
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 0,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.006172839506172839,
+    "active_top1_experts": [
+      0,
+      1
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      4,
+      6,
+      7
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.9097222089767456,
+      0.08873456716537476,
+      0.0,
+      0.0,
+      0.0007716049440205097,
+      0.0,
+      0.0,
+      0.0007716049440205097
+    ],
+    "top2_fraction_by_expert": [
+      0.4552469253540039,
+      0.047453705221414566,
+      0.0,
+      0.0,
+      0.054398149251937866,
+      0.0,
+      0.3966049253940582,
+      0.046296294778585434
+    ],
+    "top2_effective_experts": 3.2229471408811445,
+    "feature_axis_std": [
+      0.037884484976530075,
+      0.043417684733867645
+    ],
+    "feature_axis_l2": [
+      0.11681920289993286,
+      0.19030015170574188
+    ],
+    "bias_std": 0.050041764974594116,
+    "length_axis_std": 0.037884484976530075,
+    "entropy_axis_std": 0.043417684733867645,
+    "entropy_to_length_l2_ratio": 1.629014253616333,
+    "length_entropy_axis_cosine": -0.8810664415359497
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 1,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.16743827160493827,
+    "active_top1_experts": [
+      0,
+      1
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      2,
+      3,
+      6
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.023148147389292717,
+      0.9768518805503845,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.09182098507881165,
+      0.49189814925193787,
+      0.013503086753189564,
+      0.023148147389292717,
+      0.0,
+      0.004629629664123058,
+      0.3746142089366913,
+      0.00038580247201025486
+    ],
+    "top2_effective_experts": 3.0322088134374434,
+    "feature_axis_std": [
+      0.04379858449101448,
+      0.0493972972035408
+    ],
+    "feature_axis_l2": [
+      0.17115452885627747,
+      0.22663366794586182
+    ],
+    "bias_std": 0.05937133729457855,
+    "length_axis_std": 0.04379858449101448,
+    "entropy_axis_std": 0.0493972972035408,
+    "entropy_to_length_l2_ratio": 1.3241465091705322,
+    "length_entropy_axis_cosine": -0.9494705200195312
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 2,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      3
+    ],
+    "active_top2_experts": [
+      3,
+      6,
+      7
+    ],
+    "active_top1_count": 1,
+    "active_top2_count": 3,
+    "top1_fraction_by_expert": [
+      0.002314814832061529,
+      0.0,
+      0.0,
+      0.9961419701576233,
+      0.0,
+      0.0,
+      0.0,
+      0.0015432098880410194
+    ],
+    "top2_fraction_by_expert": [
+      0.006172839552164078,
+      0.0015432098880410194,
+      0.0,
+      0.49807098507881165,
+      0.0,
+      0.0,
+      0.3819444477558136,
+      0.11226851493120193
+    ],
+    "top2_effective_experts": 2.7228712702415456,
+    "feature_axis_std": [
+      0.040338579565286636,
+      0.049979329109191895
+    ],
+    "feature_axis_l2": [
+      0.15959128737449646,
+      0.2588610053062439
+    ],
+    "bias_std": 0.059179261326789856,
+    "length_axis_std": 0.040338579565286636,
+    "entropy_axis_std": 0.049979329109191895,
+    "entropy_to_length_l2_ratio": 1.622024655342102,
+    "length_entropy_axis_cosine": -0.9229134321212769
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 3,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      0,
+      6
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      4,
+      6
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.1489197462797165,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.8510802388191223,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.10879629850387573,
+      0.07793209701776505,
+      0.0,
+      0.0,
+      0.3132716119289398,
+      0.0,
+      0.5,
+      0.0
+    ],
+    "top2_effective_experts": 3.159455998597804,
+    "feature_axis_std": [
+      0.027703996747732162,
+      0.029773054644465446
+    ],
+    "feature_axis_l2": [
+      0.07836298644542694,
+      0.10319623351097107
+    ],
+    "bias_std": 0.029628891497850418,
+    "length_axis_std": 0.027703996747732162,
+    "entropy_axis_std": 0.029773054644465446,
+    "entropy_to_length_l2_ratio": 1.3169002532958984,
+    "length_entropy_axis_cosine": -0.7743971943855286
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 4,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.25617283950617287,
+    "active_top1_experts": [
+      0,
+      2,
+      6,
+      7
+    ],
+    "active_top2_experts": [
+      0,
+      2,
+      4,
+      6,
+      7
+    ],
+    "active_top1_count": 4,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.1983024626970291,
+      0.0,
+      0.24537037312984467,
+      0.0,
+      0.0007716049440205097,
+      0.0,
+      0.2947530746459961,
+      0.2608024775981903
+    ],
+    "top2_fraction_by_expert": [
+      0.10185185074806213,
+      0.0,
+      0.27237653732299805,
+      0.0,
+      0.10030864179134369,
+      0.0,
+      0.3722993731498718,
+      0.1531635820865631
+    ],
+    "top2_effective_experts": 4.361362083094147,
+    "feature_axis_std": [
+      0.03622663393616676,
+      0.037143200635910034
+    ],
+    "feature_axis_l2": [
+      0.11342945694923401,
+      0.14578072726726532
+    ],
+    "bias_std": 0.04201225936412811,
+    "length_axis_std": 0.03622663393616676,
+    "entropy_axis_std": 0.037143200635910034,
+    "entropy_to_length_l2_ratio": 1.2852104902267456,
+    "length_entropy_axis_cosine": -0.9392589926719666
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 5,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      1,
+      7
+    ],
+    "active_top2_experts": [
+      1,
+      4,
+      6,
+      7
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.8209876418113708,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.17901234328746796
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.41550925374031067,
+      0.0,
+      0.0,
+      0.08449073880910873,
+      0.0,
+      0.4058642089366913,
+      0.09413580596446991
+    ],
+    "top2_effective_experts": 3.196749381672741,
+    "feature_axis_std": [
+      0.03648597002029419,
+      0.03991367667913437
+    ],
+    "feature_axis_l2": [
+      0.10447998344898224,
+      0.16116110980510712
+    ],
+    "bias_std": 0.04262072220444679,
+    "length_axis_std": 0.03648597002029419,
+    "entropy_axis_std": 0.03991367667913437,
+    "entropy_to_length_l2_ratio": 1.5425070524215698,
+    "length_entropy_axis_cosine": -0.7958779335021973
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 6,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      0,
+      2,
+      7
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      2,
+      3,
+      7
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.3163580298423767,
+      0.0,
+      0.1697530895471573,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.5138888955116272
+    ],
+    "top2_fraction_by_expert": [
+      0.4193672835826874,
+      0.08063271641731262,
+      0.08719135820865631,
+      0.0694444477558136,
+      0.0,
+      0.0,
+      0.0,
+      0.3433642089366913
+    ],
+    "top2_effective_experts": 3.7902772215870844,
+    "feature_axis_std": [
+      0.033964719623327255,
+      0.03953080624341965
+    ],
+    "feature_axis_l2": [
+      0.0978270098567009,
+      0.15433862805366516
+    ],
+    "bias_std": 0.040814515203237534,
+    "length_axis_std": 0.033964719623327255,
+    "entropy_axis_std": 0.03953080624341965,
+    "entropy_to_length_l2_ratio": 1.5776689052581787,
+    "length_entropy_axis_cosine": -0.8305019736289978
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 7,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.10108024691358025,
+    "active_top1_experts": [
+      1,
+      3,
+      5,
+      6
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      3,
+      5,
+      6
+    ],
+    "active_top1_count": 4,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.1628086417913437,
+      0.0,
+      0.783178985118866,
+      0.0,
+      0.040123455226421356,
+      0.013888888992369175,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.050154320895671844,
+      0.10570987313985825,
+      0.00038580247201025486,
+      0.4313271641731262,
+      0.0,
+      0.3688271641731262,
+      0.043595679104328156,
+      0.0
+    ],
+    "top2_effective_experts": 3.517728953842732,
+    "feature_axis_std": [
+      0.016276275739073753,
+      0.01727023534476757
+    ],
+    "feature_axis_l2": [
+      0.04610970616340637,
+      0.08161988109350204
+    ],
+    "bias_std": 0.020715374499559402,
+    "length_axis_std": 0.016276275739073753,
+    "entropy_axis_std": 0.01727023534476757,
+    "entropy_to_length_l2_ratio": 1.7701236009597778,
+    "length_entropy_axis_cosine": -0.6359758377075195
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 8,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.22762345679012347,
+    "active_top1_experts": [
+      0,
+      4,
+      5
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 6,
+    "top1_fraction_by_expert": [
+      0.6188271641731262,
+      0.0,
+      0.0,
+      0.0,
+      0.13348765671253204,
+      0.24768517911434174,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.37692901492118835,
+      0.025462962687015533,
+      0.17091049253940582,
+      0.01774691417813301,
+      0.08834876865148544,
+      0.32060185074806213,
+      0.0,
+      0.0
+    ],
+    "top2_effective_experts": 4.111506495772498,
+    "feature_axis_std": [
+      0.01888752169907093,
+      0.019695624709129333
+    ],
+    "feature_axis_l2": [
+      0.055218931287527084,
+      0.0826350599527359
+    ],
+    "bias_std": 0.023749688640236855,
+    "length_axis_std": 0.01888752169907093,
+    "entropy_axis_std": 0.019695624709129333,
+    "entropy_to_length_l2_ratio": 1.496498703956604,
+    "length_entropy_axis_cosine": -0.44292283058166504
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 9,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.7399691358024691,
+    "active_top1_experts": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      3,
+      4,
+      6
+    ],
+    "active_top1_count": 4,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.03858024626970291,
+      0.8186728358268738,
+      0.0,
+      0.09413580596446991,
+      0.0486111119389534,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.36998456716537476,
+      0.4313271641731262,
+      0.0007716049440205097,
+      0.10879629850387573,
+      0.07137345522642136,
+      0.0,
+      0.01774691417813301,
+      0.0
+    ],
+    "top2_effective_experts": 3.4466515133837685,
+    "feature_axis_std": [
+      0.03686600923538208,
+      0.04122065007686615
+    ],
+    "feature_axis_l2": [
+      0.10615719854831696,
+      0.16306939721107483
+    ],
+    "bias_std": 0.042275384068489075,
+    "length_axis_std": 0.03686600923538208,
+    "entropy_axis_std": 0.04122065007686615,
+    "entropy_to_length_l2_ratio": 1.5361124277114868,
+    "length_entropy_axis_cosine": -0.8243067264556885
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 10,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      1,
+      2,
+      4
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.7445987462997437,
+      0.18518517911434174,
+      0.0,
+      0.07021605223417282,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.09143518656492233,
+      0.40432098507881165,
+      0.09529320895671844,
+      0.00038580247201025486,
+      0.40856480598449707,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "top2_effective_experts": 3.2466102514291495,
+    "feature_axis_std": [
+      0.028909392654895782,
+      0.02958730235695839
+    ],
+    "feature_axis_l2": [
+      0.08233550190925598,
+      0.13459734618663788
+    ],
+    "bias_std": 0.03258265182375908,
+    "length_axis_std": 0.028909392654895782,
+    "entropy_axis_std": 0.02958730235695839,
+    "entropy_to_length_l2_ratio": 1.6347424983978271,
+    "length_entropy_axis_cosine": -0.6935037970542908
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 11,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      1,
+      5,
+      6
+    ],
+    "active_top2_experts": [
+      1,
+      3,
+      5,
+      6
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.6527777910232544,
+      0.0,
+      0.0,
+      0.0,
+      0.20679011940956116,
+      0.14043210446834564,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.5,
+      0.0,
+      0.2010030895471573,
+      0.0,
+      0.11304012686014175,
+      0.18595679104328156,
+      0.0
+    ],
+    "top2_effective_experts": 3.4154969059241833,
+    "feature_axis_std": [
+      0.028597615659236908,
+      0.030207501724362373
+    ],
+    "feature_axis_l2": [
+      0.08088631927967072,
+      0.11119706183671951
+    ],
+    "bias_std": 0.03065168485045433,
+    "length_axis_std": 0.028597615659236908,
+    "entropy_axis_std": 0.030207501724362373,
+    "entropy_to_length_l2_ratio": 1.3747326135635376,
+    "length_entropy_axis_cosine": -0.760088324546814
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 12,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      0,
+      1,
+      2,
+      4,
+      5
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      2,
+      4,
+      5
+    ],
+    "active_top1_count": 5,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.19675925374031067,
+      0.013117283582687378,
+      0.6797839403152466,
+      0.0,
+      0.06867283582687378,
+      0.0416666679084301,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.10185185074806213,
+      0.030092593282461166,
+      0.3676697611808777,
+      0.0,
+      0.3016975224018097,
+      0.1975308656692505,
+      0.0011574074160307646,
+      0.0
+    ],
+    "top2_effective_experts": 4.037753249423546,
+    "feature_axis_std": [
+      0.016910335049033165,
+      0.01793384738266468
+    ],
+    "feature_axis_l2": [
+      0.052352175116539,
+      0.07292642444372177
+    ],
+    "bias_std": 0.01788773387670517,
+    "length_axis_std": 0.016910335049033165,
+    "entropy_axis_std": 0.01793384738266468,
+    "entropy_to_length_l2_ratio": 1.3929970264434814,
+    "length_entropy_axis_cosine": -0.33000481128692627
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 13,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.05015432098765432,
+    "active_top1_experts": [
+      2,
+      4,
+      5,
+      6
+    ],
+    "active_top2_experts": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "active_top1_count": 4,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.015432098880410194,
+      0.0,
+      0.7623456716537476,
+      0.06327160447835922,
+      0.15895061194896698,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.3757716119289398,
+      0.07677469402551651,
+      0.389660507440567,
+      0.0590277761220932,
+      0.09876543283462524,
+      0.0
+    ],
+    "top2_effective_experts": 3.7726974231457318,
+    "feature_axis_std": [
+      0.03248271718621254,
+      0.035798005759716034
+    ],
+    "feature_axis_l2": [
+      0.0938948318362236,
+      0.13703696429729462
+    ],
+    "bias_std": 0.038096748292446136,
+    "length_axis_std": 0.03248271718621254,
+    "entropy_axis_std": 0.035798005759716034,
+    "entropy_to_length_l2_ratio": 1.459472894668579,
+    "length_entropy_axis_cosine": -0.8553371429443359
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 14,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      2,
+      6,
+      7
+    ],
+    "active_top2_experts": [
+      2,
+      4,
+      5,
+      6,
+      7
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.5362654328346252,
+      0.0,
+      0.0,
+      0.0,
+      0.15740740299224854,
+      0.3063271641731262
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.4270833432674408,
+      0.006558641791343689,
+      0.09529320895671844,
+      0.06635802239179611,
+      0.1006944477558136,
+      0.30401235818862915
+    ],
+    "top2_effective_experts": 4.0288878842983795,
+    "feature_axis_std": [
+      0.022104617208242416,
+      0.02414322830736637
+    ],
+    "feature_axis_l2": [
+      0.06269655376672745,
+      0.10175475478172302
+    ],
+    "bias_std": 0.025945549830794334,
+    "length_axis_std": 0.022104617208242416,
+    "entropy_axis_std": 0.02414322830736637,
+    "entropy_to_length_l2_ratio": 1.622972011566162,
+    "length_entropy_axis_cosine": -0.7180426120758057
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 15,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.7785493827160493,
+    "active_top1_experts": [
+      2,
+      7
+    ],
+    "active_top2_experts": [
+      1,
+      2,
+      6,
+      7
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.10725308954715729,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.8927469253540039
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.07561728358268738,
+      0.08371913433074951,
+      0.00038580247201025486,
+      0.0,
+      0.0007716049440205097,
+      0.3892746865749359,
+      0.45023149251937866
+    ],
+    "top2_effective_experts": 3.120552467599733,
+    "feature_axis_std": [
+      0.0291790459305048,
+      0.03156479075551033
+    ],
+    "feature_axis_l2": [
+      0.08620031923055649,
+      0.13158215582370758
+    ],
+    "bias_std": 0.03528803214430809,
+    "length_axis_std": 0.0291790459305048,
+    "entropy_axis_std": 0.03156479075551033,
+    "entropy_to_length_l2_ratio": 1.5264694690704346,
+    "length_entropy_axis_cosine": -0.8433051109313965
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 16,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      1,
+      5,
+      6
+    ],
+    "active_top2_experts": [
+      1,
+      5,
+      6,
+      7
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.7908950448036194,
+      0.0,
+      0.0,
+      0.0,
+      0.17824074625968933,
+      0.03086419776082039,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.5,
+      0.0,
+      0.0,
+      0.0,
+      0.12075617164373398,
+      0.2642746865749359,
+      0.11496913433074951
+    ],
+    "top2_effective_experts": 3.3275175509344406,
+    "feature_axis_std": [
+      0.026917405426502228,
+      0.028454871848225594
+    ],
+    "feature_axis_l2": [
+      0.07630926370620728,
+      0.1008339524269104
+    ],
+    "bias_std": 0.02967282012104988,
+    "length_axis_std": 0.026917405426502228,
+    "entropy_axis_std": 0.028454871848225594,
+    "entropy_to_length_l2_ratio": 1.3213855028152466,
+    "length_entropy_axis_cosine": -0.82956862449646
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 17,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      1,
+      3,
+      5
+    ],
+    "active_top2_experts": [
+      1,
+      3,
+      5
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 3,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.7777777910232544,
+      0.0,
+      0.018518518656492233,
+      0.0,
+      0.20370370149612427,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.5,
+      0.0,
+      0.3815586566925049,
+      0.0,
+      0.11844135820865631,
+      0.0,
+      0.0
+    ],
+    "top2_effective_experts": 2.629719459134831,
+    "feature_axis_std": [
+      0.026751209050416946,
+      0.027019472792744637
+    ],
+    "feature_axis_l2": [
+      0.07595867663621902,
+      0.09374704211950302
+    ],
+    "bias_std": 0.0291999951004982,
+    "length_axis_std": 0.026751209050416946,
+    "entropy_axis_std": 0.027019472792744637,
+    "entropy_to_length_l2_ratio": 1.234184741973877,
+    "length_entropy_axis_cosine": -0.8573858141899109
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 18,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      3,
+      5,
+      6
+    ],
+    "active_top2_experts": [
+      1,
+      3,
+      5,
+      6,
+      7
+    ],
+    "active_top1_count": 3,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.0,
+      0.729938268661499,
+      0.0,
+      0.11882716417312622,
+      0.1496913582086563,
+      0.0015432098880410194
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.04436728358268738,
+      0.0,
+      0.3996913433074951,
+      0.0,
+      0.08294752985239029,
+      0.08912037312984467,
+      0.38387346267700195
+    ],
+    "top2_effective_experts": 3.648324851230976,
+    "feature_axis_std": [
+      0.02593196928501129,
+      0.030747709795832634
+    ],
+    "feature_axis_l2": [
+      0.0740843415260315,
+      0.1203232929110527
+    ],
+    "bias_std": 0.03271016478538513,
+    "length_axis_std": 0.02593196928501129,
+    "entropy_axis_std": 0.030747709795832634,
+    "entropy_to_length_l2_ratio": 1.6241393089294434,
+    "length_entropy_axis_cosine": -0.8076325058937073
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 19,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.023148148148148147,
+    "active_top1_experts": [
+      2,
+      5
+    ],
+    "active_top2_experts": [
+      2,
+      4,
+      5,
+      6
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.9251543283462524,
+      0.0,
+      0.0,
+      0.07484567910432816,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.48842594027519226,
+      0.0,
+      0.03549382835626602,
+      0.0833333358168602,
+      0.3923611044883728,
+      0.00038580247201025486
+    ],
+    "top2_effective_experts": 2.845312646976463,
+    "feature_axis_std": [
+      0.026008592918515205,
+      0.028824733570218086
+    ],
+    "feature_axis_l2": [
+      0.07382629811763763,
+      0.1173931434750557
+    ],
+    "bias_std": 0.03161827102303505,
+    "length_axis_std": 0.026008592918515205,
+    "entropy_axis_std": 0.028824733570218086,
+    "entropy_to_length_l2_ratio": 1.590126395225525,
+    "length_entropy_axis_cosine": -0.7228193283081055
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 20,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.19753086419753085,
+    "active_top1_experts": [
+      2
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      7
+    ],
+    "active_top1_count": 1,
+    "active_top2_count": 7,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.015817901119589806,
+      0.2847222089767456,
+      0.5,
+      0.09876543283462524,
+      0.02391975373029709,
+      0.0243055559694767,
+      0.0015432098880410194,
+      0.05092592537403107
+    ],
+    "top2_effective_experts": 3.818058378356472,
+    "feature_axis_std": [
+      0.022272910922765732,
+      0.024944623932242393
+    ],
+    "feature_axis_l2": [
+      0.06515730917453766,
+      0.09565078467130661
+    ],
+    "bias_std": 0.02763812057673931,
+    "length_axis_std": 0.022272910922765732,
+    "entropy_axis_std": 0.024944623932242393,
+    "entropy_to_length_l2_ratio": 1.4679977893829346,
+    "length_entropy_axis_cosine": -0.41447246074676514
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 21,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      5,
+      7
+    ],
+    "active_top2_experts": [
+      0,
+      1,
+      3,
+      5,
+      7
+    ],
+    "active_top1_count": 2,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.16589505970478058,
+      0.0,
+      0.8341049551963806
+    ],
+    "top2_fraction_by_expert": [
+      0.07368826866149902,
+      0.2843364179134369,
+      0.0,
+      0.1076388880610466,
+      0.0,
+      0.10802469402551651,
+      0.0,
+      0.426311731338501
+    ],
+    "top2_effective_experts": 4.029094996539697,
+    "feature_axis_std": [
+      0.021293729543685913,
+      0.02292586676776409
+    ],
+    "feature_axis_l2": [
+      0.06057437136769295,
+      0.09490764886140823
+    ],
+    "bias_std": 0.02466868981719017,
+    "length_axis_std": 0.021293729543685913,
+    "entropy_axis_std": 0.02292586676776409,
+    "entropy_to_length_l2_ratio": 1.5667954683303833,
+    "length_entropy_axis_cosine": -0.5950709581375122
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 22,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      5
+    ],
+    "active_top2_experts": [
+      1,
+      2,
+      3,
+      5,
+      6
+    ],
+    "active_top1_count": 1,
+    "active_top2_count": 5,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.004629629664123058,
+      0.0,
+      0.0,
+      0.9953703880310059,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.3260030746459961,
+      0.09182098507881165,
+      0.026234567165374756,
+      0.0,
+      0.5,
+      0.0520833320915699,
+      0.0038580247201025486
+    ],
+    "top2_effective_experts": 3.327059290706591,
+    "feature_axis_std": [
+      0.025768430903553963,
+      0.03134288638830185
+    ],
+    "feature_axis_l2": [
+      0.07327035814523697,
+      0.13026997447013855
+    ],
+    "bias_std": 0.03193662315607071,
+    "length_axis_std": 0.025768430903553963,
+    "entropy_axis_std": 0.03134288638830185,
+    "entropy_to_length_l2_ratio": 1.77793550491333,
+    "length_entropy_axis_cosine": -0.5159270167350769
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 23,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.0,
+    "active_top1_experts": [
+      3
+    ],
+    "active_top2_experts": [
+      1,
+      3,
+      7
+    ],
+    "active_top1_count": 1,
+    "active_top2_count": 3,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.0,
+      0.41203704476356506,
+      0.0,
+      0.5,
+      0.0,
+      0.0,
+      0.0,
+      0.08796296268701553
+    ],
+    "top2_effective_experts": 2.523701784757434,
+    "feature_axis_std": [
+      0.011933140456676483,
+      0.019204795360565186
+    ],
+    "feature_axis_l2": [
+      0.06521628051996231,
+      0.1468210071325302
+    ],
+    "bias_std": 0.021052857860922813,
+    "length_axis_std": 0.011933140456676483,
+    "entropy_axis_std": 0.019204795360565186,
+    "entropy_to_length_l2_ratio": 2.251293897628784,
+    "length_entropy_axis_cosine": 0.6412351727485657
+  },
+  {
+    "tag": "natural_granularity_AC1_total20k",
+    "layer": 24,
+    "feature_names": [
+      "length",
+      "entropy"
+    ],
+    "weight_shape": [
+      8,
+      2
+    ],
+    "same_pair_fraction": 0.24459876543209877,
+    "active_top1_experts": [
+      6
+    ],
+    "active_top2_experts": [
+      2,
+      4,
+      6,
+      7
+    ],
+    "active_top1_count": 1,
+    "active_top2_count": 4,
+    "top1_fraction_by_expert": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "top2_fraction_by_expert": [
+      0.005787036847323179,
+      0.003086419776082039,
+      0.013888888992369175,
+      0.0,
+      0.35262346267700195,
+      0.002314814832061529,
+      0.5,
+      0.12229938060045242
+    ],
+    "top2_effective_experts": 2.980886372444087,
+    "feature_axis_std": [
+      0.023641539737582207,
+      0.02993793413043022
+    ],
+    "feature_axis_l2": [
+      0.10747477412223816,
+      0.2248774766921997
+    ],
+    "bias_std": 0.03292402997612953,
+    "length_axis_std": 0.023641539737582207,
+    "entropy_axis_std": 0.02993793413043022,
+    "entropy_to_length_l2_ratio": 2.092374563217163,
+    "length_entropy_axis_cosine": 0.534630537033081
+  }
+]

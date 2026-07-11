@@ -1,4 +1,5 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
+import math
 import abc
 import json
 import logging
@@ -119,6 +120,9 @@ class BaseTransformerArgs(BaseModel):
     moe_router_jitter: float = 0.0
     moe_router_congestion_weight: float = 0.0
     moe_router_z_loss_weight: float = 0.0
+    moe_router_anticollapse_loss_weight: float = 0.0
+    moe_router_dominance_loss_weight: float = 0.0
+    moe_router_dominance_threshold: float = 0.35
     moe_router_use_hidden_state: bool = True
     moe_router_patch_feature_bias: bool = False
     moe_router_normalize_patch_entropy: bool = True
@@ -627,6 +631,9 @@ class SparseMoEFeedForward(nn.Module):
         router_jitter: float = 0.0,
         router_congestion_weight: float = 0.0,
         router_z_loss_weight: float = 0.0,
+        router_anticollapse_loss_weight: float = 0.0,
+        router_dominance_loss_weight: float = 0.0,
+        router_dominance_threshold: float = 0.35,
         router_use_hidden_state: bool = True,
         router_patch_feature_bias: bool = False,
         router_normalize_patch_entropy: bool = True,
@@ -672,6 +679,12 @@ class SparseMoEFeedForward(nn.Module):
             raise ValueError("router_congestion_weight must be non-negative")
         if router_z_loss_weight < 0:
             raise ValueError("router_z_loss_weight must be non-negative")
+        if router_anticollapse_loss_weight < 0:
+            raise ValueError("router_anticollapse_loss_weight must be non-negative")
+        if router_dominance_loss_weight < 0:
+            raise ValueError("router_dominance_loss_weight must be non-negative")
+        if router_dominance_threshold <= 0 or router_dominance_threshold > 1:
+            raise ValueError("router_dominance_threshold must be in (0, 1]")
         if router_entropy_mlp_hidden_dim < 0:
             raise ValueError("router_entropy_mlp_hidden_dim must be non-negative")
         if router_entropy_std <= 0:
@@ -737,6 +750,9 @@ class SparseMoEFeedForward(nn.Module):
         self.router_jitter = router_jitter
         self.router_congestion_weight = router_congestion_weight
         self.router_z_loss_weight = router_z_loss_weight
+        self.router_anticollapse_loss_weight = router_anticollapse_loss_weight
+        self.router_dominance_loss_weight = router_dominance_loss_weight
+        self.router_dominance_threshold = router_dominance_threshold
         self.router_use_hidden_state = router_use_hidden_state
         self.router_normalize_patch_entropy = router_normalize_patch_entropy
         self.router_entropy_mlp_hidden_dim = router_entropy_mlp_hidden_dim
@@ -858,6 +874,9 @@ class SparseMoEFeedForward(nn.Module):
         )
         self.last_balance_loss: Optional[torch.Tensor] = None
         self.last_router_z_loss: Optional[torch.Tensor] = None
+        self.last_router_anticollapse_loss: Optional[torch.Tensor] = None
+        self.last_router_entropy_collapse_loss: Optional[torch.Tensor] = None
+        self.last_router_dominance_loss: Optional[torch.Tensor] = None
         self.last_metrics: dict[str, float] = {}
         self.last_expert_parallel_metrics: dict[str, float] = {}
 
@@ -975,6 +994,9 @@ class SparseMoEFeedForward(nn.Module):
             zero = flat_x.sum() * 0.0
             self.last_balance_loss = zero.float()
             self.last_router_z_loss = zero.float()
+            self.last_router_anticollapse_loss = zero.float()
+            self.last_router_entropy_collapse_loss = zero.float()
+            self.last_router_dominance_loss = zero.float()
             self.last_expert_parallel_metrics = {}
             self.last_metrics = {
                 "hidden_state_routing": float(self.router_use_hidden_state),
@@ -1093,6 +1115,42 @@ class SparseMoEFeedForward(nn.Module):
             group_probs = F.softmax(router_logits.float(), dim=-1)
         else:
             group_probs = pre_congestion_group_probs
+
+        self.last_router_anticollapse_loss = router_logits.new_zeros(()).float()
+        self.last_router_entropy_collapse_loss = router_logits.new_zeros(()).float()
+        self.last_router_dominance_loss = router_logits.new_zeros(()).float()
+        if (
+            self.training
+            and (
+                self.router_anticollapse_loss_weight > 0.0
+                or self.router_dominance_loss_weight > 0.0
+            )
+        ):
+            mean_group_probs = (
+                group_probs.float() * load_weights.float().unsqueeze(-1)
+            ).sum(dim=0)
+            mean_group_probs = mean_group_probs / load_weights.float().sum().clamp_min(1.0)
+
+            eps = 1e-8
+            entropy = -(
+                mean_group_probs * mean_group_probs.clamp_min(eps).log()
+            ).sum()
+            entropy_norm = entropy / math.log(float(mean_group_probs.numel()))
+            entropy_collapse_loss = 1.0 - entropy_norm
+
+            dominance = mean_group_probs.max()
+            dominance_loss = torch.relu(
+                dominance - self.router_dominance_threshold
+            ).pow(2)
+
+            self.last_router_entropy_collapse_loss = entropy_collapse_loss.to(
+                router_logits.dtype
+            )
+            self.last_router_dominance_loss = dominance_loss.to(router_logits.dtype)
+            self.last_router_anticollapse_loss = (
+                self.router_anticollapse_loss_weight * entropy_collapse_loss
+                + self.router_dominance_loss_weight * dominance_loss
+            ).to(router_logits.dtype)
 
         if self.routing_granularity == "pair":
             router_probs = group_probs.repeat_interleave(self.pair_size, dim=-1)
@@ -1596,6 +1654,21 @@ class SparseMoEFeedForward(nn.Module):
                 if self.last_balance_loss is not None
                 else 0.0
             ),
+            "router_anticollapse_loss": (
+                self.last_router_anticollapse_loss.detach().item()
+                if self.last_router_anticollapse_loss is not None
+                else 0.0
+            ),
+            "router_entropy_collapse_loss": (
+                self.last_router_entropy_collapse_loss.detach().item()
+                if self.last_router_entropy_collapse_loss is not None
+                else 0.0
+            ),
+            "router_dominance_loss": (
+                self.last_router_dominance_loss.detach().item()
+                if self.last_router_dominance_loss is not None
+                else 0.0
+            ),
             "routed_units": float(routed_units),
             "total_units": float(
                 load_weights.numel() if total_units is None else total_units
@@ -2078,6 +2151,17 @@ def get_moe_router_z_loss(module: nn.Module) -> Optional[torch.Tensor]:
     return torch.stack(losses).mean()
 
 
+def get_moe_router_anticollapse_loss(module: nn.Module) -> Optional[torch.Tensor]:
+    losses = [
+        child.last_router_anticollapse_loss
+        for _, child in _iter_sparse_moe_modules(module)
+        if child.last_router_anticollapse_loss is not None
+    ]
+    if len(losses) == 0:
+        return None
+    return torch.stack(losses).mean()
+
+
 def get_moe_balance_loss_weight_for_step(args: BaseTransformerArgs, step: int) -> float:
     base_weight = float(args.moe_balance_loss_weight)
     if args.moe_balance_schedule == "constant":
@@ -2165,6 +2249,9 @@ class TransformerBlock(nn.Module):
                 router_jitter=args.moe_router_jitter,
                 router_congestion_weight=args.moe_router_congestion_weight,
                 router_z_loss_weight=args.moe_router_z_loss_weight,
+                router_anticollapse_loss_weight=args.moe_router_anticollapse_loss_weight,
+                router_dominance_loss_weight=args.moe_router_dominance_loss_weight,
+                router_dominance_threshold=args.moe_router_dominance_threshold,
                 router_use_hidden_state=args.moe_router_use_hidden_state,
                 router_patch_feature_bias=args.moe_router_patch_feature_bias,
                 router_normalize_patch_entropy=args.moe_router_normalize_patch_entropy,

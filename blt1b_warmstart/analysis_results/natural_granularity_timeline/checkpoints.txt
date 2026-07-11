@@ -1,0 +1,4 @@
+/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseA_3k/checkpoints/0000002000
+/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseA_3k/checkpoints/0000003000
+/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000037000
+/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000

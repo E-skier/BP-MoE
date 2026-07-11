@@ -1,0 +1,83 @@
+{
+  "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_AC1_A5k_B15k_6gpu_c00000_c00005/phaseB_resume_from4000_to_total20k/checkpoints/0000011000",
+  "layer": 12,
+  "max_batches": 50,
+  "bucket_counts": {
+    "all": 59882,
+    "short_all_entropy_len_le_4": 15702,
+    "short_higher_entropy_len_le_4_ent_ge_1_5": 3855,
+    "short_high_entropy_len_le_4_ent_ge_2_5": 361,
+    "low_entropy_ent_le_1_0": 49624,
+    "long_low_entropy_len_ge_8_ent_le_1_0": 29331,
+    "verylong_low_entropy_len_ge_32_ent_le_1_0": 753
+  },
+  "means": {
+    "baseline": {
+      "all": 0.4815502287147797,
+      "short_all_entropy_len_le_4": 0.9208600582734534,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 1.7488674732806926,
+      "short_high_entropy_len_le_4_ent_ge_2_5": 1.6290199711217115,
+      "low_entropy_ent_le_1_0": 0.3265511114405525,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.2792848215918931,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": 0.13764792276054105
+    },
+    "ablate_E1_E5_short_channel": {
+      "all": 0.48413647650111624,
+      "short_all_entropy_len_le_4": 0.9253628188645728,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 1.757888976021654,
+      "short_high_entropy_len_le_4_ent_ge_2_5": 1.6421456559873353,
+      "low_entropy_ent_le_1_0": 0.3285828445412431,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.28086959921063115,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": 0.1358217181437519
+    },
+    "ablate_E2_E4_lowent_long_channel": {
+      "all": 0.4843386308666158,
+      "short_all_entropy_len_le_4": 0.9247372182307464,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 1.7550337260799185,
+      "short_high_entropy_len_le_4_ent_ge_2_5": 1.6222858777336797,
+      "low_entropy_ent_le_1_0": 0.3289088830820268,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.281241775985582,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": 0.1384969522328095
+    }
+  },
+  "deltas_vs_baseline": {
+    "ablate_E1_E5_short_channel": {
+      "all": 0.0025862477863365374,
+      "short_all_entropy_len_le_4": 0.004502760591119426,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 0.009021502740961473,
+      "short_high_entropy_len_le_4_ent_ge_2_5": 0.013125684865623821,
+      "low_entropy_ent_le_1_0": 0.0020317331006906025,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.0015847776187380425,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": -0.0018262046167891455
+    },
+    "ablate_E2_E4_lowent_long_channel": {
+      "all": 0.0027884021518361224,
+      "short_all_entropy_len_le_4": 0.003877159957292986,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 0.006166252799225891,
+      "short_high_entropy_len_le_4_ent_ge_2_5": -0.00673409338803177,
+      "low_entropy_ent_le_1_0": 0.0023577716414743266,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.00195695439368887,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": 0.0008490294722684477
+    }
+  },
+  "relative_deltas_vs_baseline": {
+    "ablate_E1_E5_short_channel": {
+      "all": 0.005370670871113555,
+      "short_all_entropy_len_le_4": 0.004889733842470895,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 0.005158482777450299,
+      "short_high_entropy_len_le_4_ent_ge_2_5": 0.008057411878496326,
+      "low_entropy_ent_le_1_0": 0.0062217920243106345,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.005674413703204429,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": -0.013267215226822558
+    },
+    "ablate_E2_E4_lowent_long_channel": {
+      "all": 0.005790469997861183,
+      "short_all_entropy_len_le_4": 0.004210368255696075,
+      "short_higher_entropy_len_le_4_ent_ge_1_5": 0.003525854813720473,
+      "short_high_entropy_len_le_4_ent_ge_2_5": -0.004133831080901239,
+      "low_entropy_ent_le_1_0": 0.007220222375214763,
+      "long_low_entropy_len_ge_8_ent_le_1_0": 0.00700702022592722,
+      "verylong_low_entropy_len_ge_32_ent_le_1_0": 0.006168124118701451
+    }
+  }
+}

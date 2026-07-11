@@ -1,0 +1,1115 @@
+{
+  "global_summary": {
+    "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/elfp_A1_length_entropy_pair/phaseA_3k/checkpoints/0000003000",
+    "max_batches": 200,
+    "num_layers": 25,
+    "mean_pair_eff_num": 1.7320388622514398,
+    "mean_dominant_frac": 0.7657335133125965,
+    "num_layers_active_pair_ge2": 24,
+    "num_layers_active_pair_ge3": 11,
+    "num_layers_entropy_range_ge_0_5": 24,
+    "num_layers_length_range_ge_4": 22
+  },
+  "layers": [
+    {
+      "layer": 0,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 1.0660033968018676,
+      "dominant_frac": 0.9898076960698007,
+      "entropy_length_corr": -0.5558642148971558,
+      "entropy_range": 2.594186782836914,
+      "length_range": 282.9333190917969,
+      "shortest_pair": 2,
+      "longest_pair": 1,
+      "highest_entropy_pair": 3,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 50596,
+          "frac": 0.9898076960698007,
+          "entropy_mean": 1.0643780207945743,
+          "length_mean": 4.723199462408095
+        },
+        {
+          "pair": 1,
+          "count": 240,
+          "frac": 0.004695111215446916,
+          "entropy_mean": 0.9064247967985769,
+          "length_mean": 283.93333333333334
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 281,
+          "frac": 0.0054971927147524306,
+          "entropy_mean": 3.5006116548042705,
+          "length_mean": 1.0
+        }
+      ]
+    },
+    {
+      "layer": 1,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 2.007600251026635,
+      "dominant_frac": 0.7643641058747579,
+      "entropy_length_corr": -0.6360882520675659,
+      "entropy_range": 0.8683956861495972,
+      "length_range": 12.564069747924805,
+      "shortest_pair": 0,
+      "longest_pair": 2,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 39072,
+          "frac": 0.7643641058747579,
+          "entropy_mean": 1.2789968774622698,
+          "length_mean": 3.914567977067977
+        },
+        {
+          "pair": 2,
+          "count": 7958,
+          "frac": 0.15568206271886065,
+          "entropy_mean": 0.4106011532488616,
+          "length_mean": 16.478637848705706
+        },
+        {
+          "pair": 3,
+          "count": 4087,
+          "frac": 0.07995383140638145,
+          "entropy_mean": 0.44383513398426566,
+          "length_mean": 5.704183998042574
+        }
+      ]
+    },
+    {
+      "layer": 2,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 2.4205700576019296,
+      "dominant_frac": 0.5944206428389772,
+      "entropy_length_corr": -0.8727852702140808,
+      "entropy_range": 1.8073737621307373,
+      "length_range": 8.089777946472168,
+      "shortest_pair": 0,
+      "longest_pair": 1,
+      "highest_entropy_pair": 2,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 30385,
+          "frac": 0.5944206428389772,
+          "entropy_mean": 0.6554156068096393,
+          "length_mean": 9.127332565410564
+        },
+        {
+          "pair": 2,
+          "count": 4367,
+          "frac": 0.08543146115773617,
+          "entropy_mean": 2.462789249141729,
+          "length_mean": 1.0375543851614382
+        },
+        {
+          "pair": 3,
+          "count": 16365,
+          "frac": 0.3201478960032866,
+          "entropy_mean": 1.4900507364766955,
+          "length_mean": 1.56034219370608
+        }
+      ]
+    },
+    {
+      "layer": 3,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.1211939096518417,
+      "dominant_frac": 0.9756832364966646,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 0.6458094716072083,
+      "length_range": 64.72352600097656,
+      "shortest_pair": 0,
+      "longest_pair": 3,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 49874,
+          "frac": 0.9756832364966646,
+          "entropy_mean": 1.092732853855847,
+          "length_mean": 4.439788266431407
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 1243,
+          "frac": 0.024316763503335486,
+          "entropy_mean": 0.44692342167934485,
+          "length_mean": 69.16331456154465
+        }
+      ]
+    },
+    {
+      "layer": 4,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 2.36645642559038,
+      "dominant_frac": 0.5134299743725179,
+      "entropy_length_corr": -0.7568914294242859,
+      "entropy_range": 1.2100794315338135,
+      "length_range": 13.225682258605957,
+      "shortest_pair": 2,
+      "longest_pair": 3,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 22136,
+          "frac": 0.4330457577713872,
+          "entropy_mean": 0.6252196862584133,
+          "length_mean": 6.0919768702565955
+        },
+        {
+          "pair": 1,
+          "count": 26245,
+          "frac": 0.5134299743725179,
+          "entropy_mean": 1.5363651499472974,
+          "length_mean": 4.705239093160602
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 2736,
+          "frac": 0.05352426785609484,
+          "entropy_mean": 0.3262857569338024,
+          "length_mean": 17.93092105263158
+        }
+      ]
+    },
+    {
+      "layer": 5,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.817797548639991,
+      "dominant_frac": 0.7149871862589745,
+      "entropy_length_corr": -0.9999998807907104,
+      "entropy_range": 0.6122612357139587,
+      "length_range": 6.58339786529541,
+      "shortest_pair": 0,
+      "longest_pair": 1,
+      "highest_entropy_pair": 3,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 36548,
+          "frac": 0.7149871862589745,
+          "entropy_mean": 0.9025265425582273,
+          "length_mean": 7.890007661157929
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 14569,
+          "frac": 0.2850128137410255,
+          "entropy_mean": 1.5147878432930093,
+          "length_mean": 1.306609925183609
+        }
+      ]
+    },
+    {
+      "layer": 6,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 2.616500297197247,
+      "dominant_frac": 0.4530586693272297,
+      "entropy_length_corr": -0.5905011892318726,
+      "entropy_range": 1.0935893058776855,
+      "length_range": 12.976004600524902,
+      "shortest_pair": 3,
+      "longest_pair": 0,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 3,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 5570,
+          "frac": 0.10896570612516383,
+          "entropy_mean": 1.0090988474057008,
+          "length_mean": 14.544344703770198
+        },
+        {
+          "pair": 1,
+          "count": 22388,
+          "frac": 0.43797562454760647,
+          "entropy_mean": 1.6413866701840887,
+          "length_mean": 1.5683401822404859
+        },
+        {
+          "pair": 2,
+          "count": 23159,
+          "frac": 0.4530586693272297,
+          "entropy_mean": 0.5477973493770375,
+          "length_mean": 8.259251263007902
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 7,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.4712589900255881,
+      "dominant_frac": 0.8701410489660973,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 1.3675282001495361,
+      "length_range": 2.227778434753418,
+      "shortest_pair": 0,
+      "longest_pair": 3,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 6638,
+          "frac": 0.1298589510339026,
+          "entropy_mean": 2.266971341006258,
+          "length_mean": 4.075173244953299
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 44479,
+          "frac": 0.8701410489660973,
+          "entropy_mean": 0.8994430721184019,
+          "length_mean": 6.3029519548551
+        }
+      ]
+    },
+    {
+      "layer": 8,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.3452014754125785,
+      "dominant_frac": 0.9125731165756988,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 0.7526821494102478,
+      "length_range": 23.853622436523438,
+      "shortest_pair": 2,
+      "longest_pair": 1,
+      "highest_entropy_pair": 0,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 46648,
+          "frac": 0.9125731165756988,
+          "entropy_mean": 1.1428335162233916,
+          "length_mean": 3.928206997084548
+        },
+        {
+          "pair": 1,
+          "count": 4469,
+          "frac": 0.08742688342430112,
+          "entropy_mean": 0.3901513317442762,
+          "length_mean": 27.78183038711121
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 9,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.0650912756285067,
+      "dominant_frac": 0.9884382886319619,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 0.5784164071083069,
+      "length_range": 121.39837646484375,
+      "shortest_pair": 0,
+      "longest_pair": 2,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 50526,
+          "frac": 0.9884382886319619,
+          "entropy_mean": 1.0837163413266788,
+          "length_mean": 4.6100819380121125
+        },
+        {
+          "pair": 2,
+          "count": 591,
+          "frac": 0.011561711368038031,
+          "entropy_mean": 0.5053000075840305,
+          "length_mean": 126.00846023688663
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 10,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 1.6887134098005563,
+      "dominant_frac": 0.8495216855449264,
+      "entropy_length_corr": -0.6673610806465149,
+      "entropy_range": 0.8265801668167114,
+      "length_range": 31.212207794189453,
+      "shortest_pair": 1,
+      "longest_pair": 2,
+      "highest_entropy_pair": 0,
+      "lowest_entropy_pair": 1,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 43425,
+          "frac": 0.8495216855449264,
+          "entropy_mean": 1.1987114524855034,
+          "length_mean": 3.6601496833621185
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 2977,
+          "frac": 0.058238942034939456,
+          "entropy_mean": 0.3721312565724642,
+          "length_mean": 34.872354719516295
+        },
+        {
+          "pair": 3,
+          "count": 4715,
+          "frac": 0.0922393724201342,
+          "entropy_mean": 0.40140076168711086,
+          "length_mean": 9.46829268292683
+        }
+      ]
+    },
+    {
+      "layer": 11,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.730604847995053,
+      "dominant_frac": 0.7622513058278068,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 0.8515099287033081,
+      "length_range": 10.7727689743042,
+      "shortest_pair": 1,
+      "longest_pair": 0,
+      "highest_entropy_pair": 2,
+      "lowest_entropy_pair": 1,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 12153,
+          "frac": 0.23774869417219321,
+          "entropy_mean": 0.4279643716017013,
+          "length_mean": 14.225211881839876
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 38964,
+          "frac": 0.7622513058278068,
+          "entropy_mean": 1.2794742110224429,
+          "length_mean": 3.4524432809773122
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 12,
+      "total_valid_patches": 51117,
+      "active_pairs": 4,
+      "top1_pair_eff_num": 1.9318258348732846,
+      "dominant_frac": 0.6481796662558444,
+      "entropy_length_corr": 0.0013231118209660053,
+      "entropy_range": 1.6998710632324219,
+      "length_range": 7.596776962280273,
+      "shortest_pair": 0,
+      "longest_pair": 3,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 51,
+          "frac": 0.0009977111332824696,
+          "entropy_mean": 0.08861515451880063,
+          "length_mean": 1.0
+        },
+        {
+          "pair": 1,
+          "count": 17913,
+          "frac": 0.3504313633429192,
+          "entropy_mean": 1.7884862932708736,
+          "length_mean": 1.2556244068553564
+        },
+        {
+          "pair": 2,
+          "count": 20,
+          "frac": 0.00039125926795390963,
+          "entropy_mean": 0.3427352517843246,
+          "length_mean": 1.0
+        },
+        {
+          "pair": 3,
+          "count": 33133,
+          "frac": 0.6481796662558444,
+          "entropy_mean": 0.6943517072730099,
+          "length_mean": 8.596776627531463
+        }
+      ]
+    },
+    {
+      "layer": 13,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.946630450027621,
+      "dominant_frac": 0.615763835905863,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 1.0681838989257812,
+      "length_range": 7.518320560455322,
+      "shortest_pair": 2,
+      "longest_pair": 0,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 31476,
+          "frac": 0.615763835905863,
+          "entropy_mean": 0.666593940723827,
+          "length_mean": 8.902465370440972
+        },
+        {
+          "pair": 1,
+          "count": 19641,
+          "frac": 0.38423616409413697,
+          "entropy_mean": 1.734777928218052,
+          "length_mean": 1.3841454101115014
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 14,
+      "total_valid_patches": 51117,
+      "active_pairs": 4,
+      "top1_pair_eff_num": 2.3569343225547947,
+      "dominant_frac": 0.6117143024825401,
+      "entropy_length_corr": -0.646668553352356,
+      "entropy_range": 2.8174948692321777,
+      "length_range": 7.9424028396606445,
+      "shortest_pair": 3,
+      "longest_pair": 2,
+      "highest_entropy_pair": 3,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 16631,
+          "frac": 0.3253516442670736,
+          "entropy_mean": 1.7914231438092307,
+          "length_mean": 1.184174132643858
+        },
+        {
+          "pair": 1,
+          "count": 2964,
+          "frac": 0.05798462351076941,
+          "entropy_mean": 0.8241410777777152,
+          "length_mean": 2.6427125506072873
+        },
+        {
+          "pair": 2,
+          "count": 31269,
+          "frac": 0.6117143024825401,
+          "entropy_mean": 0.7012799164389484,
+          "length_mean": 8.94240301896447
+        },
+        {
+          "pair": 3,
+          "count": 253,
+          "frac": 0.004949429739616957,
+          "entropy_mean": 3.518774703557312,
+          "length_mean": 1.0
+        }
+      ]
+    },
+    {
+      "layer": 15,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.3265188985863166,
+      "dominant_frac": 0.9184420055950075,
+      "entropy_length_corr": 1.0,
+      "entropy_range": 0.6785354614257812,
+      "length_range": 0.4881000518798828,
+      "shortest_pair": 0,
+      "longest_pair": 1,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 46948,
+          "frac": 0.9184420055950075,
+          "entropy_mean": 1.132368852830728,
+          "length_mean": 6.053463406321888
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 4169,
+          "frac": 0.08155799440499246,
+          "entropy_mean": 0.45383335659796453,
+          "length_mean": 5.565363396497961
+        }
+      ]
+    },
+    {
+      "layer": 16,
+      "total_valid_patches": 51117,
+      "active_pairs": 1,
+      "top1_pair_eff_num": 1.0,
+      "dominant_frac": 1.0,
+      "entropy_length_corr": null,
+      "entropy_range": 0.0,
+      "length_range": 0.0,
+      "shortest_pair": 0,
+      "longest_pair": 2,
+      "highest_entropy_pair": 2,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 51117,
+          "frac": 1.0,
+          "entropy_mean": 1.0770288586253876,
+          "length_mean": 6.013654948451592
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 17,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 1.3132217942315483,
+      "dominant_frac": 0.9250738501868263,
+      "entropy_length_corr": -0.6781013011932373,
+      "entropy_range": 2.0081429481506348,
+      "length_range": 380.6505126953125,
+      "shortest_pair": 2,
+      "longest_pair": 0,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 63,
+          "frac": 0.0012324666940548153,
+          "entropy_mean": 0.5213494870870833,
+          "length_mean": 381.6507936507937
+        },
+        {
+          "pair": 1,
+          "count": 3767,
+          "frac": 0.07369368311911888,
+          "entropy_mean": 2.5294923430448635,
+          "length_mean": 1.000265463233342
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 47287,
+          "frac": 0.9250738501868263,
+          "entropy_mean": 0.9620623319816748,
+          "length_mean": 5.9125763952037556
+        }
+      ]
+    },
+    {
+      "layer": 18,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 2.3280874596062398,
+      "dominant_frac": 0.5655065829371834,
+      "entropy_length_corr": -0.7775672078132629,
+      "entropy_range": 1.1132835149765015,
+      "length_range": 6.454879283905029,
+      "shortest_pair": 2,
+      "longest_pair": 0,
+      "highest_entropy_pair": 3,
+      "lowest_entropy_pair": 2,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 28907,
+          "frac": 0.5655065829371834,
+          "entropy_mean": 0.6237176492705606,
+          "length_mean": 8.459335109143113
+        },
+        {
+          "pair": 1,
+          "count": 2693,
+          "frac": 0.05268306042999393,
+          "entropy_mean": 1.1599059298363397,
+          "length_mean": 2.004455997029335
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 19517,
+          "frac": 0.38181035663282276,
+          "entropy_mean": 1.7370011482215804,
+          "length_mean": 2.9445099144335707
+        }
+      ]
+    },
+    {
+      "layer": 19,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.7763797875700094,
+      "dominant_frac": 0.7385409941897999,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 1.1173079013824463,
+      "length_range": 6.773194789886475,
+      "shortest_pair": 0,
+      "longest_pair": 1,
+      "highest_entropy_pair": 2,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 37752,
+          "frac": 0.7385409941897999,
+          "entropy_mean": 0.7848986525741402,
+          "length_mean": 7.78456770502225
+        },
+        {
+          "pair": 2,
+          "count": 13365,
+          "frac": 0.26145900581020015,
+          "entropy_mean": 1.9022065270763187,
+          "length_mean": 1.011372989150767
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 20,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.7952513185881347,
+      "dominant_frac": 0.7280943717354305,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 1.1393426656723022,
+      "length_range": 6.784808158874512,
+      "shortest_pair": 1,
+      "longest_pair": 2,
+      "highest_entropy_pair": 0,
+      "lowest_entropy_pair": 1,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 13899,
+          "frac": 0.27190562826456954,
+          "entropy_mean": 1.9065778306666292,
+          "length_mean": 1.0736743650622347
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 37218,
+          "frac": 0.7280943717354305,
+          "entropy_mean": 0.7672351791584304,
+          "length_mean": 7.858482454726207
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 21,
+      "total_valid_patches": 51117,
+      "active_pairs": 3,
+      "top1_pair_eff_num": 1.4918024022052807,
+      "dominant_frac": 0.8633135747403017,
+      "entropy_length_corr": -0.7883766889572144,
+      "entropy_range": 3.554368019104004,
+      "length_range": 17.482234954833984,
+      "shortest_pair": 0,
+      "longest_pair": 3,
+      "highest_entropy_pair": 1,
+      "lowest_entropy_pair": 0,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 1,
+          "count": 7,
+          "frac": 0.00013694074378386837,
+          "entropy_mean": 3.9263392857142856,
+          "length_mean": 1.0
+        },
+        {
+          "pair": 2,
+          "count": 44130,
+          "frac": 0.8633135747403017,
+          "entropy_mean": 1.1880951585424966,
+          "length_mean": 4.042306820756854
+        },
+        {
+          "pair": 3,
+          "count": 6980,
+          "frac": 0.13654948451591448,
+          "entropy_mean": 0.37197141044033977,
+          "length_mean": 18.482234957020058
+        }
+      ]
+    },
+    {
+      "layer": 22,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.9791299636206452,
+      "dominant_frac": 0.5722949312361837,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 1.0209767818450928,
+      "length_range": 7.822640419006348,
+      "shortest_pair": 1,
+      "longest_pair": 2,
+      "highest_entropy_pair": 0,
+      "lowest_entropy_pair": 1,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 21863,
+          "frac": 0.42770506876381637,
+          "entropy_mean": 1.661328688940692,
+          "length_mean": 1.5367973288203816
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 29254,
+          "frac": 0.5722949312361837,
+          "entropy_mean": 0.6403519190552948,
+          "length_mean": 9.359438025569153
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    },
+    {
+      "layer": 23,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.8150401956176376,
+      "dominant_frac": 0.7166304751843809,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 0.7899314761161804,
+      "length_range": 11.534650802612305,
+      "shortest_pair": 1,
+      "longest_pair": 0,
+      "highest_entropy_pair": 3,
+      "lowest_entropy_pair": 1,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 14485,
+          "frac": 0.28336952481561906,
+          "entropy_mean": 0.5109399128071308,
+          "length_mean": 14.279737659647912
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 3,
+          "count": 36632,
+          "frac": 0.7166304751843809,
+          "entropy_mean": 1.3008713564463488,
+          "length_mean": 2.745086263376283
+        }
+      ]
+    },
+    {
+      "layer": 24,
+      "total_valid_patches": 51117,
+      "active_pairs": 2,
+      "top1_pair_eff_num": 1.5231572434323077,
+      "dominant_frac": 0.8511062855801397,
+      "entropy_length_corr": -1.0,
+      "entropy_range": 0.8104578852653503,
+      "length_range": 14.935397148132324,
+      "shortest_pair": 1,
+      "longest_pair": 2,
+      "highest_entropy_pair": 0,
+      "lowest_entropy_pair": 1,
+      "pairs": [
+        {
+          "pair": 0,
+          "count": 43506,
+          "frac": 0.8511062855801397,
+          "entropy_mean": 1.1977009359819613,
+          "length_mean": 3.789868064175056
+        },
+        {
+          "pair": 1,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        },
+        {
+          "pair": 2,
+          "count": 7611,
+          "frac": 0.14889371441986032,
+          "entropy_mean": 0.38724310150081953,
+          "length_mean": 18.72526606227828
+        },
+        {
+          "pair": 3,
+          "count": 0,
+          "frac": 0.0,
+          "entropy_mean": 0.0,
+          "length_mean": 0.0
+        }
+      ]
+    }
+  ]
+}

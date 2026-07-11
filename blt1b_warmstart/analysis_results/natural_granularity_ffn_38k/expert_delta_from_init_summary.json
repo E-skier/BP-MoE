@@ -1,0 +1,242 @@
+{
+  "final": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_A3k_B47k_6gpu_c00000_c00005/phaseB_to_total50k/checkpoints/0000038000",
+  "init": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/initial_weights/blt_1b_patchmoe_entropy_randominit_paired_dcp",
+  "num_tensors": 600,
+  "mean_relative_delta_norm": 0.05144400224134143,
+  "max_relative_delta_norm": 0.0923075835847571,
+  "by_expert": [
+    {
+      "expert": 0,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.046170532840123124,
+      "max_relative_delta_norm": 0.09115354810410815,
+      "mean_delta_norm": 3.435083899497986
+    },
+    {
+      "expert": 1,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.04994833799177445,
+      "max_relative_delta_norm": 0.08835427844366998,
+      "mean_delta_norm": 3.7031640720367434
+    },
+    {
+      "expert": 2,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.05411284645520625,
+      "max_relative_delta_norm": 0.08929563685610767,
+      "mean_delta_norm": 3.986806279818217
+    },
+    {
+      "expert": 3,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.05325552451089695,
+      "max_relative_delta_norm": 0.0923075835847571,
+      "mean_delta_norm": 3.93717160542806
+    },
+    {
+      "expert": 4,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.049965147160933025,
+      "max_relative_delta_norm": 0.083052721335787,
+      "mean_delta_norm": 3.7089043919245404
+    },
+    {
+      "expert": 5,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.05326983886184977,
+      "max_relative_delta_norm": 0.09220909657974882,
+      "mean_delta_norm": 3.9157872168223062
+    },
+    {
+      "expert": 6,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.055754716823472446,
+      "max_relative_delta_norm": 0.0841019259899801,
+      "mean_delta_norm": 4.080102491378784
+    },
+    {
+      "expert": 7,
+      "num_tensors": 75,
+      "mean_relative_delta_norm": 0.04907507328647539,
+      "max_relative_delta_norm": 0.08725300343961329,
+      "mean_delta_norm": 3.6282157770792645
+    }
+  ],
+  "by_layer": [
+    {
+      "layer": 0,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.04656745117306802,
+      "max_relative_delta_norm": 0.08331349887749447,
+      "mean_delta_norm": 3.212816079457601
+    },
+    {
+      "layer": 1,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.03724643929691562,
+      "max_relative_delta_norm": 0.0780962798815328,
+      "mean_delta_norm": 2.6818090230226517
+    },
+    {
+      "layer": 2,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.03539634738278286,
+      "max_relative_delta_norm": 0.07673350904493582,
+      "mean_delta_norm": 2.5954431047042212
+    },
+    {
+      "layer": 3,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05389991767418897,
+      "max_relative_delta_norm": 0.08132900896942102,
+      "mean_delta_norm": 3.8340145647525787
+    },
+    {
+      "layer": 4,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.051691498858109954,
+      "max_relative_delta_norm": 0.08049979617090373,
+      "mean_delta_norm": 3.6973926375309625
+    },
+    {
+      "layer": 5,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.052131111340445034,
+      "max_relative_delta_norm": 0.08000011912232692,
+      "mean_delta_norm": 3.7265458504358926
+    },
+    {
+      "layer": 6,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05349294018011588,
+      "max_relative_delta_norm": 0.08092815687335166,
+      "mean_delta_norm": 3.7740704168876014
+    },
+    {
+      "layer": 7,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05956978729685347,
+      "max_relative_delta_norm": 0.07889372937121605,
+      "mean_delta_norm": 4.245913008848826
+    },
+    {
+      "layer": 8,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.049908677954364246,
+      "max_relative_delta_norm": 0.07819124003653495,
+      "mean_delta_norm": 3.5873669385910034
+    },
+    {
+      "layer": 9,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.048556688097601865,
+      "max_relative_delta_norm": 0.07899446043764156,
+      "mean_delta_norm": 3.4981284538904824
+    },
+    {
+      "layer": 10,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.04860157982428179,
+      "max_relative_delta_norm": 0.07732416146856137,
+      "mean_delta_norm": 3.5449819515148797
+    },
+    {
+      "layer": 11,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.055193238130762635,
+      "max_relative_delta_norm": 0.0776842043716542,
+      "mean_delta_norm": 4.002089122931163
+    },
+    {
+      "layer": 12,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05870405234518423,
+      "max_relative_delta_norm": 0.07766820785107306,
+      "mean_delta_norm": 4.267755746841431
+    },
+    {
+      "layer": 13,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05196924240337544,
+      "max_relative_delta_norm": 0.07801431604021325,
+      "mean_delta_norm": 3.833266720175743
+    },
+    {
+      "layer": 14,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.04918840303239457,
+      "max_relative_delta_norm": 0.083052721335787,
+      "mean_delta_norm": 3.6601113379001617
+    },
+    {
+      "layer": 15,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05350713326935824,
+      "max_relative_delta_norm": 0.07911967065551744,
+      "mean_delta_norm": 3.9912375609079995
+    },
+    {
+      "layer": 16,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.058580897663961774,
+      "max_relative_delta_norm": 0.08552749150492879,
+      "mean_delta_norm": 4.3727539628744125
+    },
+    {
+      "layer": 17,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.04840098828014968,
+      "max_relative_delta_norm": 0.08725300343961329,
+      "mean_delta_norm": 3.679703012108803
+    },
+    {
+      "layer": 18,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.054393660822211455,
+      "max_relative_delta_norm": 0.08354263427113885,
+      "mean_delta_norm": 4.115849410494168
+    },
+    {
+      "layer": 19,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05773844981629969,
+      "max_relative_delta_norm": 0.09115354810410815,
+      "mean_delta_norm": 4.375029628475507
+    },
+    {
+      "layer": 20,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05545692892061638,
+      "max_relative_delta_norm": 0.08948049161746242,
+      "mean_delta_norm": 4.243392199277878
+    },
+    {
+      "layer": 21,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.057469866604441845,
+      "max_relative_delta_norm": 0.09220909657974882,
+      "mean_delta_norm": 4.4153204162915545
+    },
+    {
+      "layer": 22,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.05254773198125298,
+      "max_relative_delta_norm": 0.0923075835847571,
+      "mean_delta_norm": 4.08522189160188
+    },
+    {
+      "layer": 23,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.0516288540677444,
+      "max_relative_delta_norm": 0.09036474602562103,
+      "mean_delta_norm": 4.029762148857117
+    },
+    {
+      "layer": 24,
+      "num_tensors": 24,
+      "mean_relative_delta_norm": 0.04425816961705457,
+      "max_relative_delta_norm": 0.08411202370449078,
+      "mean_delta_norm": 3.515136480331421
+    }
+  ]
+}

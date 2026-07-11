@@ -1,0 +1,38 @@
+{
+  "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_AC1_A5k_B15k_6gpu_c00000_c00005/phaseB_resume_from4000_to_total20k/checkpoints/0000011000",
+  "layer": 12,
+  "max_batches": 50,
+  "means": {
+    "baseline": 0.48860472440719604,
+    "ablate_E0": 0.488579238653183,
+    "ablate_E1": 0.4886474579572678,
+    "ablate_E2": 0.48893565595149996,
+    "ablate_E4": 0.4884996396303177,
+    "ablate_E5": 0.48895186841487887,
+    "ablate_E1_E5_short_channel": 0.49130226492881773,
+    "ablate_E2_E4_lowent_long_channel": 0.49139629304409027,
+    "ablate_E0_E4_ultralong_lowent_channel": 0.4885233074426651
+  },
+  "deltas_vs_baseline": {
+    "baseline": 0.0,
+    "ablate_E0": -2.5485754013065964e-05,
+    "ablate_E1": 4.273355007172741e-05,
+    "ablate_E2": 0.000330931544303914,
+    "ablate_E4": -0.00010508477687837248,
+    "ablate_E5": 0.0003471440076828203,
+    "ablate_E1_E5_short_channel": 0.0026975405216216886,
+    "ablate_E2_E4_lowent_long_channel": 0.002791568636894226,
+    "ablate_E0_E4_ultralong_lowent_channel": -8.141696453095593e-05
+  },
+  "relative_deltas_vs_baseline": {
+    "baseline": 0.0,
+    "ablate_E0": -5.216026931378279e-05,
+    "ablate_E1": 8.746037018691185e-05,
+    "ablate_E2": 0.0006772991086105842,
+    "ablate_E4": -0.0002150711436649891,
+    "ablate_E5": 0.0007104802519132327,
+    "ablate_E1_E5_short_channel": 0.005520905523159857,
+    "ablate_E2_E4_lowent_long_channel": 0.0057133476150504296,
+    "ablate_E0_E4_ultralong_lowent_channel": -0.00016663155402301067
+  }
+}

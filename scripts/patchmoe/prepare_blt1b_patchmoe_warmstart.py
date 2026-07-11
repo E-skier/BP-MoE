@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument(
         "--patch-feature-init",
         default="random",
-        choices=("random", "entropy_bands"),
+        choices=("random", "entropy_bands", "length_entropy_anchors"),
         help="Initialize patch-feature router randomly or with entropy-ordered expert-pair bands.",
     )
     parser.add_argument(

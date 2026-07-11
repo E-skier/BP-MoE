@@ -1,0 +1,160 @@
+{
+  "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_AC1_A5k_B15k_6gpu_c00000_c00005/phaseB_resume_from4000_to_total20k/checkpoints/0000011000",
+  "layer": 12,
+  "max_batches": 200,
+  "total_valid_patches": 51117,
+  "top1_fraction_by_expert": [
+    0.0068861632607877254,
+    0.42144492268562317,
+    0.21585774421691895,
+    0.0,
+    0.3198348879814148,
+    0.035976290702819824,
+    0.0,
+    0.0
+  ],
+  "top2_fraction_by_expert": [
+    0.005614570342004299,
+    0.22941486537456512,
+    0.2665649354457855,
+    0.0,
+    0.212444007396698,
+    0.2859616279602051,
+    0.0,
+    0.0
+  ],
+  "experts": {
+    "0": {
+      "count": 352,
+      "top1_frac": 0.00688616311598881,
+      "entropy_mean": 0.4507906138896942,
+      "entropy_min": 0.07560790330171585,
+      "entropy_max": 1.6171875,
+      "length_mean": 163.1420440673828,
+      "length_min": 15.0,
+      "length_max": 848.0,
+      "high_entropy_frac_ent_ge_2_5": 0.0,
+      "low_entropy_frac_ent_le_1_0": 0.9034090638160706,
+      "short_length_frac_len_le_4": 0.0,
+      "long_length_frac_len_ge_12": 1.0,
+      "most_common_second_experts": [
+        {
+          "expert": 4,
+          "frac": 0.9829545454545454
+        },
+        {
+          "expert": 2,
+          "frac": 0.017045454545454544
+        }
+      ]
+    },
+    "1": {
+      "count": 21543,
+      "top1_frac": 0.4214449204765538,
+      "entropy_mean": 1.5579124689102173,
+      "entropy_min": 8.58306884765625e-06,
+      "entropy_max": 2.96875,
+      "length_mean": 1.5710439682006836,
+      "length_min": 1.0,
+      "length_max": 3.0,
+      "high_entropy_frac_ent_ge_2_5": 0.04349440708756447,
+      "low_entropy_frac_ent_le_1_0": 0.12551641464233398,
+      "short_length_frac_len_le_4": 1.0,
+      "long_length_frac_len_ge_12": 0.0,
+      "most_common_second_experts": [
+        {
+          "expert": 5,
+          "frac": 0.9902984728217983
+        },
+        {
+          "expert": 2,
+          "frac": 0.005755930000464188
+        },
+        {
+          "expert": 4,
+          "frac": 0.003945597177737548
+        }
+      ]
+    },
+    "2": {
+      "count": 11034,
+      "top1_frac": 0.21585773813017195,
+      "entropy_mean": 0.8759763836860657,
+      "entropy_min": 0.5955657958984375,
+      "entropy_max": 3.359375,
+      "length_mean": 6.1115641593933105,
+      "length_min": 4.0,
+      "length_max": 639.0,
+      "high_entropy_frac_ent_ge_2_5": 0.0007250317139551044,
+      "low_entropy_frac_ent_le_1_0": 0.7929128408432007,
+      "short_length_frac_len_le_4": 0.5212071537971497,
+      "long_length_frac_len_ge_12": 0.004622077103704214,
+      "most_common_second_experts": [
+        {
+          "expert": 5,
+          "frac": 0.5493927859343847
+        },
+        {
+          "expert": 4,
+          "frac": 0.44761645822004714
+        },
+        {
+          "expert": 1,
+          "frac": 0.0029001268805510243
+        },
+        {
+          "expert": 0,
+          "frac": 9.062896501721951e-05
+        }
+      ]
+    },
+    "4": {
+      "count": 16349,
+      "top1_frac": 0.31983488858892345,
+      "entropy_mean": 0.47741198539733887,
+      "entropy_min": 0.0706586241722107,
+      "entropy_max": 1.06201171875,
+      "length_mean": 8.84457778930664,
+      "length_min": 3.0,
+      "length_max": 113.0,
+      "high_entropy_frac_ent_ge_2_5": 0.0,
+      "low_entropy_frac_ent_le_1_0": 0.9999388456344604,
+      "short_length_frac_len_le_4": 0.03272371366620064,
+      "long_length_frac_len_ge_12": 0.17462842166423798,
+      "most_common_second_experts": [
+        {
+          "expert": 2,
+          "frac": 0.9840357208391951
+        },
+        {
+          "expert": 0,
+          "frac": 0.01351764633922564
+        },
+        {
+          "expert": 1,
+          "frac": 0.0024466328215793014
+        }
+      ]
+    },
+    "5": {
+      "count": 1839,
+      "top1_frac": 0.035976289688361994,
+      "entropy_mean": 2.1005802154541016,
+      "entropy_min": 1.2469888925552368,
+      "entropy_max": 4.09375,
+      "length_mean": 2.226209878921509,
+      "length_min": 1.0,
+      "length_max": 3.0,
+      "high_entropy_frac_ent_ge_2_5": 0.33931484818458557,
+      "low_entropy_frac_ent_le_1_0": 0.0,
+      "short_length_frac_len_le_4": 1.0,
+      "long_length_frac_len_ge_12": 0.0,
+      "most_common_second_experts": [
+        {
+          "expert": 1,
+          "frac": 1.0
+        }
+      ]
+    }
+  }
+}

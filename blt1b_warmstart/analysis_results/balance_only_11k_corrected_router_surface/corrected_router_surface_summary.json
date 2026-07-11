@@ -1,0 +1,717 @@
+{
+  "global": {
+    "checkpoint": "/data1/pengfeigao/BP-MoE/blt1b_warmstart/natural_granularity_AC1_A5k_B15k_6gpu_c00000_c00005/phaseB_resume_from4000_to_total20k/checkpoints/0000011000",
+    "note": "Corrected 2D router surface scan. Feature order: [normalized log patch length, raw entropy]. This is router-surface analysis, not real-data input purity.",
+    "num_layers": 25,
+    "mean_layer_top1_eff_num": 1.4901145549490478,
+    "mean_layer_top2_eff_num": 2.6429939485231118,
+    "mean_top1_dominant_frac": 0.8489814829826355,
+    "num_layers_active_top1_ge2": 15,
+    "num_valid_corr_layers": 15,
+    "mean_entropy_length_corr": -0.750202697267135,
+    "num_layers_negative_corr": 14,
+    "num_layers_strong_negative_corr": 12
+  },
+  "layers": [
+    {
+      "layer": 0,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.0,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5,
+        0.0
+      ]
+    },
+    {
+      "layer": 1,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.0280837762144417,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.5,
+        0.0011574074160307646,
+        0.0,
+        0.0,
+        0.0,
+        0.49807098507881165,
+        0.0007716049440205097
+      ]
+    },
+    {
+      "layer": 2,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.011565909105755,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.0007716049440205097,
+        0.0,
+        0.5,
+        0.0,
+        0.0,
+        0.4992283880710602,
+        0.0
+      ]
+    },
+    {
+      "layer": 3,
+      "top1_effective_experts": 1.3565693832617307,
+      "top2_effective_experts": 3.030025723663078,
+      "top1_dominant_frac": 0.9089506268501282,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": 1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.09104938060045242,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.9089506268501282,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.002314814832061529,
+        0.3653549253940582,
+        0.0,
+        0.0,
+        0.13734567165374756,
+        0.02739197574555874,
+        0.46759259700775146,
+        0.0
+      ]
+    },
+    {
+      "layer": 4,
+      "top1_effective_experts": 1.4666318223825954,
+      "top2_effective_experts": 2.8546907604629865,
+      "top1_dominant_frac": 0.8742284178733826,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0007716049440205097,
+        0.0,
+        0.125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.8742284178733826
+      ],
+      "top2_fraction_by_expert": [
+        0.0007716049440205097,
+        0.0,
+        0.1979166716337204,
+        0.0,
+        0.0,
+        0.0,
+        0.3371913433074951,
+        0.46412035822868347
+      ]
+    },
+    {
+      "layer": 5,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.0,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5,
+        0.0
+      ]
+    },
+    {
+      "layer": 6,
+      "top1_effective_experts": 1.7904885104160522,
+      "top2_effective_experts": 2.574136759345341,
+      "top1_dominant_frac": 0.7600308656692505,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.2330246865749359,
+        0.0,
+        0.0,
+        0.0069444444961845875,
+        0.0,
+        0.0,
+        0.0,
+        0.7600308656692505
+      ],
+      "top2_fraction_by_expert": [
+        0.49151235818862915,
+        0.0,
+        0.0,
+        0.10030864179134369,
+        0.0,
+        0.0,
+        0.0,
+        0.40817901492118835
+      ]
+    },
+    {
+      "layer": 7,
+      "top1_effective_experts": 2.4954984974875454,
+      "top2_effective_experts": 3.0396643459662336,
+      "top1_dominant_frac": 0.6180555820465088,
+      "active_top1_count": 3,
+      "entropy_length_corr_across_top1_experts": -0.05476599559187889,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.6180555820465088,
+        0.0,
+        0.24459876120090485,
+        0.13734567165374756,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.00038580247201025486,
+        0.002314814832061529,
+        0.36998456716537476,
+        0.0,
+        0.3267746865749359,
+        0.30054011940956116,
+        0.0
+      ]
+    },
+    {
+      "layer": 8,
+      "top1_effective_experts": 1.6829017104971271,
+      "top2_effective_experts": 4.689814394851874,
+      "top1_dominant_frac": 0.8086419701576233,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.8086419701576233,
+        0.0,
+        0.0,
+        0.007716049440205097,
+        0.0,
+        0.1836419701576233,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.43865740299224854,
+        0.13425925374031067,
+        0.09529320895671844,
+        0.10108024626970291,
+        0.0,
+        0.1809413582086563,
+        0.0,
+        0.04976851865649223
+      ]
+    },
+    {
+      "layer": 9,
+      "top1_effective_experts": 1.8147192051726309,
+      "top2_effective_experts": 2.248476300960554,
+      "top1_dominant_frac": 0.716821014881134,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -0.9999999403953552,
+      "top1_fraction_by_expert": [
+        0.28317901492118835,
+        0.716821014881134,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.4756944477558136,
+        0.5,
+        0.005401234608143568,
+        0.0,
+        0.002314814832061529,
+        0.0,
+        0.016589505597949028,
+        0.0
+      ]
+    },
+    {
+      "layer": 10,
+      "top1_effective_experts": 1.1476696237527215,
+      "top2_effective_experts": 2.011565909105755,
+      "top1_dominant_frac": 0.9691358208656311,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.9691358208656311,
+        0.0,
+        0.0,
+        0.03086419776082039,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.4992283880710602,
+        0.0,
+        0.0007716049440205097,
+        0.5,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "layer": 11,
+      "top1_effective_experts": 1.870482650565839,
+      "top2_effective_experts": 2.8347453724084826,
+      "top1_dominant_frac": 0.7021604776382446,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -0.9999998807907104,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.2947530746459961,
+        0.0,
+        0.0,
+        0.0,
+        0.003086419776082039,
+        0.7021604776382446,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.007716049440205097,
+        0.47453704476356506,
+        0.013117283582687378,
+        0.08487654477357864,
+        0.0,
+        0.0034722222480922937,
+        0.4162808656692505,
+        0.0
+      ]
+    },
+    {
+      "layer": 12,
+      "top1_effective_experts": 3.390448506609585,
+      "top2_effective_experts": 3.6096575808571694,
+      "top1_dominant_frac": 0.5046296119689941,
+      "active_top1_count": 4,
+      "entropy_length_corr_across_top1_experts": -0.19827470183372498,
+      "top1_fraction_by_expert": [
+        0.0007716049440205097,
+        0.11496913433074951,
+        0.5046296119689941,
+        0.0,
+        0.14814814925193787,
+        0.23148147761821747,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0034722222480922937,
+        0.13773147761821747,
+        0.358410507440567,
+        0.0,
+        0.10918209701776505,
+        0.3888888955116272,
+        0.002314814832061529,
+        0.0
+      ]
+    },
+    {
+      "layer": 13,
+      "top1_effective_experts": 1.9554659304110995,
+      "top2_effective_experts": 3.0155153055055353,
+      "top1_dominant_frac": 0.6057098507881165,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -0.9999999403953552,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.6057098507881165,
+        0.39429011940956116,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.33564814925193787,
+        0.0007716049440205097,
+        0.3221450746059418,
+        0.34143519401550293,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "layer": 14,
+      "top1_effective_experts": 1.9561113462334472,
+      "top2_effective_experts": 3.084466030574728,
+      "top1_dominant_frac": 0.604938268661499,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.395061731338501,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.604938268661499
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.44907405972480774,
+        0.05092592537403107,
+        0.11419752985239029,
+        0.0,
+        0.0,
+        0.3858024775981903
+      ]
+    },
+    {
+      "layer": 15,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.1097523617374447,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.00038580247201025486,
+        0.0,
+        0.0015432098880410194,
+        0.0,
+        0.007716049440205097,
+        0.4903549253940582,
+        0.5
+      ]
+    },
+    {
+      "layer": 16,
+      "top1_effective_experts": 1.7065887666261952,
+      "top2_effective_experts": 2.708842112564171,
+      "top1_dominant_frac": 0.7739197611808777,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.7739197611808777,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2260802537202835,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0034722222480922937,
+        0.36921295523643494,
+        0.12731482088565826
+      ]
+    },
+    {
+      "layer": 17,
+      "top1_effective_experts": 1.4813638952945944,
+      "top2_effective_experts": 2.080572179669416,
+      "top1_dominant_frac": 0.8665123581886292,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.8665123581886292,
+        0.0,
+        0.13348765671253204,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.4965277910232544,
+        0.0,
+        0.4969135820865631,
+        0.0,
+        0.003086419776082039,
+        0.0034722222480922937,
+        0.0
+      ]
+    },
+    {
+      "layer": 18,
+      "top1_effective_experts": 1.9933141161452255,
+      "top2_effective_experts": 2.95307173979468,
+      "top1_dominant_frac": 0.5408950448036194,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.4591049253940582,
+        0.0,
+        0.5408950448036194,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.25192901492118835,
+        0.0,
+        0.38078704476356506,
+        0.0,
+        0.3672839403152466
+      ]
+    },
+    {
+      "layer": 19,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.1158707372518233,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.006172839552164078,
+        0.5,
+        0.0,
+        0.0015432098880410194,
+        0.0,
+        0.4903549253940582,
+        0.0019290123600512743
+      ]
+    },
+    {
+      "layer": 20,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 3.5429613329181584,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.006172839552164078,
+        0.08526234328746796,
+        0.5,
+        0.00038580247201025486,
+        0.1736111044883728,
+        0.0,
+        0.006558641791343689,
+        0.22800925374031067
+      ]
+    },
+    {
+      "layer": 21,
+      "top1_effective_experts": 1.1446099088698019,
+      "top2_effective_experts": 2.532548468447343,
+      "top1_dominant_frac": 0.9699074029922485,
+      "active_top1_count": 2,
+      "entropy_length_corr_across_top1_experts": -1.0,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.030092593282461166,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.9699074029922485
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.41473764181137085,
+        0.0,
+        0.08371913433074951,
+        0.0,
+        0.0015432098880410194,
+        0.0,
+        0.5
+      ]
+    },
+    {
+      "layer": 22,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.1546874170015258,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.4864969253540039,
+        0.0,
+        0.0069444444961845875,
+        0.0011574074160307646,
+        0.5,
+        0.0,
+        0.005401234608143568
+      ]
+    },
+    {
+      "layer": 23,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.011565909105755,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.0,
+        0.4992283880710602,
+        0.0007716049440205097,
+        0.5,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "layer": 24,
+      "top1_effective_experts": 1.0,
+      "top2_effective_experts": 2.8325682855655536,
+      "top1_dominant_frac": 1.0,
+      "active_top1_count": 1,
+      "entropy_length_corr_across_top1_experts": null,
+      "top1_fraction_by_expert": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "top2_fraction_by_expert": [
+        0.005401234608143568,
+        0.0,
+        0.10030864179134369,
+        0.0,
+        0.3777006268501282,
+        0.016589505597949028,
+        0.5,
+        0.0
+      ]
+    }
+  ]
+}

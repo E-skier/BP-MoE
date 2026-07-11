@@ -35,6 +35,7 @@ from bytelatent.base_transformer import (
     get_moe_aux_loss,
     get_moe_metrics,
     get_moe_router_z_loss,
+    get_moe_router_anticollapse_loss,
     set_moe_router_step,
 )
 from bytelatent.checkpoint import CheckpointManager, load_from_checkpoint
@@ -657,6 +658,7 @@ def train(args: TrainArgs):
 
             moe_aux_loss_log = None
             moe_router_z_loss_log = None
+            moe_router_anticollapse_loss_log = None
             trace_train_phase(trace_step, train_state.acc_step, "before_forward")
             if not args.train_entropy_model:
                 set_moe_router_step(model, train_state.step)
@@ -691,6 +693,11 @@ def train(args: TrainArgs):
                             loss
                             + args.model.moe_router_z_loss_weight * moe_router_z_loss
                         )
+
+                moe_router_anticollapse_loss = get_moe_router_anticollapse_loss(model)
+                if moe_router_anticollapse_loss is not None:
+                    moe_router_anticollapse_loss_log = moe_router_anticollapse_loss.detach()
+                    loss = loss + moe_router_anticollapse_loss
 
             # We scale loss with grad_acc_steps so the gradient is the same
             # regardless of grad_acc_steps
@@ -948,6 +955,10 @@ def train(args: TrainArgs):
                     if moe_router_z_loss_log is not None:
                         moe_metrics["router_z_loss_aux"] = to_py_num(
                             moe_router_z_loss_log
+                        )
+                    if moe_router_anticollapse_loss_log is not None:
+                        moe_metrics["router_anticollapse_loss_aux"] = to_py_num(
+                            moe_router_anticollapse_loss_log
                         )
                     if len(moe_metrics) > 0:
                         metric_dict["moe"] = moe_metrics
